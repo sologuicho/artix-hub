@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "research": "Investigaciones",
+    "articles": "Artículos",
+    "events": "Eventos",
+    "blog": "Blog",
+    "login": "Log In",
+    "signup": "Sign Up"
+  },
+  "footer": {
+    "links": {
+      "articles": "Artículos",
+      "blog": "Blog",
+      "events": "Eventos",
+      "contact": "Contacto",
+      "terms": "Términos",
+      "policies": "Políticas"
+    },
+    "social": "Síguenos",
+    "language": "Idioma"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar Sesión",
+      "subtitle": "Accede a tu cuenta para continuar",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "remember": "Recordarme",
+      "forgot": "¿Olvidaste tu contraseña?",
+      "submit": "Iniciar Sesión",
+      "noAccount": "¿No tienes cuenta?",
+      "signUp": "Regístrate"
+    },
+    "signup": {
+      "title": "Crear Cuenta",
+      "subtitle": "Únete a Artix Hub hoy",
+      "username": "Nombre de usuario",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Crear Cuenta",
+      "hasAccount": "¿Ya tienes cuenta?",
+      "signIn": "Inicia Sesión"
+    },
+    "oauth": {
+      "google": "Continuar con Google",
+      "microsoft": "Continuar con Microsoft",
+      "github": "Continuar con GitHub",
+      "or": "O"
+    }
+  },
+  "home": {
+    "hero": {
+      "badge": "Investigadores y Profesores",
+      "title": "Ninguna Investigación Está\nCompletamente Terminada",
+      "cta": "Descubrir Más"
+    },
+    "articles": {
+      "title": "Artículos Recientes",
+      "subtitle": "Descubre las últimas investigaciones e insights de nuestra comunidad"
+    },
+    "competitions": {
+      "title": "Competencias"
+    }
+  },
+  "articles": {
+    "title": "Artículos",
+    "subtitle": "Descubre artículos e investigaciones de nuestra comunidad",
+    "featured": "Artículo Destacado",
+    "all": "Todos los Artículos",
+    "filters": "Filtros",
+    "create": "Crear Artículo"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Lee las últimas noticias, actualizaciones e insights de Artix Hub",
+    "create": "Crear Post"
+  },
+  "events": {
+    "title": "Eventos",
+    "subtitle": "Únete a eventos próximos, talleres y conferencias"
+  }
+}
+

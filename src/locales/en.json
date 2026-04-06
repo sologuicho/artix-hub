@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "research": "Research",
+    "articles": "Articles",
+    "events": "Events",
+    "blog": "Blog",
+    "login": "Log In",
+    "signup": "Sign Up"
+  },
+  "footer": {
+    "links": {
+      "articles": "Articles",
+      "blog": "Blog",
+      "events": "Events",
+      "contact": "Contact",
+      "terms": "Terms",
+      "policies": "Policies"
+    },
+    "social": "Follow Us",
+    "language": "Language"
+  },
+  "auth": {
+    "login": {
+      "title": "Log In",
+      "subtitle": "Sign in to your account to continue",
+      "email": "Email address",
+      "password": "Password",
+      "remember": "Remember me",
+      "forgot": "Forgot password?",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "signup": {
+      "title": "Sign Up",
+      "subtitle": "Join Artix Hub today",
+      "username": "Username",
+      "email": "Email address",
+      "password": "Password",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "oauth": {
+      "google": "Continue with Google",
+      "microsoft": "Continue with Microsoft",
+      "github": "Continue with GitHub",
+      "or": "Or"
+    }
+  },
+  "home": {
+    "hero": {
+      "badge": "Researcher & Professors",
+      "title": "No Research is Ever\nQuite Complete",
+      "cta": "Discover More"
+    },
+    "articles": {
+      "title": "Latest Articles",
+      "subtitle": "Discover the latest research and insights from our community"
+    },
+    "competitions": {
+      "title": "Competitions"
+    }
+  },
+  "articles": {
+    "title": "Articles",
+    "subtitle": "Discover insightful articles and research papers from our community",
+    "featured": "Featured Article",
+    "all": "All Articles",
+    "filters": "Filters",
+    "create": "Create Article"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Read the latest news, updates, and insights from Artix Hub",
+    "create": "Create Post"
+  },
+  "events": {
+    "title": "Events",
+    "subtitle": "Join upcoming events, workshops, and conferences"
+  }
+}
+
