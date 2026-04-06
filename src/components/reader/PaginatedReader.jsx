@@ -75,13 +75,11 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
                     return null;
                 };
                 const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-                const token = localStorage.getItem('token');
                 await fetch(`${backendUrl}/api/reading-progress`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'x-csrf-token': getCsrfToken() || '',
-                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     },
                     credentials: 'include',
                     body: JSON.stringify(payload)
@@ -130,15 +128,26 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
 
             {/* Reader Area */}
             <div className="flex-1 relative overflow-hidden px-8 md:px-16 py-8" ref={containerRef}>
+                {/* Article title — only visible on first page */}
+                {currentPage === 1 && title && (
+                    <div className="mb-6">
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
+                            {title}
+                        </h1>
+                        <div className="mt-3 h-0.5 w-12 bg-blue-500 rounded-full" />
+                    </div>
+                )}
+
                 <div
-                    className="h-full transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1)"
                     style={{
-                        transform: `translateX(-${(currentPage - 1) * (containerRef.current ? containerRef.current.clientWidth + 40 : 0)}px)`
+                        transform: `translateX(-${(currentPage - 1) * (containerRef.current ? containerRef.current.clientWidth + 40 : 0)}px)`,
+                        transition: 'transform 500ms cubic-bezier(0.25, 1, 0.5, 1)',
+                        height: currentPage === 1 && title ? 'calc(100% - 80px)' : '100%'
                     }}
                 >
                     <div
                         ref={contentRef}
-                        className="prose prose-lg dark:prose-invert max-w-none h-full text-justify"
+                        className="prose prose-lg dark:prose-invert max-w-none h-full text-left"
                         style={{
                             columnWidth: containerRef.current ? `${containerRef.current.clientWidth}px` : 'auto',
                             columnGap: '40px',
