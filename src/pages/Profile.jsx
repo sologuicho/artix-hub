@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { User, MapPin, Briefcase, FileText, Settings, Users, UserPlus } from 'lucide-react';
+import { BACKEND_URL } from '../config/client';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -20,7 +21,6 @@ const Profile = () => {
 
   const fetchFollowStats = async () => {
     try {
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
       const [followersRes, followingRes] = await Promise.all([
         fetch(`${BACKEND_URL}/api/follow/${user.id}/followers`, { credentials: 'include' }),
         fetch(`${BACKEND_URL}/api/follow/${user.id}/following`, { credentials: 'include' })

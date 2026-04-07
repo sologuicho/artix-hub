@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const UserMentionInput = ({ value, onChange, placeholder = 'Mencionar a alguien...' }) => {
   const [searchQuery, setSearchQuery] = useState('');

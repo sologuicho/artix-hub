@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send, Bot, Wand2, Lightbulb, GraduationCap, Copy, Check, RefreshCw, Maximize2, Minimize2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const AIAssistantOverlay = ({ isOpen, onClose, contextData = {}, onInsertText }) => {
     const [prompt, setPrompt] = useState('');

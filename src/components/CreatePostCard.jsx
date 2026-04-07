@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 // import RichTextEditorWithMentions from './RichTextEditorWithMentions';
 // import TagSelector from './TagSelector';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const CreatePostCard = ({ onPostCreated }) => {
   const { user } = useAuth();

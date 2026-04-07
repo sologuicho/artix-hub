@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

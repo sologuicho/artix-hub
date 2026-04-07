@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import useAIValidation from '../hooks/useAIValidation';
 import AIValidationPanel from '../components/AIValidationPanel';
+import { BACKEND_URL } from '../config/client';
 
 const interestsOptions = [
   'Tecnología',
@@ -124,7 +125,6 @@ const ProfileSetup = () => {
         payloadData.avatar = preview;
       }
 
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
       const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
         method: 'PUT',
         headers: {

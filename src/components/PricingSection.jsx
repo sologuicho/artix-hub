@@ -55,7 +55,7 @@ const PLANS = [
     }
 ];
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const PricingSection = () => {
     const { user, refreshUser } = useAuth();

@@ -8,7 +8,7 @@ import PremiumCard from '../components/ui/PremiumCard';
 import GlassSearchBar from '../components/ui/GlassSearchBar';
 import { GLOBAL_CATEGORIES } from '../constants/categories';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const Events = () => {
   const { t } = useLanguage();

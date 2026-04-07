@@ -3,7 +3,7 @@ import { Search, User, FileText, BookOpen, Calendar, MessageSquare, X, Hash } fr
 import { useNavigate } from 'react-router-dom';
 import { useDebounce } from '../hooks/useDebounce';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const GlobalSearch = () => {
   const [query, setQuery] = useState('');

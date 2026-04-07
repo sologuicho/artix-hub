@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 import clsx from 'clsx'; // Make sure clsx is imported, or remove if not used
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const CreateArticle = () => {
   const { id } = useParams();

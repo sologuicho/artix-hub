@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Sparkles, Wand2, Lightbulb, GraduationCap, X, Loader, Check, ArrowRight, Send } from 'lucide-react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const AIEditorPanel = ({ selectedText, onTextReplace, onInsertText, category, isOpen, onClose, contentType = 'article' }) => {
   const [activeTab, setActiveTab] = useState('improve');

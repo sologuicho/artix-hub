@@ -7,7 +7,7 @@ import SearchBar from '../components/SearchBar';
 import ProtectedRoute from '../components/ProtectedRoute';
 import CommentSection from '../components/CommentSection';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const UserProfile = () => {
   const { userId } = useParams();

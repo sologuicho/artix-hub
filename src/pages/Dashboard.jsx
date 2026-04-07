@@ -4,7 +4,7 @@ import { FileText, Calendar, BookOpen, ArrowRight, TrendingUp, Users, Clock, Bui
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const Dashboard = () => {
   const { t } = useLanguage();

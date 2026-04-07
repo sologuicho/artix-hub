@@ -11,7 +11,7 @@ import ShareModal from '../components/ShareModal';
 import AdvancedSearch from '../components/AdvancedSearch';
 import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const Blog = () => {
   const { t } = useLanguage();

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { BACKEND_URL } from '../config/client';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -14,7 +15,6 @@ const AuthCallback = () => {
       if (success === 'true') {
         // OAuth was successful, check auth status
         try {
-          const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
           const response = await fetch(`${BACKEND_URL}/me`, {
             method: 'GET',
             credentials: 'include',

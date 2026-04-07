@@ -9,7 +9,7 @@ import ScrollToTop from '../components/ScrollToTop';
 import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 import { motion } from 'framer-motion';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const getCsrfToken = () => {
   const cookies = document.cookie.split(';');

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, X, UserPlus, Check, XCircle } from 'lucide-react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const CollaboratorSelector = ({ selectedCollaborators, onSelect, onRemove, placeholder = 'Buscar usuarios...' }) => {
   const [searchQuery, setSearchQuery] = useState('');

@@ -7,7 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { handleGoogleAuth, handleMicrosoftAuth, handleGitHubAuth } from '../lib/auth/oauth';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState('login');

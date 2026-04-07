@@ -3,7 +3,7 @@ import { Edit, Trash2, Bookmark, BookmarkCheck, MoreVertical, Archive, ArchiveRe
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) => {
   const { user } = useAuth();

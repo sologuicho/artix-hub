@@ -4,7 +4,7 @@ import { User, MapPin, Briefcase, FileText, Users, UserPlus, ArrowLeft, UserChec
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const FollowersFollowing = () => {
   const { userId, type } = useParams(); // type: 'followers' or 'following'

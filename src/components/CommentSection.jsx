@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageCircle, Send, MoreVertical, Reply, Trash2, Edit2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const CommentSection = ({ postId, articleId, researchId, discussionId }) => {
   const { isAuthenticated, user } = useAuth();

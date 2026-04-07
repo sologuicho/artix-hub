@@ -3,7 +3,7 @@ import { UserPlus, Check, XCircle, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const CollaborationInvitation = ({ type, itemId, onUpdate }) => {
   const { user } = useAuth();

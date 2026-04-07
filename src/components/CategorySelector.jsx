@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Check } from 'lucide-react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 // Predefined categories based on content type
 const getPredefinedCategories = (contentType = 'general') => {

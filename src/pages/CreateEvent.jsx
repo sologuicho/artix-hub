@@ -11,7 +11,7 @@ import CategorySelector from '../components/CategorySelector';
 import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 import { useAuth } from '../context/AuthContext';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const CreateEvent = () => {
   const { id } = useParams();

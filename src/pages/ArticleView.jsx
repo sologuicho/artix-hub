@@ -15,7 +15,7 @@ import PaginatedReader from '../components/reader/PaginatedReader';
 import { motion } from 'framer-motion';
 import PricingModal from '../components/PricingModal';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const ActionButton = ({ onClick, icon: Icon, label, active, count, disabled }) => (
   <button

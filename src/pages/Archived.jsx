@@ -6,7 +6,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import SearchBar from '../components/SearchBar';
 import ProfileSidebar from '../components/ProfileSidebar';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const Archived = () => {
   const { user } = useAuth();

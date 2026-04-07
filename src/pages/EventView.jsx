@@ -7,7 +7,7 @@ import CollaborationInvitation from '../components/CollaborationInvitation';
 import ContentActions from '../components/ContentActions';
 import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const EventView = () => {
   const { id } = useParams();

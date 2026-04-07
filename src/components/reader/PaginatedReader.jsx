@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Bookmark } from 'lucide-react';
 import CircularProgress from './CircularProgress';
 import { useAuth } from '../../context/AuthContext';
+import { BACKEND_URL } from '../../config/client';
 
 const PaginatedReader = ({ content, title, contentId, contentType, initialProgress }) => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -74,8 +75,7 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
                     }
                     return null;
                 };
-                const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-                await fetch(`${backendUrl}/api/reading-progress`, {
+                await fetch(`${BACKEND_URL}/api/reading-progress`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

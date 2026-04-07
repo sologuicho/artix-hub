@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const buildUrl = (endpoint, mode = 'validate') => {
   const baseUrl = `${BACKEND_URL}/api/validate/${endpoint}`;

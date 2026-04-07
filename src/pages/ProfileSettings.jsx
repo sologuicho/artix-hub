@@ -8,7 +8,7 @@ import CountrySelector from '../components/CountrySelector';
 import OccupationSelector from '../components/OccupationSelector';
 import TagSelector from '../components/TagSelector';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '../config/client';
 
 const ProfileSettings = () => {
   const { user, updateUser } = useAuth();
