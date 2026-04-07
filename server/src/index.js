@@ -15,6 +15,7 @@ const { verifyCsrf } = require('./middleware/csrfMiddleware');
 const { protect } = require('./middleware/authMiddleware');
 const { initializeSocket } = require('./socket/socketServer');
 const { ALLOWED_ORIGINS } = require('./config/urls');
+const { startEmailReminderJob } = require('./jobs/emailReminderJob');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -271,15 +272,7 @@ app.use((req, res) => {
   res.status(404).json({ ok: false, message: 'Route not found' });
 });
 
-// Setup email reminder cron job (runs every hour)
-if (process.env.NODE_ENV !== 'test') {
-  const emailService = require('./services/emailService');
-  // Run immediately on startup, then every hour
-  emailService.checkAndSendReminders().catch(console.error);
-  setInterval(() => {
-    emailService.checkAndSendReminders().catch(console.error);
-  }, 60 * 60 * 1000); // Every hour
-}
+startEmailReminderJob();
 
 // Global error handler
 app.use((err, req, res, next) => {
