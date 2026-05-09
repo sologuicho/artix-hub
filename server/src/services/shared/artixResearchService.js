@@ -39,5 +39,5 @@ exports.getArtixResearchAuthorId = async () => {
  * Returns true if the given user is allowed to publish content as Artix Research.
  */
 exports.canPublishAsArtixResearch = (user) => {
-  return user.username === 'luisflores01' || user.role === 'admin';
+  return user.username === 'luisflores01' || user.role === 'ADMIN';
 };

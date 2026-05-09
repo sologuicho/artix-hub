@@ -7,7 +7,7 @@ const canManageContent = async (authorId, userId, userUsername, userRole) => {
   if (authorId === userId) return true;
   
   // If user is admin, allow
-  if (userRole === 'admin') return true;
+  if (userRole === 'ADMIN') return true;
   
   // If user is luisflores01 and content was published by Artix Research, allow
   if (userUsername === 'luisflores01') {

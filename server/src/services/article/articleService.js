@@ -40,7 +40,7 @@ jobQueue.register('article:track-read', async ({ userId }) => {
 // Authorization helper
 // ——————————————————————————————————————————
 const assertCanManage = (authorId, currentUser) => {
-  if (authorId !== currentUser.id && currentUser.role !== 'admin') {
+  if (authorId !== currentUser.id && currentUser.role !== 'ADMIN') {
     const err = new Error('Not authorized');
     err.code = 'UNAUTHORIZED';
     throw err;
@@ -180,7 +180,7 @@ exports.setArchived = async (id, archived, currentUser) => {
     throw err;
   }
   assertCanManage(existing.authorId, currentUser);
-  return articleRepository.update(id, { archived });
+  return articleRepository.update(id, { status: archived ? 'archived' : 'published' });
 };
 
 exports.addComment = async (articleId, content, currentUser) => {

@@ -30,7 +30,6 @@ exports.globalSearch = async (req, res) => {
           OR: [
             { username: searchMode },
             { name: searchMode },
-            { email: searchMode },
             { occupation: searchMode },
             { country: searchMode },
             { bio: searchMode }

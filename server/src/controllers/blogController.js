@@ -2,7 +2,7 @@ const prisma = require('../prismaClient');
 
 // Helper: only author or admin can manage content
 const canManageContent = (authorId, userId, userRole) =>
-  authorId === userId || userRole === 'admin';
+  authorId === userId || userRole === 'ADMIN';
 
 // Get unique categories
 exports.getCategories = async (req, res) => {
@@ -135,7 +135,7 @@ exports.createBlogPost = async (req, res) => {
     
     // Only admin users can publish as Artix Research
     let authorId = userId;
-    if (publishAsArtixResearch && req.user.role === 'admin') {
+    if (publishAsArtixResearch && req.user.role === 'ADMIN') {
       // Buscar o crear el usuario Artix Research
       let artixUser = await prisma.user.findFirst({
         where: {

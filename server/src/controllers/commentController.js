@@ -232,7 +232,7 @@ exports.updateComment = async (req, res) => {
       return res.status(404).json({ ok: false, message: 'Comment not found' });
     }
 
-    if (existing.authorId !== userId && req.user.role !== 'admin') {
+    if (existing.authorId !== userId && req.user.role !== 'ADMIN') {
       return res.status(403).json({ ok: false, message: 'Not authorized' });
     }
 
@@ -269,7 +269,7 @@ exports.deleteComment = async (req, res) => {
       return res.status(404).json({ ok: false, message: 'Comment not found' });
     }
 
-    if (existing.authorId !== userId && req.user.role !== 'admin') {
+    if (existing.authorId !== userId && req.user.role !== 'ADMIN') {
       return res.status(403).json({ ok: false, message: 'Not authorized' });
     }
 

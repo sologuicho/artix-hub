@@ -2,23 +2,12 @@
 const { callOpenAI } = require('./providers/openai');
 const { callGemini } = require('./providers/gemini');
 
-// Check API keys at runtime (not module load time)
 const checkAPIKeys = () => {
   const openaiKey = process.env.OPENAI_API_KEY || '';
   const geminiKey = process.env.GOOGLE_API_KEY || '';
 
   const hasOpenAIKey = Boolean(openaiKey && openaiKey.trim() !== '' && !openaiKey.includes('tu_api_key'));
   const hasGeminiKey = Boolean(geminiKey && geminiKey.trim() !== '' && !geminiKey.includes('tu_api_key'));
-
-  // Always log in development to help debug
-  console.log('🔑 AI Provider Status Check:');
-  console.log('  - OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
-  console.log('  - OPENAI_API_KEY valid:', hasOpenAIKey);
-  console.log('  - GOOGLE_API_KEY exists:', !!process.env.GOOGLE_API_KEY);
-  console.log('  - GOOGLE_API_KEY valid:', hasGeminiKey);
-  if (process.env.GOOGLE_API_KEY) {
-    console.log('  - GOOGLE_API_KEY preview:', process.env.GOOGLE_API_KEY.substring(0, 10) + '...');
-  }
 
   return { hasOpenAIKey, hasGeminiKey };
 };
@@ -218,9 +207,7 @@ const validateContent = async ({
   // Always prefer Gemini if available, only use OpenAI if Gemini is not available
   if (hasGeminiKey) {
     try {
-      console.log('🤖 Using Gemini API (preferred)...');
       response = await callGemini({ prompt });
-      console.log('✅ Gemini API response received');
     } catch (error) {
       lastError = error;
       console.error('❌ Gemini failed:', error.message);
@@ -240,9 +227,7 @@ const validateContent = async ({
   } else if (hasOpenAIKey) {
     // Only OpenAI available (not recommended if quota is exceeded)
     try {
-      console.log('🤖 Using OpenAI API (Gemini not available)...');
       response = await callOpenAI({ prompt });
-      console.log('✅ OpenAI API response received');
     } catch (error) {
       const errorMessage = error.message || '';
       console.error('❌ OpenAI failed:', errorMessage);

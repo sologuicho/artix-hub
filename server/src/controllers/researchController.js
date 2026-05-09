@@ -6,7 +6,7 @@ const canManageContent = async (authorId, userId, userUsername, userRole) => {
   if (authorId === userId) return true;
   
   // If user is admin, allow
-  if (userRole === 'admin') return true;
+  if (userRole === 'ADMIN') return true;
   
   // If user is luisflores01 and content was published by Artix Research, allow
   if (userUsername === 'luisflores01') {
@@ -166,6 +166,55 @@ exports.getResearch = async (req, res) => {
   }
 };
 
+// Get research preview
+exports.getResearchPreview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const research = await prisma.research.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: {
+            name: true,
+            username: true,
+            avatar: true
+          }
+        }
+      }
+    });
+
+    if (!research) {
+      return res.status(404).json({ ok: false, message: 'Research not found' });
+    }
+
+    // Generate content preview: strip HTML tags and get first 200 words
+    const strippedContent = research.content ? research.content.replace(/<[^>]*>?/gm, '') : '';
+    const words = strippedContent.split(/\s+/).filter(word => word.length > 0);
+    const contentPreview = words.slice(0, 200).join(' ') + (words.length > 200 ? '...' : '');
+
+    res.json({
+      ok: true,
+      research: {
+        id: research.id,
+        title: research.title,
+        description: research.description,
+        category: research.category,
+        tags: research.tags,
+        coverImage: research.coverUrl || research.coverImage,
+        author: research.author,
+        createdAt: research.createdAt,
+        readTime: research.readTime,
+        contentPreview,
+        isPreview: true
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching research preview:', error);
+    res.status(500).json({ ok: false, message: 'Failed to fetch research preview' });
+  }
+};
+
 // Create research
 exports.createResearch = async (req, res) => {
   try {
@@ -267,7 +316,7 @@ exports.updateResearch = async (req, res) => {
     if (!existing) {
       return res.status(404).json({ ok: false, message: 'Research not found' });
     }
-    if (existing.authorId !== userId && req.user.role !== 'admin') {
+    if (existing.authorId !== userId && req.user.role !== 'ADMIN') {
       return res.status(403).json({ ok: false, message: 'Not authorized' });
     }
 

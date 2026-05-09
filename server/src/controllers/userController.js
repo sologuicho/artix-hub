@@ -14,16 +14,14 @@ exports.searchUsers = async (req, res) => {
       where: {
         OR: [
           { username: { contains: q, mode: 'insensitive' } },
-          { name: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } }
+          { name: { contains: q, mode: 'insensitive' } }
         ]
       },
       select: {
         id: true,
         name: true,
         username: true,
-        avatar: true,
-        email: true
+        avatar: true
       },
       take: 10
     });

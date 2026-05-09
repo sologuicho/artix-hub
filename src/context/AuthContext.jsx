@@ -63,9 +63,14 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf='))
+        ?.split('=')[1];
       await fetch(`${BACKEND_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
+        headers: { 'x-csrf-token': csrfToken || '' },
       });
     } catch (error) {
       console.error('Error logging out:', error);
@@ -85,6 +90,10 @@ export const AuthProvider = ({ children }) => {
 
   const needsProfileSetup = () => user && !user.profileComplete;
 
+  // Alias explícito para re-sincronizar el usuario con el backend
+  // (usado por PaymentSuccess, PricingModal, etc.)
+  const refreshUser = checkAuth;
+
   return (
     <AuthContext.Provider
       value={{
@@ -96,6 +105,7 @@ export const AuthProvider = ({ children }) => {
         needsProfileSetup,
         loading,
         checkAuth,
+        refreshUser,
       }}
     >
       {children}
