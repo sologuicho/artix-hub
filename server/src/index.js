@@ -4,8 +4,8 @@ const express = require('express');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
 const passport = require('./auth/passport');
+const { generalLimiter } = require('./middleware/rateLimitMiddleware');
 const authRoutes = require('./auth/authRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 const eventRoutes = require('./routes/eventRoutes');
@@ -64,22 +64,8 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiters
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,                   // 20 attempts per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { ok: false, message: 'Too many attempts. Please try again in 15 minutes.' }
-});
-
-const checkUsernameLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { ok: false, message: 'Too many requests.' }
-});
+// Apply general rate limit to all /api routes (500 req / 15 min)
+app.use('/api', generalLimiter);
 
 // Initialize passport strategies
 app.use(passport.initialize());
