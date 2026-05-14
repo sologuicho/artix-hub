@@ -35,8 +35,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ ok: false, message: 'Faltan campos obligatorios' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 6 caracteres' });
+    if (password.length < 8) {
+      return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres.' });
     }
     
     // Validate username format
