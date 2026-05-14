@@ -16,7 +16,7 @@ function verifyToken(token) {
   return jwt.verify(token, JWT_SECRET);
 }
 
-/** Short-lived JWT for Socket.IO (HttpOnly session cookie is not readable in the browser). */
+/** Short-lived JWT for Socket.IO (1h) — session cookie is HttpOnly and unreadable by the browser. */
 function signSocketToken(user) {
   const payload = {
     id: user.id,
@@ -24,7 +24,7 @@ function signSocketToken(user) {
     role: user.role,
     tv: user.tokenVersion ?? 0,
   };
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 }
 
 module.exports = { signToken, signSocketToken, verifyToken };
