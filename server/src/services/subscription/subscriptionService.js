@@ -26,8 +26,7 @@ const checkUsageLimit = async (req, res, next) => {
     const limit = TIER_LIMITS[user.subscriptionTier]?.articlesPerDay;
     if (limit === Infinity) return next();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(new Date().toISOString().split('T')[0]);
 
     const usage = await prisma.dailyUsage.findUnique({
       where: { userId_date: { userId: req.user.id, date: today } }
@@ -56,8 +55,7 @@ const checkUsageLimit = async (req, res, next) => {
  * Call fire-and-forget (via jobQueue) so it never blocks a response.
  */
 const trackArticleRead = async (userId) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date(new Date().toISOString().split('T')[0]);
 
   await prisma.dailyUsage.upsert({
     where: { userId_date: { userId, date: today } },
@@ -74,7 +72,7 @@ const updateSubscription = async (req, res) => {
     const userId = req.user.id;
     const { tier } = req.body;
 
-    if (!['OBSERVER', 'STUDENT', 'RESEARCHER', 'VISIONARY'].includes(tier)) {
+    if (!['OBSERVER', 'STUDENT', 'RESEARCHER', 'VISIONARY', 'TEAM'].includes(tier)) {
       return res.status(400).json({ message: 'Invalid subscription tier' });
     }
 
