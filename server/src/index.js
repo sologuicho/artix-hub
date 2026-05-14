@@ -268,6 +268,22 @@ app.post('/profile/update', protect, verifyCsrf, async (req, res) => {
         ...(interests && { interests }),
         ...(avatar !== undefined && { avatar }),
         profileComplete: true
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+        bio: true,
+        avatar: true,
+        country: true,
+        occupation: true,
+        interests: true,
+        profileComplete: true,
+        subscriptionTier: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
     res.json({ ok: true, user });
