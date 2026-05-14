@@ -12,16 +12,6 @@ const checkAPIKeys = () => {
   return { hasOpenAIKey, hasGeminiKey };
 };
 
-const selectProvider = (preferGemini = false) => {
-  // If preferGemini is true and Gemini is available, use it first
-  if (preferGemini && hasGeminiKey) return 'gemini';
-  if (hasGeminiKey) return 'gemini'; // Prefer Gemini by default
-  if (hasOpenAIKey) return 'openai';
-  throw new Error(
-    'No AI provider configured. Set OPENAI_API_KEY or GOOGLE_API_KEY in .env.'
-  );
-};
-
 const getTypeSpecificGuidelines = (type) => {
   const guidelines = {
     article: {
