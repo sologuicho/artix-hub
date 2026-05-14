@@ -17,11 +17,12 @@ model User {
   name                   String?
   avatar                 String?
   bio                    String?
-  role                   String                 @default("user")
+  role                   Role                   @default(USER)
   country                String?
   occupation             String?
   interests              String[]
   profileComplete        Boolean                @default(false)
+  banned                 Boolean                @default(false)
   tokenVersion           Int                    @default(0)
   articles               Article[]              @relation("ArticleAuthor")
   research               Research[]             @relation("ResearchAuthor")
@@ -45,6 +46,8 @@ model User {
   readingProgress        ReadingProgress[]
   
   subscriptionTier       SubscriptionTier       @default(OBSERVER)
+  stripeCustomerId       String?                @unique
+  stripeSubscriptionId   String?                @unique
   dailyUsage             DailyUsage[]
   passwordResetTokens    PasswordResetToken[]
 
@@ -52,10 +55,16 @@ model User {
   @@index([email])
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 enum SubscriptionTier {
   OBSERVER
   STUDENT
   RESEARCHER
+  TEAM
   VISIONARY
 }
 
@@ -161,6 +170,7 @@ model Article {
   @@index([authorId])
   @@index([category])
   @@index([status])
+  @@index([title])
 }
 
 // Research/Investigaciones Model - Research generates Articles
@@ -417,4 +427,17 @@ model PasswordResetToken {
 
   @@index([userId])
   @@index([token])
+}
+
+// Idempotencia: evitar procesar el mismo evento de Stripe dos veces
+model StripeEvent {
+  id          String   @id        // event.id de Stripe (ej: "evt_xxx")
+  type        String              // event.type
+  processedAt DateTime @default(now())
+}
+
+// Idempotencia: evitar procesar el mismo webhook de MercadoPago dos veces
+model MpEvent {
+  id          String   @id        // x-request-id de MercadoPago
+  processedAt DateTime @default(now())
 }
