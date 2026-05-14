@@ -1,6 +1,7 @@
 require('dotenv').config();
 const http = require('http');
 const express = require('express');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -34,6 +35,16 @@ if (missingEnvVars.length > 0) {
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+app.use(helmet());
+
+// ⚠️  STRIPE WEBHOOK — DEBE estar ANTES de express.json() para recibir el raw body
+//    Stripe verifica la firma criptográfica con el body en bytes, no como objeto JSON
+app.post(
+  '/api/payments/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  require('./routes/stripeWebhook')
+);
 
 // Increase JSON payload limit to handle base64 images (avatars, covers, etc.)
 app.use(express.json({ limit: '10mb' }));
@@ -150,6 +161,8 @@ app.use('/api/saved', require('./routes/savedItemRoutes'));
 app.use('/api/follow', require('./routes/followRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 // User routes
 app.get('/me', protect, async (req, res) => {
@@ -164,6 +177,7 @@ app.get('/me', protect, async (req, res) => {
         name: u.name,
         avatar: u.avatar,
         role: u.role,
+        subscriptionTier: u.subscriptionTier,
         bio: u.bio,
         country: u.country,
         occupation: u.occupation,
@@ -220,6 +234,7 @@ app.put('/api/auth/me', protect, verifyCsrf, async (req, res) => {
         name: updatedUser.name,
         avatar: updatedUser.avatar,
         role: updatedUser.role,
+        subscriptionTier: updatedUser.subscriptionTier,
         bio: updatedUser.bio,
         country: updatedUser.country,
         occupation: updatedUser.occupation,
