@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Calendar, User, Heart, MessageCircle, Share2, BookOpen, ArrowLeft, Copy, Check, UserPlus, UserCheck, Download, Eye, Clock } from 'lucide-react';
+import { Heart, MessageCircle, Share2, BookOpen, ArrowLeft, Copy, Check, Download, Clock } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
@@ -9,39 +9,44 @@ import CommentSection from '../components/CommentSection';
 import ContentActions from '../components/ContentActions';
 import ReadingMode from '../components/ReadingMode';
 import ScrollToTop from '../components/ScrollToTop';
-import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 import { generatePDF } from '../utils/pdfGenerator';
 import PaginatedReader from '../components/reader/PaginatedReader';
-import { motion } from 'framer-motion';
 import PricingModal from '../components/PricingModal';
-
 import { BACKEND_URL } from '../config/client';
 
-const ActionButton = ({ onClick, icon: Icon, label, active, count, disabled }) => (
+// ── Sidebar action button ────────────────────────────────────────────────────
+const SideAction = ({ onClick, icon: Icon, label, active, count, disabled }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`
-      flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-300
-      backdrop-blur-md border border-white/10
-      ${active
-        ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/20'
-      }
-      ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-    `}
+    className="w-full flex items-center gap-3 font-sans text-xs uppercase tracking-wider transition-colors duration-150"
+    style={{
+      padding: '0.625rem 0',
+      background: 'none',
+      border: 'none',
+      borderBottom: '1px solid var(--border)',
+      color: active ? 'var(--accent)' : 'var(--muted)',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.5 : 1,
+    }}
+    onMouseEnter={e => { if (!disabled && !active) e.currentTarget.style.color = 'var(--text)'; }}
+    onMouseLeave={e => { if (!disabled && !active) e.currentTarget.style.color = 'var(--muted)'; }}
   >
-    <Icon className={`w-5 h-5 ${active ? 'fill-current' : ''}`} />
-    {label && <span>{label}</span>}
-    {count !== undefined && <span className="text-sm opacity-60 ml-1">{count}</span>}
+    <Icon size={14} />
+    <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
+    {count !== undefined && (
+      <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{count}</span>
+    )}
   </button>
 );
 
+// ── ArticleView ──────────────────────────────────────────────────────────────
 const ArticleView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
+
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
@@ -53,120 +58,100 @@ const ArticleView = () => {
   const [readingMode, setReadingMode] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [readingProgress, setReadingProgress] = useState(null);
+  const [limitReached, setLimitReached] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
+  useEffect(() => { fetchArticle(); }, [id]);
   useEffect(() => {
-    fetchArticle();
-  }, [id]);
-
-  useEffect(() => {
-    if (user && article) {
-      checkFollowStatus();
-      fetchReadingProgress();
-    }
+    if (user && article) { checkFollowStatus(); fetchReadingProgress(); checkReactionStatus(); }
   }, [user, article]);
+
+  const getCsrfToken = () => {
+    for (const c of document.cookie.split(';')) {
+      const [n, v] = c.trim().split('=');
+      if (n === 'csrf') return v;
+    }
+    return null;
+  };
 
   const fetchReadingProgress = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-
-      const response = await fetch(`${BACKEND_URL}/api/reading-progress?articleId=${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const res = await fetch(`${BACKEND_URL}/api/reading-progress?articleId=${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-      const data = await response.json();
-      if (data) {
-        setReadingProgress(data);
-      }
-    } catch (error) {
-      console.error('Error fetching reading progress:', error);
-    }
+      const data = await res.json();
+      if (data) setReadingProgress(data);
+    } catch (_) {}
   };
 
   const checkFollowStatus = async () => {
     if (!user || !article?.author?.id || user.id === article.author.id) return;
     try {
-      const response = await fetch(`${BACKEND_URL}/api/follow/${article.author.id}/check`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const res = await fetch(`${BACKEND_URL}/api/follow/${article.author.id}/check`, { credentials: 'include' });
+      const data = await res.json();
       if (data.ok) setFollowing(data.following);
-    } catch (error) {
-      console.error('Error checking follow status:', error);
-    }
+    } catch (_) {}
   };
 
   const handleFollow = async () => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
+    if (!user) { navigate('/auth'); return; }
     try {
-      const getCsrfToken = () => {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-          const [name, value] = cookie.trim().split('=');
-          if (name === 'csrf') return value;
-        }
-        return null;
-      };
-
-      const response = await fetch(`${BACKEND_URL}/api/follow/${article.author.id}`, {
+      await fetch(`${BACKEND_URL}/api/follow/${article.author.id}`, {
         method: 'POST',
-        headers: {
-          'x-csrf-token': getCsrfToken() || ''
-        },
-        credentials: 'include'
+        headers: { 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
       });
-
-      const data = await response.json();
-      if (data.ok) {
-        setFollowing(data.following);
-      }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
-    }
+      setFollowing(f => !f);
+    } catch (_) {}
   };
-
-  const [limitReached, setLimitReached] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
 
   const fetchArticle = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/articles/${id}`, {
-        credentials: 'include'
-      });
-
-      const data = await response.json();
-
-      if (response.status === 403 && data.error === 'limit_reached') {
-        setLimitReached(true);
-        // Do not set article data if limit reached (or maybe backend doesn't send it)
-        return;
-      }
-
+      const res = await fetch(`${BACKEND_URL}/api/articles/${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (res.status === 403 && data.error === 'limit_reached') { setLimitReached(true); return; }
       if (data.ok) {
         setArticle(data.article);
         setLikesCount(data.article.likesCount || 0);
-      } else {
-        // Handle other errors?
       }
-    } catch (error) {
-      console.error('Error fetching article:', error);
-    } finally {
-      setLoading(false);
+    } catch (_) {}
+    finally { setLoading(false); }
+  };
+
+  const checkReactionStatus = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reactions/user?articleId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setLiked(data.reactions.some(r => r.type === 'like'));
+    } catch (_) {}
+  };
+
+  const handleLike = async () => {
+    if (!user) { navigate('/auth'); return; }
+    const prevLiked = liked;
+    const prevCount = likesCount;
+    setLiked(l => !l);
+    setLikesCount(n => prevLiked ? n - 1 : n + 1);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reactions/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
+        body: JSON.stringify({ articleId: id, type: 'like' }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setLiked(prevLiked); setLikesCount(prevCount); }
+    } catch (_) {
+      setLiked(prevLiked);
+      setLikesCount(prevCount);
     }
   };
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikesCount(prev => liked ? prev - 1 : prev + 1);
-  };
-
   const handleCopyLink = () => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -175,145 +160,172 @@ const ArticleView = () => {
     setDownloadingPDF(true);
     try {
       await generatePDF({
-        title: article.title,
-        content: article.content,
+        title: article.title, content: article.content,
         author: article.author?.name || 'Autor desconocido',
-        date: article.createdAt,
-        description: article.description,
-        tags: article.tags || []
+        date: article.createdAt, description: article.description, tags: article.tags || [],
       }, 'article');
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      alert('Error al generar el PDF. Por favor, intenta de nuevo.');
+    } catch {
+      alert('Error al generar el PDF.');
     } finally {
       setDownloadingPDF(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (d) =>
+    new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
 
+  // Loading
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#030303]">
-        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
+        <div style={{
+          width: 24, height: 24, border: '2px solid var(--border)',
+          borderTopColor: 'var(--accent)', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  // Limit reached
   if (limitReached) {
     return (
-      <PremiumPageLayout>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-          <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6 border border-yellow-500/20">
-            <div className="w-10 h-10 border-2 border-yellow-500 rounded-full flex items-center justify-center">
-              <span className="font-bold text-yellow-500">!</span>
-            </div>
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-4">Daily Limit Reached</h2>
-          <p className="text-gray-400 max-w-md mb-8">
-            You've hit your daily reading limit on the Observer plan. Upgrade to unlock unlimited access to world-class research and articles.
-          </p>
-          <button
-            onClick={() => setShowPricing(true)}
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all hover:scale-105"
-          >
-            Upgrade Membership
+      <div
+        className="min-h-screen flex flex-col items-center justify-center text-center px-6"
+        style={{ backgroundColor: 'var(--bg)' }}
+      >
+        <span className="category-tag mb-4">Límite diario</span>
+        <h2
+          className="font-display mb-4"
+          style={{ fontSize: '2rem', color: 'var(--text)', maxWidth: '480px' }}
+        >
+          Has alcanzado tu límite de lecturas diarias
+        </h2>
+        <p className="font-sans text-sm mb-8" style={{ color: 'var(--muted)', maxWidth: '400px', lineHeight: 1.7 }}>
+          El plan Lector tiene un límite diario. Actualiza tu membresía para acceso ilimitado.
+        </p>
+        <div className="flex gap-4">
+          <button onClick={() => setShowPricing(true)} className="btn btn-primary">
+            Ver planes
           </button>
-          <button onClick={() => navigate('/articles')} className="mt-4 text-sm text-gray-500 hover:text-white transition-colors">
-            Back to Articles
+          <button onClick={() => navigate('/articles')} className="btn btn-ghost">
+            Volver a artículos
           </button>
         </div>
         <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
-      </PremiumPageLayout>
+      </div>
     );
   }
 
+  // Not found
   if (!article) {
     return (
-      <PremiumPageLayout>
-        <div className="text-center py-20">
-          <h2 className="text-2xl font-bold text-white mb-4">Artículo no encontrado</h2>
-          <button onClick={() => navigate('/articles')} className="glass-button-premium">
-            Volver a Artículos
-          </button>
-        </div>
-      </PremiumPageLayout>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
+        <p className="font-display mb-4" style={{ fontSize: '1.5rem', color: 'var(--text)' }}>
+          Artículo no encontrado
+        </p>
+        <button onClick={() => navigate('/articles')} className="btn btn-outline">
+          Volver a artículos
+        </button>
+      </div>
     );
   }
 
   return (
-    <PremiumPageLayout>
-      {/* Back Navigation */}
-      <button
-        onClick={() => navigate('/articles')}
-        className="group flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"
-      >
-        <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-        </div>
-        <span className="text-sm font-medium">Volver a Artículos</span>
-      </button>
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <div className="site-container py-12">
 
-      {/* Collaboration Status */}
-      <CollaborationInvitation type="article" itemId={id} onUpdate={fetchArticle} />
+        {/* Back nav */}
+        <button
+          onClick={() => navigate('/articles')}
+          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10 transition-colors duration-150"
+          style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
+        >
+          <ArrowLeft size={12} /> Artículos
+        </button>
 
-      {/* Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12">
-        <article className="space-y-8">
-          {/* Header */}
-          <header className="space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                {article.category}
-              </span>
+        <CollaborationInvitation type="article" itemId={id} onUpdate={fetchArticle} />
+
+        {/* Main layout: article + sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-16">
+
+          {/* Article */}
+          <article>
+            {/* Meta */}
+            <div className="flex flex-wrap items-center gap-3 mb-5">
+              {article.category && (
+                <span className="category-tag">{article.category}</span>
+              )}
               {article.tags?.map((tag, i) => (
-                <span key={i} className="text-xs text-gray-500">#{tag}</span>
+                <span
+                  key={i}
+                  className="font-sans text-xs"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  #{tag}
+                </span>
               ))}
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+            {/* Title */}
+            <h1
+              className="font-display mb-6"
+              style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', color: 'var(--text)', lineHeight: 1.15, maxWidth: '720px' }}
+            >
               {article.title}
             </h1>
 
-            <div className="flex items-center justify-between py-6 border-b border-white/5">
-              <Link to={`/profile/${article.author?.id}`} className="flex items-center gap-4 group">
+            {/* Byline */}
+            <div
+              className="flex items-center justify-between py-5 mb-8"
+              style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+            >
+              <Link to={`/profile/${article.author?.id}`} className="flex items-center gap-3 group">
                 {article.author?.avatar ? (
-                  <img src={article.author.avatar} alt="" className="w-12 h-12 rounded-full object-cover ring-2 ring-black border border-white/10" />
+                  <img
+                    src={article.author.avatar}
+                    alt=""
+                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                  />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                    <User className="w-6 h-6 text-gray-400" />
+                  <div
+                    style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                      {(article.author?.name || 'A').charAt(0).toUpperCase()}
+                    </span>
                   </div>
                 )}
                 <div>
-                  <div className="text-white font-medium group-hover:text-blue-400 transition-colors">
-                    {article.author?.name || 'Anonymous'}
-                  </div>
-                  <div className="text-sm text-gray-500 flex items-center gap-2">
-                    <span>{formatDate(article.createdAt)}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {Math.ceil((article.content?.length || 0) / 1000)} min de lectura
-                    </span>
-                  </div>
+                  <p
+                    className="font-sans text-sm font-medium transition-colors duration-150"
+                    style={{ color: 'var(--text)' }}
+                  >
+                    {article.author?.name || 'Anónimo'}
+                  </p>
+                  <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                    {formatDate(article.createdAt)}
+                    {' · '}
+                    <Clock size={10} style={{ display: 'inline', marginBottom: 1 }} />
+                    {' '}{Math.ceil((article.content?.length || 0) / 1000)} min
+                  </p>
                 </div>
               </Link>
 
-              {/* Follow / Actions */}
               <div className="flex items-center gap-3">
                 {user && article.author?.id && user.id !== article.author.id && (
                   <button
                     onClick={handleFollow}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${following
-                      ? 'bg-white/5 text-gray-400 border border-white/5'
-                      : 'bg-blue-600 text-white hover:bg-blue-500'
-                      }`}
+                    className={`btn ${following ? 'btn-ghost' : 'btn-outline'}`}
+                    style={{ padding: '0.375rem 1rem', fontSize: '0.625rem' }}
                   >
                     {following ? 'Siguiendo' : 'Seguir'}
                   </button>
@@ -329,156 +341,150 @@ const ArticleView = () => {
                 )}
               </div>
             </div>
-          </header>
 
-          {/* Featured Image */}
-          {article.coverUrl && (
-            <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 bg-white/5">
-              <img
-                src={article.coverUrl}
-                alt={article.title}
-                className="w-full h-full object-cover"
+            {/* Cover image */}
+            {article.coverUrl && (
+              <div
+                className="mb-10 overflow-hidden"
+                style={{ aspectRatio: '16/9', maxWidth: '720px' }}
+              >
+                <img
+                  src={article.coverUrl}
+                  alt={article.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+            )}
+
+            {/* Body */}
+            <div
+              className="font-sans"
+              style={{ maxWidth: '720px', fontSize: '1.0625rem', lineHeight: 1.8, color: 'var(--text)' }}
+            >
+              <PaginatedReader
+                content={article.content}
+                title={article.title}
+                contentId={article.id}
+                contentType="article"
+                initialProgress={readingProgress}
               />
             </div>
-          )}
 
-          {/* New Advanced Reader */}
-          <div className="my-8">
-            <PaginatedReader
-              content={article.content}
-              title={article.title}
-              contentId={article.id}
-              contentType="article"
-              initialProgress={readingProgress}
-            />
-          </div>
-
-          {/* Tags Footer */}
-          {article.tags && article.tags.length > 0 && (
-            <div className="pt-8 border-t border-white/5">
-              <h4 className="text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">Temas Relacionados</h4>
-              <div className="flex flex-wrap gap-2">
-                {article.tags.map((tag, i) => (
-                  <span key={i} className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 text-sm hover:bg-white/10 transition-colors cursor-default">
-                    {tag}
-                  </span>
-                ))}
+            {/* Tags footer */}
+            {article.tags?.length > 0 && (
+              <div
+                className="mt-12 pt-8"
+                style={{ borderTop: '1px solid var(--border)' }}
+              >
+                <p
+                  className="font-sans text-xs uppercase tracking-wider mb-4"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  Temas relacionados
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {article.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="badge badge-observer"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Comments */}
-          {showComments && (
-            <div id="comments-section" className="pt-12 border-t border-white/5">
-              <h3 className="text-2xl font-bold text-white mb-8">Discusión</h3>
-              <CommentSection articleId={article.id} />
-            </div>
-          )}
-        </article>
+            {/* Comments */}
+            {showComments && (
+              <div
+                id="comments-section"
+                className="mt-12 pt-10"
+                style={{ borderTop: '1px solid var(--border)' }}
+              >
+                <h3
+                  className="font-display mb-8"
+                  style={{ fontSize: '1.5rem', color: 'var(--text)' }}
+                >
+                  Discusión
+                </h3>
+                <CommentSection articleId={article.id} />
+              </div>
+            )}
+          </article>
 
-        {/* Sidebar Actions (Sticky) */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-32 space-y-4">
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm space-y-4">
-              <h4 className="font-semibold text-white">Acciones</h4>
-
-              <div className="grid gap-3">
-                <ActionButton
-                  onClick={handleLike}
-                  icon={Heart}
-                  active={liked}
-                  count={likesCount}
-                  label="Me gusta"
-                />
-                <ActionButton
+          {/* Sticky sidebar */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-20">
+              <p
+                className="font-sans text-xs uppercase tracking-wider mb-4"
+                style={{ color: 'var(--muted)' }}
+              >
+                Acciones
+              </p>
+              <div>
+                <SideAction onClick={handleLike} icon={Heart} label="Me gusta" active={liked} count={likesCount} />
+                <SideAction
                   onClick={() => {
-                    setShowComments(!showComments);
-                    if (!showComments) {
-                      setTimeout(() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
-                    }
+                    setShowComments(v => !v);
+                    if (!showComments) setTimeout(() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
                   }}
                   icon={MessageCircle}
-                  count={article.comments?.length || 0}
                   label="Comentar"
+                  count={article.comments?.length || 0}
                 />
-                <ActionButton
-                  onClick={() => setShowShareModal(true)}
-                  icon={Share2}
-                  label="Compartir"
-                />
-                <ActionButton
-                  onClick={handleCopyLink}
-                  icon={copied ? Check : Copy}
-                  label={copied ? 'Copiado' : 'Copiar Link'}
-                  active={copied}
-                />
-              </div>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm space-y-4">
-              <h4 className="font-semibold text-white">Herramientas</h4>
-              <div className="grid gap-3">
-                {/* Legacy Reading Mode - kept but maybe less emphasized now */}
-                <ActionButton
-                  onClick={() => setReadingMode(true)}
-                  icon={BookOpen}
-                  label="Modo Lectura Full"
-                />
-                <ActionButton
+                <SideAction onClick={() => setShowShareModal(true)} icon={Share2} label="Compartir" />
+                <SideAction onClick={handleCopyLink} icon={copied ? Check : Copy} label={copied ? 'Copiado' : 'Copiar link'} active={copied} />
+                <SideAction onClick={() => setReadingMode(true)} icon={BookOpen} label="Modo lectura" />
+                <SideAction
                   onClick={handleDownloadPDF}
                   icon={Download}
-                  label={downloadingPDF ? 'Generando...' : 'Descargar PDF'}
+                  label={downloadingPDF ? 'Generando…' : 'Descargar PDF'}
                   disabled={downloadingPDF}
                 />
               </div>
             </div>
-          </div>
-        </aside>
-      </div>
+          </aside>
+        </div>
 
-      {/* Mobile Floating Actions */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 lg:hidden z-40 flex items-center gap-2 p-2 rounded-full bg-[#111]/90 backdrop-blur-xl border border-white/10 shadow-2xl">
-        <button onClick={handleLike} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <Heart className={`w-5 h-5 ${liked ? 'fill-blue-500 text-blue-500' : ''}`} />
-        </button>
-        <button onClick={() => setShowComments(!showComments)} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <MessageCircle className="w-5 h-5" />
-        </button>
-        <div className="w-px h-6 bg-white/10" />
-        <button onClick={() => setReadingMode(true)} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <BookOpen className="w-5 h-5" />
-        </button>
-        <button onClick={() => setShowShareModal(true)} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <Share2 className="w-5 h-5" />
-        </button>
+        {/* Mobile floating actions */}
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 lg:hidden z-40 flex items-center gap-1"
+          style={{
+            backgroundColor: 'var(--darkBg, #111110)',
+            border: '1px solid var(--darkBorder, #2E2C2A)',
+            padding: '0.5rem 0.75rem',
+          }}
+        >
+          {[
+            { icon: Heart, action: handleLike, active: liked },
+            { icon: MessageCircle, action: () => setShowComments(v => !v) },
+            { icon: BookOpen, action: () => setReadingMode(true) },
+            { icon: Share2, action: () => setShowShareModal(true) },
+          ].map(({ icon: Icon, action, active }, i) => (
+            <button
+              key={i}
+              onClick={action}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: active ? 'var(--accent)' : '#8C8A86' }}
+            >
+              <Icon size={16} />
+            </button>
+          ))}
+        </div>
+
+        <div className="lg:hidden"><ScrollToTop showAfter={300} /></div>
       </div>
 
       {/* Modals */}
       {showShareModal && (
-        <ShareModal
-          url={window.location.href}
-          title={article.title}
-          onClose={() => setShowShareModal(false)}
-        />
+        <ShareModal url={window.location.href} title={article.title} onClose={() => setShowShareModal(false)} />
       )}
-
-      <ReadingMode
-        isOpen={readingMode}
-        onClose={() => setReadingMode(false)}
-        title={article.title}
-        author={article.author?.name}
-        date={article.createdAt}
-      >
-        <div className="prose prose-xl prose-invert max-w-3xl mx-auto">
+      <ReadingMode isOpen={readingMode} onClose={() => setReadingMode(false)} title={article.title} author={article.author?.name} date={article.createdAt}>
+        <div className="prose prose-xl max-w-3xl mx-auto" style={{ color: 'var(--text)' }}>
           <div dangerouslySetInnerHTML={{ __html: article.content }} />
         </div>
       </ReadingMode>
-
-      <div className="lg:hidden">
-        <ScrollToTop showAfter={300} />
-      </div>
-
-    </PremiumPageLayout>
+    </div>
   );
 };
 

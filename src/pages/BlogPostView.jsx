@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Share2, Clock, User, Bookmark, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Clock, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CommentSection from '../components/CommentSection';
 import ContentActions from '../components/ContentActions';
 import ShareModal from '../components/ShareModal';
 import ScrollToTop from '../components/ScrollToTop';
-import PremiumPageLayout from '../components/layout/PremiumPageLayout';
-import { motion } from 'framer-motion';
-
 import { BACKEND_URL } from '../config/client';
 
 const getCsrfToken = () => {
@@ -19,6 +16,25 @@ const getCsrfToken = () => {
   }
   return null;
 };
+
+const SideAction = ({ onClick, icon: Icon, label, active }) => (
+  <button
+    onClick={onClick}
+    className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider w-full text-left"
+    style={{
+      background: 'none',
+      border: 'none',
+      borderBottom: '1px solid var(--border)',
+      padding: '0.875rem 0',
+      cursor: 'pointer',
+      color: active ? 'var(--text)' : 'var(--muted)',
+      transition: 'color 0.15s',
+    }}
+  >
+    <Icon size={13} style={{ flexShrink: 0 }} />
+    {label}
+  </button>
+);
 
 const BlogPostView = () => {
   const { id } = useParams();
@@ -35,10 +51,7 @@ const BlogPostView = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [following, setFollowing] = useState(false);
 
-  useEffect(() => {
-    fetchPost();
-  }, [id]);
-
+  useEffect(() => { fetchPost(); }, [id]);
   useEffect(() => {
     if (user && post) {
       checkFollowStatus();
@@ -57,8 +70,7 @@ const BlogPostView = () => {
       } else {
         setError('Post no encontrado');
       }
-    } catch (err) {
-      console.error('Error fetching post:', err);
+    } catch {
       setError('Error al cargar el post');
     } finally {
       setLoading(false);
@@ -76,9 +88,9 @@ const BlogPostView = () => {
 
   const checkReactionStatus = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/reactions/post/${id}/check`, { credentials: 'include' });
+      const res = await fetch(`${BACKEND_URL}/api/reactions/user?postId=${id}`, { credentials: 'include' });
       const data = await res.json();
-      if (data.ok) setLiked(data.reacted);
+      if (data.ok) setLiked(data.reactions.some(r => r.type === 'like'));
     } catch (_) {}
   };
 
@@ -92,38 +104,37 @@ const BlogPostView = () => {
 
   const handleLike = async () => {
     if (!user) return navigate('/auth');
+    const prevLiked = liked;
+    const prevCount = likesCount;
+    setLiked(l => !l);
+    setLikesCount(n => prevLiked ? n - 1 : n + 1);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/reactions`, {
+      const res = await fetch(`${BACKEND_URL}/api/reactions/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
-        body: JSON.stringify({ postId: id, type: 'like' })
+        body: JSON.stringify({ postId: id, type: 'like' }),
       });
       const data = await res.json();
-      if (data.ok) {
-        setLiked(prev => !prev);
-        setLikesCount(prev => liked ? prev - 1 : prev + 1);
-      }
-    } catch (err) {
-      console.error('Error liking post:', err);
+      if (!data.ok) { setLiked(prevLiked); setLikesCount(prevCount); }
+    } catch (_) {
+      setLiked(prevLiked);
+      setLikesCount(prevCount);
     }
   };
 
   const handleSave = async () => {
     if (!user) return navigate('/auth');
     try {
-      const method = saved ? 'DELETE' : 'POST';
       const res = await fetch(`${BACKEND_URL}/api/saved`, {
-        method,
+        method: saved ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
-        body: JSON.stringify({ postId: id })
+        body: JSON.stringify({ postId: id }),
       });
       const data = await res.json();
       if (data.ok) setSaved(prev => !prev);
-    } catch (err) {
-      console.error('Error saving post:', err);
-    }
+    } catch (_) {}
   };
 
   const handleFollow = async () => {
@@ -132,7 +143,7 @@ const BlogPostView = () => {
       const res = await fetch(`${BACKEND_URL}/api/follow/${post.author.id}`, {
         method: 'POST',
         headers: { 'x-csrf-token': getCsrfToken() || '' },
-        credentials: 'include'
+        credentials: 'include',
       });
       const data = await res.json();
       if (data.ok) setFollowing(data.following);
@@ -140,102 +151,113 @@ const BlogPostView = () => {
   };
 
   const formatDate = (dateStr) =>
-    new Date(dateStr).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+    new Date(dateStr).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const readTime = (content) => Math.max(1, Math.ceil((content?.length || 0) / 1200));
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#030303]">
-        <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          width: 28, height: 28,
+          border: '2px solid var(--border)',
+          borderTopColor: 'var(--accent)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (error || !post) {
     return (
-      <PremiumPageLayout>
-        <div className="text-center py-20">
-          <h2 className="text-2xl font-bold text-white mb-4">{error || 'Post no encontrado'}</h2>
-          <button onClick={() => navigate('/blog')} className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-colors">
+      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+        <div className="site-container py-16 text-center">
+          <p className="font-display" style={{ fontSize: '1.5rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
+            {error || 'Post no encontrado'}
+          </p>
+          <button onClick={() => navigate('/blog')} className="btn btn-outline">
             Volver al Blog
           </button>
         </div>
-      </PremiumPageLayout>
+      </div>
     );
   }
 
   return (
-    <PremiumPageLayout>
-      {/* Back Nav */}
-      <button
-        onClick={() => navigate('/blog')}
-        className="group flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"
-      >
-        <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-        </div>
-        <span className="text-sm font-medium">Volver al Blog</span>
-      </button>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12 max-w-5xl mx-auto">
-        {/* Main article */}
-        <motion.article
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <div className="site-container py-12">
+        {/* Back */}
+        <button
+          onClick={() => navigate('/blog')}
+          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
         >
-          {/* Cover Image */}
-          {post.coverUrl && (
-            <div className="rounded-2xl overflow-hidden border border-white/5 aspect-video">
-              <img src={post.coverUrl} alt={post.title || 'Blog cover'} className="w-full h-full object-cover" />
-            </div>
-          )}
+          <ArrowLeft size={13} /> Volver al Blog
+        </button>
 
-          {/* Header */}
-          <header className="space-y-5">
-            {post.category && (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                {post.category}
-              </span>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-12 items-start">
+          {/* Article */}
+          <article style={{ maxWidth: '720px' }}>
+            {/* Cover */}
+            {post.coverUrl && (
+              <div style={{ marginBottom: '2rem', aspectRatio: '16/9', overflow: 'hidden' }}>
+                <img src={post.coverUrl} alt={post.title || 'Blog cover'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
             )}
 
+            {/* Category */}
+            {post.category && <span className="category-tag">{post.category}</span>}
+
+            {/* Title */}
             {post.title && (
-              <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">{post.title}</h1>
+              <h1
+                className="font-display"
+                style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', lineHeight: 1.15, color: 'var(--text)', margin: '1rem 0 1.5rem' }}
+              >
+                {post.title}
+              </h1>
             )}
 
-            {/* Author row */}
-            <div className="flex items-center justify-between py-5 border-b border-white/5">
-              <Link to={`/profile/${post.author?.id}`} className="flex items-center gap-3 group">
-                {post.author?.avatar ? (
-                  <img src={post.author.avatar} alt="" className="w-11 h-11 rounded-full object-cover ring-2 ring-black border border-white/10" />
-                ) : (
-                  <div className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                    <User className="w-5 h-5 text-gray-400" />
-                  </div>
-                )}
+            {/* Byline */}
+            <div
+              className="flex items-center justify-between gap-4 flex-wrap py-5"
+              style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: '2.5rem' }}
+            >
+              <Link to={`/profile/${post.author?.id}`} className="flex items-center gap-3">
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+                  overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  {post.author?.avatar ? (
+                    <img src={post.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <User size={16} style={{ color: 'var(--muted)' }} />
+                  )}
+                </div>
                 <div>
-                  <div className="text-white font-medium group-hover:text-purple-400 transition-colors">
+                  <p className="font-sans text-sm font-medium" style={{ color: 'var(--text)' }}>
                     {post.author?.name || 'Anónimo'}
-                  </div>
-                  <div className="text-xs text-gray-500 flex items-center gap-2">
-                    <span>{formatDate(post.createdAt)}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {readTime(post.content)} min de lectura
-                    </span>
-                  </div>
+                  </p>
+                  <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                    {formatDate(post.createdAt)} · {readTime(post.content)} min de lectura
+                  </p>
                 </div>
               </Link>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {user && post.author?.id && user.id !== post.author.id && (
                   <button
                     onClick={handleFollow}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      following ? 'bg-white/5 text-gray-400 border border-white/10' : 'bg-purple-600 text-white hover:bg-purple-500'
-                    }`}
+                    className="btn btn-ghost"
+                    style={{
+                      fontSize: '0.6875rem', padding: '0.375rem 0',
+                      borderBottom: `1px solid ${following ? 'var(--border)' : 'var(--text)'}`,
+                      color: following ? 'var(--muted)' : 'var(--text)',
+                    }}
                   >
                     {following ? 'Siguiendo' : 'Seguir'}
                   </button>
@@ -251,108 +273,88 @@ const BlogPostView = () => {
                 )}
               </div>
             </div>
-          </header>
 
-          {/* Content */}
-          <div
-            className="prose prose-invert prose-lg max-w-none
-              prose-headings:font-bold prose-headings:text-white
-              prose-p:text-gray-300 prose-p:leading-relaxed
-              prose-a:text-purple-400 prose-a:no-underline hover:prose-a:underline
-              prose-code:bg-white/5 prose-code:rounded prose-code:px-1
-              prose-blockquote:border-l-purple-500 prose-blockquote:text-gray-400
-              prose-img:rounded-xl prose-img:border prose-img:border-white/10"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+            {/* Content */}
+            <div
+              className="font-sans prose-editorial"
+              style={{ color: 'var(--text)', lineHeight: 1.75, fontSize: '1.0625rem' }}
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
 
-          {/* Video embed */}
-          {post.videoUrl && (
-            <div className="rounded-xl overflow-hidden border border-white/5 aspect-video">
-              <iframe src={post.videoUrl} className="w-full h-full" allowFullScreen title="Video" />
-            </div>
-          )}
+            {/* Video */}
+            {post.videoUrl && (
+              <div style={{ marginTop: '2rem', aspectRatio: '16/9', overflow: 'hidden' }}>
+                <iframe src={post.videoUrl} className="w-full h-full" allowFullScreen title="Video" />
+              </div>
+            )}
 
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="pt-6 border-t border-white/5 flex flex-wrap gap-2">
-              {post.tags.map((tag, i) => (
-                <span key={i} className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 text-sm">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
+            {/* Tags */}
+            {post.tags?.length > 0 && (
+              <div className="flex flex-wrap gap-3 mt-8 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
+                {post.tags.map((tag, i) => (
+                  <span key={i} className="font-sans text-xs" style={{ color: 'var(--muted)' }}>#{tag}</span>
+                ))}
+              </div>
+            )}
 
-          {/* Comments */}
-          {showComments && (
-            <div id="blog-comments" className="pt-10 border-t border-white/5">
-              <h3 className="text-xl font-bold text-white mb-6">Comentarios</h3>
-              <CommentSection postId={post.id} />
-            </div>
-          )}
-        </motion.article>
+            {/* Comments */}
+            {showComments && (
+              <div id="blog-comments" style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+                <h3 className="font-display mb-6" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>Comentarios</h3>
+                <CommentSection postId={post.id} />
+              </div>
+            )}
+          </article>
 
-        {/* Sidebar */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-32 space-y-4">
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm space-y-3">
-              <h4 className="font-semibold text-white text-sm">Acciones</h4>
-
-              <button
+          {/* Sidebar actions */}
+          <aside className="hidden lg:block" style={{ paddingTop: '0.5rem' }}>
+            <div style={{ position: 'sticky', top: '6rem' }}>
+              <p className="font-sans text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
+                Acciones
+              </p>
+              <SideAction
                 onClick={handleLike}
-                className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border ${
-                  liked ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10 border-white/10'
-                }`}
-              >
-                <Heart className={`w-4 h-4 ${liked ? 'fill-current' : ''}`} />
-                <span>Me gusta</span>
-                {likesCount > 0 && <span className="ml-auto text-xs opacity-60">{likesCount}</span>}
-              </button>
-
-              <button
-                onClick={() => { setShowComments(!showComments); setTimeout(() => document.getElementById('blog-comments')?.scrollIntoView({ behavior: 'smooth' }), 100); }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10 transition-all"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Comentar</span>
-              </button>
-
-              <button
-                onClick={handleSave}
-                className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border ${
-                  saved ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10 border-white/10'
-                }`}
-              >
-                <Bookmark className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
-                <span>{saved ? 'Guardado' : 'Guardar'}</span>
-              </button>
-
-              <button
-                onClick={() => setShowShareModal(true)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10 transition-all"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Compartir</span>
-              </button>
+                icon={Heart}
+                label={`Me gusta${likesCount > 0 ? ` · ${likesCount}` : ''}`}
+                active={liked}
+              />
+              <SideAction
+                onClick={() => {
+                  setShowComments(!showComments);
+                  if (!showComments) setTimeout(() => document.getElementById('blog-comments')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }}
+                icon={MessageCircle}
+                label="Comentar"
+                active={showComments}
+              />
+              <SideAction onClick={handleSave} icon={Bookmark} label={saved ? 'Guardado' : 'Guardar'} active={saved} />
+              <SideAction onClick={() => setShowShareModal(true)} icon={Share2} label="Compartir" active={false} />
             </div>
-          </div>
-        </aside>
-      </div>
+          </aside>
+        </div>
 
-      {/* Mobile actions bar */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 lg:hidden z-40 flex items-center gap-1 p-2 rounded-full bg-[#111]/90 backdrop-blur-xl border border-white/10 shadow-2xl">
-        <button onClick={handleLike} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <Heart className={`w-5 h-5 ${liked ? 'fill-red-400 text-red-400' : ''}`} />
-        </button>
-        <button onClick={() => setShowComments(!showComments)} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <MessageCircle className="w-5 h-5" />
-        </button>
-        <button onClick={handleSave} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <Bookmark className={`w-5 h-5 ${saved ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-        </button>
-        <button onClick={() => setShowShareModal(true)} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <Share2 className="w-5 h-5" />
-        </button>
+        {/* Mobile floating bar */}
+        <div
+          className="fixed lg:hidden z-40 flex items-center gap-1"
+          style={{
+            bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
+            backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+            padding: '0.5rem 1rem',
+          }}
+        >
+          <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: liked ? 'var(--accent)' : 'var(--muted)' }}>
+            <Heart size={18} />
+          </button>
+          <button onClick={() => setShowComments(!showComments)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
+            <MessageCircle size={18} />
+          </button>
+          <button onClick={handleSave} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: saved ? 'var(--accent)' : 'var(--muted)' }}>
+            <Bookmark size={18} />
+          </button>
+          <button onClick={() => setShowShareModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
+            <Share2 size={18} />
+          </button>
+        </div>
       </div>
 
       {showShareModal && (
@@ -360,7 +362,7 @@ const BlogPostView = () => {
       )}
 
       <ScrollToTop showAfter={300} />
-    </PremiumPageLayout>
+    </div>
   );
 };
 

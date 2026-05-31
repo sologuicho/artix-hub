@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Calendar, User, Heart, MessageCircle, Share2, BookOpen, ArrowLeft, Copy, Check, UserPlus, UserCheck, Download, Eye, Clock, FileText, FlaskConical, Link as LinkIcon, DownloadCloud, Sparkles } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Copy, Check, BookOpen, Download, User, Clock } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
@@ -9,30 +9,36 @@ import CommentSection from '../components/CommentSection';
 import ContentActions from '../components/ContentActions';
 import ReadingMode from '../components/ReadingMode';
 import ScrollToTop from '../components/ScrollToTop';
-import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 import { generatePDF } from '../utils/pdfGenerator';
 import PaginatedReader from '../components/reader/PaginatedReader';
-import { motion } from 'framer-motion';
-
 import { BACKEND_URL } from '../config/client';
 
-const ActionButton = ({ onClick, icon: Icon, label, active, count, disabled }) => (
+const getCsrfToken = () => {
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'csrf') return value;
+  }
+  return null;
+};
+
+const SideAction = ({ onClick, icon: Icon, label, active, disabled }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`
-      flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-300
-      backdrop-blur-md border border-white/10
-      ${active
-        ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/20'
-      }
-      ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-    `}
+    className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider w-full text-left"
+    style={{
+      background: 'none', border: 'none',
+      borderBottom: '1px solid var(--border)',
+      padding: '0.875rem 0',
+      cursor: disabled ? 'wait' : 'pointer',
+      color: active ? 'var(--text)' : 'var(--muted)',
+      transition: 'color 0.15s',
+      opacity: disabled ? 0.5 : 1,
+    }}
   >
-    <Icon className={`w-5 h-5 ${active ? 'fill-current' : ''}`} />
-    {label && <span>{label}</span>}
-    {count !== undefined && <span className="text-sm opacity-60 ml-1">{count}</span>}
+    <Icon size={13} style={{ flexShrink: 0 }} />
+    {label}
   </button>
 );
 
@@ -53,14 +59,12 @@ const ResearchView = () => {
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [readingProgress, setReadingProgress] = useState(null);
 
-  useEffect(() => {
-    fetchResearch();
-  }, [id]);
-
+  useEffect(() => { fetchResearch(); }, [id]);
   useEffect(() => {
     if (user && research?.author?.id) {
       checkFollowStatus();
       fetchReadingProgress();
+      checkReactionStatus();
     }
   }, [user, research?.author?.id]);
 
@@ -68,91 +72,80 @@ const ResearchView = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-
       const response = await fetch(`${BACKEND_URL}/api/reading-progress?researchId=${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await response.json();
-      if (data) {
-        setReadingProgress(data);
-      }
-    } catch (error) {
-      console.error('Error fetching reading progress:', error);
-    }
+      if (data) setReadingProgress(data);
+    } catch (_) {}
   };
 
   const checkFollowStatus = async () => {
     if (!user || !research?.author?.id || user.id === research.author.id) return;
     try {
-      const response = await fetch(`${BACKEND_URL}/api/follow/${research.author.id}/check`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${BACKEND_URL}/api/follow/${research.author.id}/check`, { credentials: 'include' });
       const data = await response.json();
       if (data.ok) setFollowing(data.following);
-    } catch (error) {
-      console.error('Error checking follow status:', error);
-    }
+    } catch (_) {}
   };
 
   const handleFollow = async () => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
+    if (!user) { navigate('/auth'); return; }
     try {
-      const getCsrfToken = () => {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-          const [name, value] = cookie.trim().split('=');
-          if (name === 'csrf') return value;
-        }
-        return null;
-      };
-
       const response = await fetch(`${BACKEND_URL}/api/follow/${research.author.id}`, {
         method: 'POST',
-        headers: {
-          'x-csrf-token': getCsrfToken() || ''
-        },
-        credentials: 'include'
+        headers: { 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
       });
-
       const data = await response.json();
-      if (data.ok) {
-        setFollowing(data.following);
-      }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
-    }
+      if (data.ok) setFollowing(data.following);
+    } catch (_) {}
   };
 
   const fetchResearch = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/research/${id}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${BACKEND_URL}/api/research/${id}`, { credentials: 'include' });
       const data = await response.json();
       if (data.ok) {
         setResearch(data.research);
         setLikesCount(data.research.likesCount || 0);
       }
-    } catch (error) {
-      console.error('Error fetching research:', error);
-    } finally {
-      setLoading(false);
+    } catch (_) {}
+    finally { setLoading(false); }
+  };
+
+  const checkReactionStatus = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reactions/user?researchId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setLiked(data.reactions.some(r => r.type === 'like'));
+    } catch (_) {}
+  };
+
+  const handleLike = async () => {
+    if (!user) { navigate('/auth'); return; }
+    const prevLiked = liked;
+    const prevCount = likesCount;
+    setLiked(l => !l);
+    setLikesCount(n => prevLiked ? n - 1 : n + 1);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reactions/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
+        body: JSON.stringify({ researchId: id, type: 'like' }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setLiked(prevLiked); setLikesCount(prevCount); }
+    } catch (_) {
+      setLiked(prevLiked);
+      setLikesCount(prevCount);
     }
   };
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikesCount(prev => liked ? prev - 1 : prev + 1);
-  };
-
   const handleCopyLink = () => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -163,118 +156,127 @@ const ResearchView = () => {
       await generatePDF({
         title: research.title,
         content: research.content,
-        author: research.author?.name || 'Researcher',
+        author: research.author?.name || 'Investigador',
         date: research.createdAt,
         description: research.abstract || research.description,
-        tags: research.tags || []
+        tags: research.tags || [],
       }, 'research');
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
+    } catch {
       alert('Error al generar el PDF. Por favor, intenta de nuevo.');
     } finally {
       setDownloadingPDF(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#030303]">
-        <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          width: 28, height: 28,
+          border: '2px solid var(--border)',
+          borderTopColor: 'var(--accent)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (!research) {
     return (
-      <PremiumPageLayout>
-        <div className="text-center py-20">
-          <h2 className="text-2xl font-bold text-white mb-4">Investigación no encontrada</h2>
-          <button onClick={() => navigate('/research')} className="glass-button-premium">
+      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+        <div className="site-container py-16 text-center">
+          <p className="font-display" style={{ fontSize: '1.5rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
+            Investigación no encontrada
+          </p>
+          <button onClick={() => navigate('/research')} className="btn btn-outline">
             Volver a Investigaciones
           </button>
         </div>
-      </PremiumPageLayout>
+      </div>
     );
   }
 
   return (
-    <PremiumPageLayout>
-      {/* Back Navigation */}
-      <button
-        onClick={() => navigate('/research')}
-        className="group flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"
-      >
-        <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-        </div>
-        <span className="text-sm font-medium">Volver a Investigaciones</span>
-      </button>
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <div className="site-container py-12">
+        {/* Back */}
+        <button
+          onClick={() => navigate('/research')}
+          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+        >
+          <ArrowLeft size={13} /> Volver a Investigaciones
+        </button>
 
-      {/* Collaboration Status */}
-      <CollaborationInvitation type="research" itemId={id} onUpdate={fetchResearch} />
+        <CollaborationInvitation type="research" itemId={id} onUpdate={fetchResearch} />
 
-      {/* Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12">
-        <article className="space-y-8">
-          {/* Header */}
-          <header className="space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                {research.category}
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                {research.status}
-              </span>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-12 items-start">
+          {/* Article */}
+          <article style={{ maxWidth: '720px' }}>
+            {/* Tags + status */}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {research.category && <span className="category-tag">{research.category}</span>}
+              {research.status && (
+                <span className="font-sans text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+                  {research.status}
+                </span>
+              )}
               {research.tags?.map((tag, i) => (
-                <span key={i} className="text-xs text-gray-500">#{tag}</span>
+                <span key={i} className="font-sans text-xs" style={{ color: 'var(--muted)' }}>#{tag}</span>
               ))}
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+            {/* Title */}
+            <h1
+              className="font-display"
+              style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', lineHeight: 1.15, color: 'var(--text)', marginBottom: '1.5rem' }}
+            >
               {research.title}
             </h1>
 
-            <div className="flex items-center justify-between py-6 border-b border-white/5">
-              <Link to={`/profile/${research.author?.id}`} className="flex items-center gap-4 group">
-                {research.author?.avatar ? (
-                  <img src={research.author.avatar} alt="" className="w-12 h-12 rounded-full object-cover ring-2 ring-black border border-white/10" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                    <User className="w-6 h-6 text-gray-400" />
-                  </div>
-                )}
+            {/* Byline */}
+            <div
+              className="flex items-center justify-between gap-4 flex-wrap py-5 mb-6"
+              style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+            >
+              <Link to={`/profile/${research.author?.id}`} className="flex items-center gap-3">
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+                  overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  {research.author?.avatar ? (
+                    <img src={research.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <User size={16} style={{ color: 'var(--muted)' }} />
+                  )}
+                </div>
                 <div>
-                  <div className="text-white font-medium group-hover:text-purple-400 transition-colors">
-                    {research.author?.name || 'Anonymous'}
-                  </div>
-                  <div className="text-sm text-gray-500 flex items-center gap-2">
-                    <span>{formatDate(research.createdAt)}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {Math.ceil((research.content?.length || 0) / 1000)} min de lectura
-                    </span>
-                  </div>
+                  <p className="font-sans text-sm font-medium" style={{ color: 'var(--text)' }}>
+                    {research.author?.name || 'Investigador'}
+                  </p>
+                  <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                    {formatDate(research.createdAt)} · {Math.ceil((research.content?.length || 0) / 1000)} min de lectura
+                  </p>
                 </div>
               </Link>
 
-              {/* Follow / Actions */}
               <div className="flex items-center gap-3">
                 {user && research.author?.id && user.id !== research.author.id && (
                   <button
                     onClick={handleFollow}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${following
-                      ? 'bg-white/5 text-gray-400 border border-white/5'
-                      : 'bg-purple-600 text-white hover:bg-purple-500'
-                      }`}
+                    className="btn btn-ghost"
+                    style={{
+                      fontSize: '0.6875rem', padding: '0.375rem 0',
+                      borderBottom: `1px solid ${following ? 'var(--border)' : 'var(--text)'}`,
+                      color: following ? 'var(--muted)' : 'var(--text)',
+                    }}
                   >
                     {following ? 'Siguiendo' : 'Seguir'}
                   </button>
@@ -290,137 +292,115 @@ const ResearchView = () => {
                 )}
               </div>
             </div>
-          </header>
 
-          {/* Abstract / Summary Box */}
-          {research.abstract && (
-            <div className="p-6 rounded-2xl bg-purple-500/5 border border-purple-500/10">
-              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-400" />
-                Abstract
-              </h3>
-              <p className="text-gray-300 leading-relaxed">
-                {research.abstract}
-              </p>
-            </div>
-          )}
+            {/* Abstract */}
+            {research.abstract && (
+              <div style={{ padding: '1.25rem 1.5rem', borderLeft: '3px solid var(--accent)', backgroundColor: 'var(--surface)', marginBottom: '2rem' }}>
+                <p className="font-sans text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--accent)' }}>Abstract</p>
+                <p className="font-sans text-sm" style={{ color: 'var(--text)', lineHeight: 1.7 }}>
+                  {research.abstract}
+                </p>
+              </div>
+            )}
 
-          {/* Featured Image */}
-          {research.coverUrl && (
-            <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 bg-white/5">
-              <img
-                src={research.coverUrl}
-                alt={research.title}
-                className="w-full h-full object-cover"
+            {/* Cover image */}
+            {research.coverUrl && (
+              <div style={{ marginBottom: '2rem', aspectRatio: '16/9', overflow: 'hidden' }}>
+                <img src={research.coverUrl} alt={research.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            )}
+
+            {/* Paginated reader */}
+            <div className="my-8">
+              <PaginatedReader
+                content={research.content}
+                title={research.title}
+                contentId={research.id}
+                contentType="research"
+                initialProgress={readingProgress}
               />
             </div>
-          )}
 
-          {/* New Advanced Reader */}
-          <div className="my-8">
-            <PaginatedReader
-              content={research.content}
-              title={research.title}
-              contentId={research.id}
-              contentType="research"
-              initialProgress={readingProgress}
-            />
-          </div>
-
-          {/* Attachments / References (Placeholder if we had them) */}
-
-          {/* Comments */}
-          {showComments && (
-            <div id="comments-section" className="pt-12 border-t border-white/5">
-              <h3 className="text-2xl font-bold text-white mb-8">Discusión Académica</h3>
-              <CommentSection articleId={research.id} />
-            </div>
-          )}
-        </article>
-
-        {/* Sidebar Actions (Sticky) */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-32 space-y-4">
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm space-y-4">
-              <h4 className="font-semibold text-white">Acciones</h4>
-
-              <div className="grid gap-3">
-                <ActionButton
-                  onClick={handleLike}
-                  icon={Heart}
-                  active={liked}
-                  count={likesCount}
-                  label="Recomendar"
-                />
-                <ActionButton
-                  onClick={() => {
-                    setShowComments(!showComments);
-                    if (!showComments) {
-                      setTimeout(() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
-                    }
-                  }}
-                  icon={MessageCircle}
-                  count={research.comments?.length || 0}
-                  label="Debatir"
-                />
-                <ActionButton
-                  onClick={() => setShowShareModal(true)}
-                  icon={Share2}
-                  label="Compartir"
-                />
-                <ActionButton
-                  onClick={handleCopyLink}
-                  icon={copied ? Check : Copy}
-                  label={copied ? 'Copiado' : 'Copiar Link'}
-                  active={copied}
-                />
+            {/* Comments */}
+            {showComments && (
+              <div id="comments-section" style={{ paddingTop: '2rem', borderTop: '1px solid var(--border)', marginTop: '2rem' }}>
+                <h3 className="font-display mb-6" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>
+                  Discusión Académica
+                </h3>
+                <CommentSection articleId={research.id} />
               </div>
-            </div>
+            )}
+          </article>
 
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm space-y-4">
-              <h4 className="font-semibold text-white">Herramientas</h4>
-              <div className="grid gap-3">
-                <ActionButton
-                  onClick={() => setReadingMode(true)}
-                  icon={BookOpen}
-                  label="Modo Lectura Full"
-                />
-                <ActionButton
-                  onClick={handleDownloadPDF}
-                  icon={Download}
-                  label={downloadingPDF ? 'Generando PDF...' : 'Descargar PDF'}
-                  disabled={downloadingPDF}
-                />
-              </div>
+          {/* Sidebar */}
+          <aside className="hidden lg:block" style={{ paddingTop: '0.5rem' }}>
+            <div style={{ position: 'sticky', top: '6rem' }}>
+              <p className="font-sans text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
+                Acciones
+              </p>
+              <SideAction
+                onClick={handleLike}
+                icon={Heart}
+                label={`Recomendar${likesCount > 0 ? ` · ${likesCount}` : ''}`}
+                active={liked}
+              />
+              <SideAction
+                onClick={() => {
+                  setShowComments(!showComments);
+                  if (!showComments) setTimeout(() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }}
+                icon={MessageCircle}
+                label="Debatir"
+                active={showComments}
+              />
+              <SideAction onClick={() => setShowShareModal(true)} icon={Share2} label="Compartir" active={false} />
+              <SideAction
+                onClick={handleCopyLink}
+                icon={copied ? Check : Copy}
+                label={copied ? 'Copiado' : 'Copiar link'}
+                active={copied}
+              />
+              <p className="font-sans text-xs uppercase tracking-widest mb-2 mt-6" style={{ color: 'var(--muted)' }}>
+                Herramientas
+              </p>
+              <SideAction onClick={() => setReadingMode(true)} icon={BookOpen} label="Modo lectura" active={false} />
+              <SideAction
+                onClick={handleDownloadPDF}
+                icon={Download}
+                label={downloadingPDF ? 'Generando…' : 'Descargar PDF'}
+                active={false}
+                disabled={downloadingPDF}
+              />
             </div>
-          </div>
-        </aside>
+          </aside>
+        </div>
+
+        {/* Mobile floating bar */}
+        <div
+          className="fixed lg:hidden z-40 flex items-center gap-1"
+          style={{
+            bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
+            backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+            padding: '0.5rem 1rem',
+          }}
+        >
+          <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: liked ? 'var(--accent)' : 'var(--muted)' }}>
+            <Heart size={18} />
+          </button>
+          <button onClick={() => setShowComments(!showComments)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
+            <MessageCircle size={18} />
+          </button>
+          <button onClick={() => setReadingMode(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
+            <BookOpen size={18} />
+          </button>
+          <button onClick={() => setShowShareModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
+            <Share2 size={18} />
+          </button>
+        </div>
       </div>
 
-      {/* Mobile Floating Actions */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 lg:hidden z-40 flex items-center gap-2 p-2 rounded-full bg-[#111]/90 backdrop-blur-xl border border-white/10 shadow-2xl">
-        <button onClick={handleLike} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <Heart className={`w-5 h-5 ${liked ? 'fill-purple-500 text-purple-500' : ''}`} />
-        </button>
-        <button onClick={() => setShowComments(!showComments)} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <MessageCircle className="w-5 h-5" />
-        </button>
-        <div className="w-px h-6 bg-white/10" />
-        <button onClick={() => setReadingMode(true)} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <BookOpen className="w-5 h-5" />
-        </button>
-        <button onClick={() => setShowShareModal(true)} className="p-3 text-white hover:bg-white/10 rounded-full">
-          <Share2 className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Modals */}
       {showShareModal && (
-        <ShareModal
-          url={window.location.href}
-          title={research.title}
-          onClose={() => setShowShareModal(false)}
-        />
+        <ShareModal url={window.location.href} title={research.title} onClose={() => setShowShareModal(false)} />
       )}
 
       <ReadingMode
@@ -430,7 +410,7 @@ const ResearchView = () => {
         author={research.author?.name}
         date={research.createdAt}
       >
-        <div className="prose prose-xl prose-invert max-w-3xl mx-auto">
+        <div className="prose prose-xl max-w-3xl mx-auto">
           <div dangerouslySetInnerHTML={{ __html: research.content }} />
         </div>
       </ReadingMode>
@@ -438,8 +418,7 @@ const ResearchView = () => {
       <div className="lg:hidden">
         <ScrollToTop showAfter={300} />
       </div>
-
-    </PremiumPageLayout>
+    </div>
   );
 };
 
