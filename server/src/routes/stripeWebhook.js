@@ -47,15 +47,28 @@ module.exports = async function stripeWebhookHandler(req, res) {
         const { userId, tier } = session.metadata || {};
 
         if (userId && VALID_TIERS.includes(tier)) {
-          await prisma.user.update({
+          const updatedUser = await prisma.user.update({
             where: { id: userId },
             data: {
               subscriptionTier: tier,
               stripeCustomerId:     session.customer     || undefined,
               stripeSubscriptionId: session.subscription || undefined
-            }
+            },
+            select: { id: true, email: true, name: true, username: true }
           });
           console.log(`[Stripe Webhook] Usuario ${userId} → tier=${tier}, customer=${session.customer}, sub=${session.subscription}`);
+
+          // Send payment confirmation email
+          try {
+            let renewalDate = null;
+            if (session.subscription) {
+              const sub = await stripe.subscriptions.retrieve(session.subscription);
+              renewalDate = sub.current_period_end;
+            }
+            await emailService.sendPaymentConfirmation(updatedUser, tier, renewalDate);
+          } catch (emailErr) {
+            console.error('[Stripe Webhook] Error enviando confirmación de pago:', emailErr.message);
+          }
         }
         break;
       }

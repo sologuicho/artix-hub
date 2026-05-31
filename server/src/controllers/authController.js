@@ -78,8 +78,10 @@ exports.register = async (req, res) => {
     });
 
     setAuthCookies(res, user);
-    
-    // Don't send password back
+
+    // Send welcome email without blocking the response
+    emailService.sendWelcome(user).catch(err => console.error('[Email] Welcome email error:', err));
+
     const { password: _, ...safeUser } = user;
     res.status(201).json({ ok: true, user: safeUser });
   } catch (error) {

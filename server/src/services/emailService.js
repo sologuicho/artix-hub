@@ -147,6 +147,96 @@ exports.sendNotificationEmail = async (user, notification) => {
   }
 };
 
+exports.sendWelcome = async (user) => {
+  const name = user.name || user.username || 'Usuario';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+    <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:30px;border-radius:10px 10px 0 0;text-align:center;">
+        <h1 style="color:white;margin:0;">Artix Hub</h1>
+      </div>
+      <div style="background:#f9f9f9;padding:30px;border-radius:0 0 10px 10px;">
+        <h2 style="color:#333;margin-top:0;">Bienvenido, ${name}</h2>
+        <p>Tu cuenta en Artix Hub ha sido creada exitosamente.</p>
+        <p>Ahora puedes explorar investigaciones, artículos, eventos y conectar con otros miembros de la comunidad.</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${frontendUrl}" style="background:#667eea;color:white;padding:12px 30px;text-decoration:none;border-radius:5px;display:inline-block;">
+            Explorar Artix Hub
+          </a>
+        </div>
+        <p>Saludos,<br><strong>El equipo de Artix Hub</strong></p>
+      </div>
+    </body>
+    </html>
+  `;
+  if (user.email) await sendEmail(user.email, 'Bienvenido a Artix Hub', html);
+};
+
+exports.sendPaymentConfirmation = async (user, tier, renewalDate) => {
+  const name = user.name || user.username || 'Usuario';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const tierNames = { STUDENT: 'Estudiante', RESEARCHER: 'Investigador', VISIONARY: 'Visionario', TEAM: 'Equipo' };
+  const tierLabel = tierNames[tier] || tier;
+  const renewal = renewalDate ? new Date(renewalDate * 1000).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+    <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:30px;border-radius:10px 10px 0 0;text-align:center;">
+        <h1 style="color:white;margin:0;">Artix Hub</h1>
+      </div>
+      <div style="background:#f9f9f9;padding:30px;border-radius:0 0 10px 10px;">
+        <h2 style="color:#333;margin-top:0;">Tu suscripción ${tierLabel} está activa</h2>
+        <p>Hola <strong>${name}</strong>,</p>
+        <p>Tu pago fue procesado exitosamente y tu plan <strong>${tierLabel}</strong> está ahora activo.</p>
+        ${renewal ? `<p style="color:#555;">Próxima renovación: <strong>${renewal}</strong></p>` : ''}
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${frontendUrl}/subscription" style="background:#667eea;color:white;padding:12px 30px;text-decoration:none;border-radius:5px;display:inline-block;">
+            Ver mi suscripción
+          </a>
+        </div>
+        <p>Saludos,<br><strong>El equipo de Artix Hub</strong></p>
+      </div>
+    </body>
+    </html>
+  `;
+  if (user.email) await sendEmail(user.email, `Tu suscripción ${tierLabel} está activa — Artix Hub`, html);
+};
+
+exports.sendPasswordReset = async (user, rawToken) => {
+  const name = user.name || user.username || 'Usuario';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetLink = `${frontendUrl}/reset-password?token=${rawToken}`;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+    <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:30px;border-radius:10px 10px 0 0;text-align:center;">
+        <h1 style="color:white;margin:0;">Artix Hub</h1>
+      </div>
+      <div style="background:#f9f9f9;padding:30px;border-radius:0 0 10px 10px;">
+        <h2 style="color:#333;margin-top:0;">Restablecer contraseña</h2>
+        <p>Hola <strong>${name}</strong>,</p>
+        <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta.</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${resetLink}" style="background:#667eea;color:white;padding:12px 30px;text-decoration:none;border-radius:5px;display:inline-block;">
+            Crear nueva contraseña
+          </a>
+        </div>
+        <p style="font-size:13px;color:#666;">Este link expira en 1 hora. Si no solicitaste este cambio, ignora este email — tu contraseña no será modificada.</p>
+        <p>Saludos,<br><strong>El equipo de Artix Hub</strong></p>
+      </div>
+    </body>
+    </html>
+  `;
+  if (user.email) await sendEmail(user.email, 'Restablecer contraseña — Artix Hub', html);
+};
+
 // Cron job function to check and send reminders
 exports.checkAndSendReminders = async () => {
   const { PrismaClient } = require('@prisma/client');
