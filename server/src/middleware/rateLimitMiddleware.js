@@ -27,4 +27,13 @@ const generalLimiter = rateLimit({
   message: { ok: false, message: 'Too many requests. Please slow down.' }
 });
 
-module.exports = { authLimiter, checkUsernameLimiter, generalLimiter };
+// Password reset requests — 3 per 15 min per IP to prevent email bombing
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Demasiados intentos. Espera 15 minutos antes de volver a solicitar.' }
+});
+
+module.exports = { authLimiter, checkUsernameLimiter, generalLimiter, passwordResetLimiter };

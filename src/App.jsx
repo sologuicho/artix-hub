@@ -31,6 +31,10 @@ import Settings from './pages/Settings';
 import ProfileSettings from './pages/ProfileSettings';
 import SavedItems from './pages/SavedItems';
 import Archived from './pages/Archived';
+import AdminPanel from './pages/AdminPanel';
+import PaymentSuccess from './pages/PaymentSuccess';
+import ResetPassword from './pages/ResetPassword';
+import SubscriptionSettings from './pages/SubscriptionSettings';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRoutes() {
@@ -142,10 +146,30 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="admin"
+            element={
+              <ProtectedRoute>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="subscription"
+            element={
+              <ProtectedRoute>
+                <SubscriptionSettings />
+              </ProtectedRoute>
+            }
+          />
         </Route>
         <Route path="/auth" element={<Auth />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/setup-username" element={<SetupUsername />} />
+        {/* No requiere auth — el usuario llega desde el redirect de Stripe/MP */}
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        {/* No requiere auth — el usuario llega desde el link del email */}
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </Router>
   );

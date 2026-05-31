@@ -2,12 +2,16 @@ const express = require('express');
 const passport = require('./passport');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const { authLimiter, checkUsernameLimiter } = require('../middleware/rateLimitMiddleware');
+const { authLimiter, checkUsernameLimiter, passwordResetLimiter } = require('../middleware/rateLimitMiddleware');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 
 // Traditional Native Auth (rate limited)
 router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
+
+// Password reset
+router.post('/forgot-password', passwordResetLimiter, authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
 // Google
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));

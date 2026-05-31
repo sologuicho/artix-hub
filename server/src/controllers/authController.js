@@ -1,6 +1,8 @@
 const { signToken, signSocketToken } = require('../utils/jwt');
 const prisma = require('../prismaClient');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const emailService = require('../services/emailService');
 
 // Helper to set auth cookies
 const setAuthCookies = (res, user) => {
@@ -208,6 +210,73 @@ exports.socketToken = async (req, res) => {
   } catch (err) {
     console.error('socketToken error:', err);
     res.status(500).json({ ok: false, message: 'Failed to issue socket token' });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ ok: false, message: 'El correo es obligatorio' });
+
+    // Always respond 200 — never reveal if email exists
+    const user = await prisma.user.findFirst({ where: { email: email.toLowerCase(), provider: 'local' } });
+    if (!user) return res.json({ ok: true });
+
+    // Delete any existing tokens for this user
+    await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    await prisma.passwordResetToken.create({
+      data: {
+        token: hashedToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+      }
+    });
+
+    await emailService.sendPasswordReset(user, rawToken);
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ ok: false, message: 'Error en el servidor' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ ok: false, message: 'Token y nueva contraseña son obligatorios' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const record = await prisma.passwordResetToken.findFirst({
+      where: { token: hashedToken, used: false, expiresAt: { gt: new Date() } }
+    });
+
+    if (!record) {
+      return res.status(400).json({ ok: false, message: 'El link es inválido o ha expirado' });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: record.userId },
+      data: { password: hashed, tokenVersion: { increment: 1 } }
+    });
+
+    await prisma.passwordResetToken.delete({ where: { id: record.id } });
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ ok: false, message: 'Error en el servidor' });
   }
 };
 
