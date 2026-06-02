@@ -2,9 +2,11 @@ require('dotenv').config();
 const http = require('http');
 const express = require('express');
 const helmet = require('helmet');
+const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const passport = require('./auth/passport');
+const logger = require('./lib/logger');
 const { generalLimiter } = require('./middleware/rateLimitMiddleware');
 const authRoutes = require('./auth/authRoutes');
 const articleRoutes = require('./routes/articleRoutes');
@@ -28,8 +30,7 @@ const requiredEnvVars = [
 
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 if (missingEnvVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
-  console.error('Please check your .env file');
+  logger.error({ missingEnvVars }, 'Missing required environment variables');
   process.exit(1);
 }
 
@@ -37,6 +38,11 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(helmet());
+
+// HTTP request logging — stream pino at 'info' level
+app.use(morgan('combined', {
+  stream: { write: msg => logger.info(msg.trim()) }
+}));
 
 // ⚠️  STRIPE WEBHOOK — DEBE estar ANTES de express.json() para recibir el raw body
 //    Stripe verifica la firma criptográfica con el body en bytes, no como objeto JSON
@@ -175,7 +181,7 @@ app.get('/me', protect, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching user:', error);
+    logger.error({ err: error }, 'Error fetching user');
     res.status(500).json({ ok: false, message: 'Failed to fetch user' });
   }
 });
@@ -230,7 +236,7 @@ app.put('/api/auth/me', protect, verifyCsrf, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Error updating user:', err);
+    logger.error({ err }, 'Error updating user');
     const errorMessage = err.message || 'Error updating user';
     const statusCode = err.code === 'P2002' ? 400 : 500; // Prisma unique constraint error
     res.status(statusCode).json({
@@ -275,7 +281,7 @@ app.post('/profile/update', protect, verifyCsrf, async (req, res) => {
     });
     res.json({ ok: true, user });
   } catch (error) {
-    console.error('Error updating profile:', error);
+    logger.error({ err: error }, 'Error updating profile');
     res.status(500).json({ ok: false, message: 'Failed to update profile' });
   }
 });
@@ -294,7 +300,7 @@ startEmailReminderJob();
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+  logger.error({ err }, 'Unhandled error');
   res.status(err.status || 500).json({
     ok: false,
     message: err.message || 'Internal server error',
@@ -306,7 +312,5 @@ const server = http.createServer(app);
 initializeSocket(server);
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server listening on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔌 Socket.IO initialized`);
+  logger.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Server listening');
 });

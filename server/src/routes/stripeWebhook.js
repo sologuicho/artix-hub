@@ -3,6 +3,7 @@
 const prisma = require('../prismaClient');
 const { stripe } = require('../config/payments');
 const emailService = require('../services/emailService');
+const logger = require('../lib/logger');
 
 const VALID_TIERS = ['STUDENT', 'VISIONARY'];
 
@@ -19,7 +20,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error('[Stripe Webhook] Firma inválida:', err.message);
+    logger.error({ err: err.message }, '[Stripe Webhook] Firma inválida');
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
@@ -30,7 +31,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
       where: { id: event.id }
     });
     if (existing) {
-      console.log(`[Stripe Webhook] Evento duplicado ignorado: ${event.id}`);
+      logger.info({ eventId: event.id }, '[Stripe Webhook] Evento duplicado ignorado');
       return res.json({ received: true });
     }
 
@@ -56,7 +57,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
             },
             select: { id: true, email: true, name: true, username: true }
           });
-          console.log(`[Stripe Webhook] Usuario ${userId} → tier=${tier}, customer=${session.customer}, sub=${session.subscription}`);
+          logger.info({ userId, tier, customer: session.customer, sub: session.subscription }, '[Stripe Webhook] checkout.session.completed');
 
           // Send payment confirmation email
           try {
@@ -67,7 +68,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
             }
             await emailService.sendPaymentConfirmation(updatedUser, tier, renewalDate);
           } catch (emailErr) {
-            console.error('[Stripe Webhook] Error enviando confirmación de pago:', emailErr.message);
+            logger.error({ err: emailErr.message }, '[Stripe Webhook] Error enviando confirmación de pago');
           }
         }
         break;
@@ -80,7 +81,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
         if (customerId) {
           const user = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } });
           if (!user) {
-            console.error('[Stripe Webhook] sub.deleted: no user found for customerId', customerId);
+            logger.error({ customerId }, '[Stripe Webhook] sub.deleted: no user found for customerId');
             break;
           }
 
@@ -88,7 +89,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
             where: { id: user.id },
             data: { subscriptionTier: 'OBSERVER' }
           });
-          console.log(`[Stripe Webhook] Suscripción cancelada — Usuario ${user.id} bajado a OBSERVER`);
+          logger.info({ userId: user.id }, '[Stripe Webhook] Suscripción cancelada — bajado a OBSERVER');
         }
         break;
       }
@@ -123,7 +124,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
             data: { subscriptionTier: 'OBSERVER' }
           });
           downgraded = true;
-          console.log(`[Stripe Webhook] Usuario ${user.id} bajado a OBSERVER por ${failCount} pagos fallidos`);
+          logger.warn({ userId: user.id, failCount }, '[Stripe Webhook] Usuario bajado a OBSERVER por pagos fallidos');
         }
 
         // Notificar al usuario — en su propio try/catch para no bloquear el 200
@@ -173,10 +174,9 @@ module.exports = async function stripeWebhookHandler(req, res) {
             `;
 
             await emailService.sendEmail(user.email, subject, html);
-            console.log(`[Stripe Webhook] Email de pago fallido enviado a ${user.email}`);
+            logger.info({ to: user.email }, '[Stripe Webhook] Email de pago fallido enviado');
           } catch (emailErr) {
-            // El email no debe bloquear el flujo principal
-            console.error('[Stripe Webhook] Error enviando email de pago fallido:', emailErr.message);
+            logger.error({ err: emailErr.message }, '[Stripe Webhook] Error enviando email de pago fallido');
           }
         }
         break;
@@ -187,8 +187,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
         break;
     }
   } catch (processingErr) {
-    // No relanzar — Stripe ya recibirá el 200
-    console.error('[Stripe Webhook] Error procesando evento:', processingErr);
+    logger.error({ err: processingErr }, '[Stripe Webhook] Error procesando evento');
   }
 
   // Siempre responder 200 a Stripe

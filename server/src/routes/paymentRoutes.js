@@ -6,6 +6,7 @@ const { protect } = require('../middleware/authMiddleware');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const { stripe, mpClient, PRICE_IDS, MP_PLAN_IDS } = require('../config/payments');
 const { Preference, Payment } = require('mercadopago');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 
@@ -47,7 +48,7 @@ router.post('/stripe/create-checkout', protect, verifyCsrf, async (req, res) => 
 
     res.json({ ok: true, url: session.url });
   } catch (err) {
-    console.error('[Stripe] Error creando checkout session:', err);
+    logger.error({ err }, '[Stripe] Error creando checkout session');
     res.status(500).json({ ok: false, message: err.message || 'Error al crear sesión de pago' });
   }
 });
@@ -98,7 +99,7 @@ router.post('/mercadopago/create-preference', protect, verifyCsrf, async (req, r
 
     res.json({ ok: true, init_point: preference.init_point });
   } catch (err) {
-    console.error('[MercadoPago] Error creando preferencia:', err);
+    logger.error({ err }, '[MercadoPago] Error creando preferencia');
     res.status(500).json({ ok: false, message: err.message || 'Error al crear preferencia de pago' });
   }
 });
@@ -125,7 +126,7 @@ router.post('/mercadopago/webhook', async (req, res) => {
   const v1 = parts['v1'];
 
   if (!ts || !v1) {
-    console.warn('[MP Webhook] Cabecera x-signature ausente o malformada');
+    logger.warn('[MP Webhook] Cabecera x-signature ausente o malformada');
     return res.status(401).json({ error: 'Missing signature' });
   }
 
@@ -134,7 +135,7 @@ router.post('/mercadopago/webhook', async (req, res) => {
 
   const mpSecret = process.env.MP_WEBHOOK_SECRET;
   if (!mpSecret) {
-    console.error('[MP Webhook] MP_WEBHOOK_SECRET no configurado — request rechazado');
+    logger.error('[MP Webhook] MP_WEBHOOK_SECRET no configurado — request rechazado');
     return res.status(500).json({ error: 'Webhook secret not configured' });
   }
 
@@ -144,7 +145,7 @@ router.post('/mercadopago/webhook', async (req, res) => {
     .digest('hex');
 
   if (expectedHash !== v1) {
-    console.warn('[MP Webhook] Firma inválida — request rechazado');
+    logger.warn('[MP Webhook] Firma inválida — request rechazado');
     return res.status(401).json({ error: 'Invalid signature' });
   }
   // ── Fin verificación ───────────────────────────────────────────────────────
@@ -159,7 +160,7 @@ router.post('/mercadopago/webhook', async (req, res) => {
     if (mpEventId) {
       const existingMp = await prisma.mpEvent.findUnique({ where: { id: mpEventId } });
       if (existingMp) {
-        console.log(`[MP Webhook] Evento duplicado ignorado: ${mpEventId}`);
+        logger.info({ eventId: mpEventId }, '[MP Webhook] Evento duplicado ignorado');
         return;
       }
       await prisma.mpEvent.create({ data: { id: mpEventId } });
@@ -212,10 +213,10 @@ router.post('/mercadopago/webhook', async (req, res) => {
         where: { id: userId },
         data: { subscriptionTier: tier }
       });
-      console.log(`[MP Webhook] Usuario ${userId} actualizado a tier ${tier}`);
+      logger.info({ userId, tier }, '[MP Webhook] Usuario actualizado');
     }
   } catch (err) {
-    console.error('[MercadoPago Webhook] Error procesando evento:', err);
+    logger.error({ err }, '[MercadoPago Webhook] Error procesando evento');
   }
 });
 

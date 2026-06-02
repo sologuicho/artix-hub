@@ -3,6 +3,7 @@ const prisma = require('../prismaClient');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const emailService = require('../services/emailService');
+const logger = require('../lib/logger');
 
 // Helper to set auth cookies
 const setAuthCookies = (res, user) => {
@@ -80,12 +81,12 @@ exports.register = async (req, res) => {
     setAuthCookies(res, user);
 
     // Send welcome email without blocking the response
-    emailService.sendWelcome(user).catch(err => console.error('[Email] Welcome email error:', err));
+    emailService.sendWelcome(user).catch(err => logger.error({ err }, '[Email] Welcome email error'));
 
     const { password: _, ...safeUser } = user;
     res.status(201).json({ ok: true, user: safeUser });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error({ err: error }, 'Registration error');
     res.status(500).json({ ok: false, message: 'Error en el servidor durante el registro' });
   }
 };
@@ -117,7 +118,7 @@ exports.login = async (req, res) => {
     const { password: _, ...safeUser } = user;
     res.json({ ok: true, user: safeUser });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error({ err: error }, 'Login error');
     res.status(500).json({ ok: false, message: 'Error en el servidor durante el inicio de sesión' });
   }
 };
@@ -127,7 +128,7 @@ exports.oauthCallback = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      console.error('OAuth callback: No user found in request');
+      logger.error('OAuth callback: No user found in request');
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth?error=oauth_no_user`);
     }
 
@@ -141,7 +142,7 @@ exports.oauthCallback = async (req, res) => {
     
     return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?success=true`);
   } catch (err) {
-    console.error('OAuth callback error:', err);
+    logger.error({ err }, 'OAuth callback error');
     return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth?error=oauth_error`);
   }
 };
@@ -162,7 +163,7 @@ exports.logout = async (req, res) => {
       } catch (_) { /* invalid token, still clear cookies */ }
     }
   } catch (err) {
-    console.error('Logout error:', err);
+    logger.error({ err }, 'Logout error');
   }
   res.clearCookie('session');
   res.clearCookie('csrf');
@@ -198,7 +199,7 @@ exports.checkUsername = async (req, res) => {
       message: existing ? 'Ese nombre de usuario no está disponible' : 'Username disponible'
     });
   } catch (error) {
-    console.error('Error checking username:', error);
+    logger.error({ err: error }, 'Error checking username');
     res.status(500).json({ ok: false, message: 'Error checking username' });
   }
 };
@@ -210,7 +211,7 @@ exports.socketToken = async (req, res) => {
     const token = signSocketToken(req.user);
     res.json({ ok: true, token });
   } catch (err) {
-    console.error('socketToken error:', err);
+    logger.error({ err }, 'socketToken error');
     res.status(500).json({ ok: false, message: 'Failed to issue socket token' });
   }
 };
@@ -242,7 +243,7 @@ exports.forgotPassword = async (req, res) => {
 
     res.json({ ok: true });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    logger.error({ err: error }, 'Forgot password error');
     res.status(500).json({ ok: false, message: 'Error en el servidor' });
   }
 };
@@ -277,7 +278,7 @@ exports.resetPassword = async (req, res) => {
 
     res.json({ ok: true });
   } catch (error) {
-    console.error('Reset password error:', error);
+    logger.error({ err: error }, 'Reset password error');
     res.status(500).json({ ok: false, message: 'Error en el servidor' });
   }
 };
@@ -323,7 +324,7 @@ exports.setupUsername = async (req, res) => {
 
     res.json({ ok: true, user });
   } catch (error) {
-    console.error('Error setting up username:', error);
+    logger.error({ err: error }, 'Error setting up username');
     res.status(500).json({ ok: false, message: 'Error setting up username' });
   }
 };
