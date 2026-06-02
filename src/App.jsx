@@ -37,6 +37,7 @@ import ResetPassword from './pages/ResetPassword';
 import SubscriptionSettings from './pages/SubscriptionSettings';
 import FeedPage from './pages/FeedPage';
 import NotFound from './pages/NotFound';
+import SearchResults from './pages/SearchResults';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -173,6 +174,7 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route path="search" element={<SearchResults />} />
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/auth" element={<Auth />} />

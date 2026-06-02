@@ -117,6 +117,13 @@ const GlobalSearch = () => {
               setIsOpen(true);
             }
           }}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && query.trim()) {
+              navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+              setIsOpen(false);
+              setQuery('');
+            }
+          }}
           placeholder="Buscar..."
           className="w-full pl-10 pr-10 py-2.5 bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:bg-black/40 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner shadow-black/20"
         />
