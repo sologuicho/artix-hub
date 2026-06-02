@@ -38,6 +38,7 @@ import SubscriptionSettings from './pages/SubscriptionSettings';
 import FeedPage from './pages/FeedPage';
 import NotFound from './pages/NotFound';
 import SearchResults from './pages/SearchResults';
+import VerifyEmail from './pages/VerifyEmail';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -184,6 +185,7 @@ function AppRoutes() {
         <Route path="/payment/success" element={<PaymentSuccess />} />
         {/* No requiere auth — el usuario llega desde el link del email */}
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </Router>
   );

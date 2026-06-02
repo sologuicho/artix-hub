@@ -80,8 +80,25 @@ exports.register = async (req, res) => {
 
     setAuthCookies(res, user);
 
-    // Send welcome email without blocking the response
-    emailService.sendWelcome(user).catch(err => logger.error({ err }, '[Email] Welcome email error'));
+    // Fire-and-forget: welcome email + verification token
+    (async () => {
+      try {
+        emailService.sendWelcome(user).catch(err => logger.error({ err }, '[Email] Welcome email error'));
+
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+        await prisma.emailVerificationToken.create({
+          data: {
+            token: hashedToken,
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+          }
+        });
+        await emailService.sendEmailVerification(user, rawToken);
+      } catch (err) {
+        logger.error({ err }, '[Email] Verification email error');
+      }
+    })();
 
     const { password: _, ...safeUser } = user;
     res.status(201).json({ ok: true, user: safeUser });
@@ -279,6 +296,72 @@ exports.resetPassword = async (req, res) => {
     res.json({ ok: true });
   } catch (error) {
     logger.error({ err: error }, 'Reset password error');
+    res.status(500).json({ ok: false, message: 'Error en el servidor' });
+  }
+};
+
+exports.verifyEmail = async (req, res) => {
+  const { token } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  if (!token) {
+    return res.redirect(`${frontendUrl}/verify-email?error=missing_token`);
+  }
+
+  try {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const record = await prisma.emailVerificationToken.findFirst({
+      where: { token: hashedToken, expiresAt: { gt: new Date() } }
+    });
+
+    if (!record) {
+      return res.redirect(`${frontendUrl}/verify-email?error=invalid_token`);
+    }
+
+    await prisma.user.update({
+      where: { id: record.userId },
+      data: { emailVerified: true }
+    });
+
+    await prisma.emailVerificationToken.delete({ where: { id: record.id } });
+
+    return res.redirect(`${frontendUrl}/auth?verified=true`);
+  } catch (error) {
+    logger.error({ err: error }, 'Email verification error');
+    return res.redirect(`${frontendUrl}/verify-email?error=server_error`);
+  }
+};
+
+exports.resendVerification = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ ok: false, message: 'No autenticado' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+
+    if (!user) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+    if (user.emailVerified) return res.json({ ok: true, message: 'El correo ya está verificado' });
+
+    // Delete existing tokens
+    await prisma.emailVerificationToken.deleteMany({ where: { userId: user.id } });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    await prisma.emailVerificationToken.create({
+      data: {
+        token: hashedToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      }
+    });
+
+    await emailService.sendEmailVerification(user, rawToken);
+
+    res.json({ ok: true, message: 'Email de verificación enviado' });
+  } catch (error) {
+    logger.error({ err: error }, 'Resend verification error');
     res.status(500).json({ ok: false, message: 'Error en el servidor' });
   }
 };

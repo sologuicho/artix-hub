@@ -171,6 +171,7 @@ app.get('/me', protect, async (req, res) => {
         avatar: u.avatar,
         role: u.role,
         subscriptionTier: u.subscriptionTier,
+        emailVerified: u.emailVerified,
         bio: u.bio,
         country: u.country,
         occupation: u.occupation,

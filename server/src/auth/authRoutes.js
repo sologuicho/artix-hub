@@ -13,6 +13,10 @@ router.post('/login', authLimiter, authController.login);
 router.post('/forgot-password', passwordResetLimiter, authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 
+// Email verification
+router.get('/verify-email', authController.verifyEmail);
+router.post('/resend-verification', require('../middleware/authMiddleware').protect, require('../middleware/csrfMiddleware').verifyCsrf, authController.resendVerification);
+
 // Google
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback',

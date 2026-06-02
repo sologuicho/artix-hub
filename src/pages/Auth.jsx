@@ -72,6 +72,8 @@ const Auth = () => {
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
 
+  const verifiedParam = searchParams.get('verified');
+
   useEffect(() => {
     const errorParam = searchParams.get('error');
     const msgs = {
@@ -272,6 +274,16 @@ const Auth = () => {
               </button>
             ))}
           </div>
+
+          {/* Email verified success */}
+          {verifiedParam === 'true' && (
+            <div
+              className="mb-6 font-sans text-sm"
+              style={{ padding: '0.75rem 1rem', border: '1px solid #22c55e', color: '#22c55e', backgroundColor: 'transparent' }}
+            >
+              Correo verificado correctamente. Ya puedes iniciar sesión.
+            </div>
+          )}
 
           {/* Error */}
           {error && (

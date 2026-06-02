@@ -45,11 +45,13 @@ model User {
 
   readingProgress        ReadingProgress[]
   
+  emailVerified          Boolean                @default(false)
   subscriptionTier       SubscriptionTier       @default(OBSERVER)
   stripeCustomerId       String?                @unique
   stripeSubscriptionId   String?                @unique
   dailyUsage             DailyUsage[]
   passwordResetTokens    PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
 
   @@index([username])
   @@index([email])
@@ -423,6 +425,18 @@ model PasswordResetToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique  // hashed with SHA-256
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([userId])

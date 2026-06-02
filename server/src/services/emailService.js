@@ -207,6 +207,36 @@ exports.sendPaymentConfirmation = async (user, tier, renewalDate) => {
   if (user.email) await sendEmail(user.email, `Tu suscripción ${tierLabel} está activa — Artix Hub`, html);
 };
 
+exports.sendEmailVerification = async (user, rawToken) => {
+  const name = user.name || user.username || 'Usuario';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const verifyLink = `${frontendUrl}/verify-email?token=${rawToken}`;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+    <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:30px;border-radius:10px 10px 0 0;text-align:center;">
+        <h1 style="color:white;margin:0;">Artix Hub</h1>
+      </div>
+      <div style="background:#f9f9f9;padding:30px;border-radius:0 0 10px 10px;">
+        <h2 style="color:#333;margin-top:0;">Verifica tu correo electrónico</h2>
+        <p>Hola <strong>${name}</strong>,</p>
+        <p>Haz clic en el botón de abajo para confirmar tu dirección de correo y activar tu cuenta.</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${verifyLink}" style="background:#667eea;color:white;padding:12px 30px;text-decoration:none;border-radius:5px;display:inline-block;">
+            Verificar correo
+          </a>
+        </div>
+        <p style="font-size:13px;color:#666;">Este link expira en 24 horas. Si no creaste esta cuenta, ignora este email.</p>
+        <p>Saludos,<br><strong>El equipo de Artix Hub</strong></p>
+      </div>
+    </body>
+    </html>
+  `;
+  if (user.email) await sendEmail(user.email, 'Verifica tu correo — Artix Hub', html);
+};
+
 exports.sendPasswordReset = async (user, rawToken) => {
   const name = user.name || user.username || 'Usuario';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
