@@ -35,6 +35,7 @@ import AdminPanel from './pages/AdminPanel';
 import PaymentSuccess from './pages/PaymentSuccess';
 import ResetPassword from './pages/ResetPassword';
 import SubscriptionSettings from './pages/SubscriptionSettings';
+import FeedPage from './pages/FeedPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRoutes() {
@@ -159,6 +160,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <SubscriptionSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="feed"
+            element={
+              <ProtectedRoute>
+                <FeedPage />
               </ProtectedRoute>
             }
           />
