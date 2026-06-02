@@ -4,6 +4,7 @@ import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Clock, User } from '
 import { useAuth } from '../context/AuthContext';
 import CommentSection from '../components/CommentSection';
 import ContentActions from '../components/ContentActions';
+import ReactionButtons from '../components/ReactionButtons';
 import ShareModal from '../components/ShareModal';
 import ScrollToTop from '../components/ScrollToTop';
 import { BACKEND_URL } from '../config/client';
@@ -44,8 +45,7 @@ const BlogPostView = () => {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const [reactions, setReactions] = useState({ like: { count: 0, active: false }, heart: { count: 0, active: false }, clap: { count: 0, active: false }, laugh: { count: 0, active: false } });
   const [saved, setSaved] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -53,6 +53,7 @@ const BlogPostView = () => {
 
   useEffect(() => { fetchPost(); }, [id]);
   useEffect(() => {
+    if (post) { fetchReactionCounts(); }
     if (user && post) {
       checkFollowStatus();
       checkReactionStatus();
@@ -66,7 +67,7 @@ const BlogPostView = () => {
       const data = await res.json();
       if (data.ok) {
         setPost(data.post);
-        setLikesCount(data.post.likesCount || 0);
+        setReactions(prev => ({ ...prev, like: { ...prev.like, count: data.post.likesCount || 0 } }));
       } else {
         setError('Post no encontrado');
       }
@@ -86,11 +87,28 @@ const BlogPostView = () => {
     } catch (_) {}
   };
 
+  const fetchReactionCounts = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reactions/counts?postId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) {
+        setReactions(prev => Object.fromEntries(
+          Object.keys(prev).map(t => [t, { ...prev[t], count: data.counts[t] || 0 }])
+        ));
+      }
+    } catch (_) {}
+  };
+
   const checkReactionStatus = async () => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/reactions/user?postId=${id}`, { credentials: 'include' });
       const data = await res.json();
-      if (data.ok) setLiked(data.reactions.some(r => r.type === 'like'));
+      if (data.ok) {
+        const active = new Set(data.reactions.map(r => r.type));
+        setReactions(prev => Object.fromEntries(
+          Object.keys(prev).map(t => [t, { ...prev[t], active: active.has(t) }])
+        ));
+      }
     } catch (_) {}
   };
 
@@ -102,24 +120,21 @@ const BlogPostView = () => {
     } catch (_) {}
   };
 
-  const handleLike = async () => {
+  const handleReaction = async (type) => {
     if (!user) return navigate('/auth');
-    const prevLiked = liked;
-    const prevCount = likesCount;
-    setLiked(l => !l);
-    setLikesCount(n => prevLiked ? n - 1 : n + 1);
+    const snap = reactions[type];
+    setReactions(r => ({ ...r, [type]: { count: snap.active ? snap.count - 1 : snap.count + 1, active: !snap.active } }));
     try {
       const res = await fetch(`${BACKEND_URL}/api/reactions/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
-        body: JSON.stringify({ postId: id, type: 'like' }),
+        body: JSON.stringify({ postId: id, type }),
       });
       const data = await res.json();
-      if (!data.ok) { setLiked(prevLiked); setLikesCount(prevCount); }
+      if (!data.ok) setReactions(r => ({ ...r, [type]: snap }));
     } catch (_) {
-      setLiked(prevLiked);
-      setLikesCount(prevCount);
+      setReactions(r => ({ ...r, [type]: snap }));
     }
   };
 
@@ -297,13 +312,16 @@ const BlogPostView = () => {
               </div>
             )}
 
+            {/* Reactions */}
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+              <ReactionButtons reactions={reactions} onReaction={handleReaction} disabled={!user} />
+            </div>
+
             {/* Comments */}
-            {showComments && (
-              <div id="blog-comments" style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
-                <h3 className="font-display mb-6" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>Comentarios</h3>
-                <CommentSection postId={post.id} />
-              </div>
-            )}
+            <div id="blog-comments" style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+              <h3 className="font-display mb-6" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>Comentarios</h3>
+              <CommentSection postId={post.id} />
+            </div>
           </article>
 
           {/* Sidebar actions */}
@@ -313,10 +331,10 @@ const BlogPostView = () => {
                 Acciones
               </p>
               <SideAction
-                onClick={handleLike}
+                onClick={() => handleReaction('like')}
                 icon={Heart}
-                label={`Me gusta${likesCount > 0 ? ` · ${likesCount}` : ''}`}
-                active={liked}
+                label={`Me gusta${reactions.like.count > 0 ? ` · ${reactions.like.count}` : ''}`}
+                active={reactions.like.active}
               />
               <SideAction
                 onClick={() => {
@@ -342,7 +360,7 @@ const BlogPostView = () => {
             padding: '0.5rem 1rem',
           }}
         >
-          <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: liked ? 'var(--accent)' : 'var(--muted)' }}>
+          <button onClick={() => handleReaction('like')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: reactions.like.active ? 'var(--accent)' : 'var(--muted)' }}>
             <Heart size={18} />
           </button>
           <button onClick={() => setShowComments(!showComments)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>

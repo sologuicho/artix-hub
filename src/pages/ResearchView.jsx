@@ -7,6 +7,7 @@ import ShareModal from '../components/ShareModal';
 import CollaborationInvitation from '../components/CollaborationInvitation';
 import CommentSection from '../components/CommentSection';
 import ContentActions from '../components/ContentActions';
+import ReactionButtons from '../components/ReactionButtons';
 import ReadingMode from '../components/ReadingMode';
 import ScrollToTop from '../components/ScrollToTop';
 import { generatePDF } from '../utils/pdfGenerator';
@@ -49,18 +50,17 @@ const ResearchView = () => {
   const { user } = useAuth();
   const [research, setResearch] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const [reactions, setReactions] = useState({ like: { count: 0, active: false }, heart: { count: 0, active: false }, clap: { count: 0, active: false }, laugh: { count: 0, active: false } });
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [following, setFollowing] = useState(false);
-  const [showComments, setShowComments] = useState(false);
   const [readingMode, setReadingMode] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [readingProgress, setReadingProgress] = useState(null);
 
   useEffect(() => { fetchResearch(); }, [id]);
   useEffect(() => {
+    if (research) { fetchReactionCounts(); }
     if (user && research?.author?.id) {
       checkFollowStatus();
       fetchReadingProgress();
@@ -108,10 +108,22 @@ const ResearchView = () => {
       const data = await response.json();
       if (data.ok) {
         setResearch(data.research);
-        setLikesCount(data.research.likesCount || 0);
+        setReactions(prev => ({ ...prev, like: { ...prev.like, count: data.research.likesCount || 0 } }));
       }
     } catch (_) {}
     finally { setLoading(false); }
+  };
+
+  const fetchReactionCounts = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reactions/counts?researchId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) {
+        setReactions(prev => Object.fromEntries(
+          Object.keys(prev).map(t => [t, { ...prev[t], count: data.counts[t] || 0 }])
+        ));
+      }
+    } catch (_) {}
   };
 
   const checkReactionStatus = async () => {
@@ -119,28 +131,30 @@ const ResearchView = () => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/reactions/user?researchId=${id}`, { credentials: 'include' });
       const data = await res.json();
-      if (data.ok) setLiked(data.reactions.some(r => r.type === 'like'));
+      if (data.ok) {
+        const active = new Set(data.reactions.map(r => r.type));
+        setReactions(prev => Object.fromEntries(
+          Object.keys(prev).map(t => [t, { ...prev[t], active: active.has(t) }])
+        ));
+      }
     } catch (_) {}
   };
 
-  const handleLike = async () => {
+  const handleReaction = async (type) => {
     if (!user) { navigate('/auth'); return; }
-    const prevLiked = liked;
-    const prevCount = likesCount;
-    setLiked(l => !l);
-    setLikesCount(n => prevLiked ? n - 1 : n + 1);
+    const snap = reactions[type];
+    setReactions(r => ({ ...r, [type]: { count: snap.active ? snap.count - 1 : snap.count + 1, active: !snap.active } }));
     try {
       const res = await fetch(`${BACKEND_URL}/api/reactions/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
-        body: JSON.stringify({ researchId: id, type: 'like' }),
+        body: JSON.stringify({ researchId: id, type }),
       });
       const data = await res.json();
-      if (!data.ok) { setLiked(prevLiked); setLikesCount(prevCount); }
+      if (!data.ok) setReactions(r => ({ ...r, [type]: snap }));
     } catch (_) {
-      setLiked(prevLiked);
-      setLikesCount(prevCount);
+      setReactions(r => ({ ...r, [type]: snap }));
     }
   };
 
@@ -321,15 +335,18 @@ const ResearchView = () => {
               />
             </div>
 
+            {/* Reactions */}
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+              <ReactionButtons reactions={reactions} onReaction={handleReaction} disabled={!user} />
+            </div>
+
             {/* Comments */}
-            {showComments && (
-              <div id="comments-section" style={{ paddingTop: '2rem', borderTop: '1px solid var(--border)', marginTop: '2rem' }}>
-                <h3 className="font-display mb-6" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>
-                  Discusión Académica
-                </h3>
-                <CommentSection articleId={research.id} />
-              </div>
-            )}
+            <div id="comments-section" style={{ paddingTop: '2rem', borderTop: '1px solid var(--border)', marginTop: '2rem' }}>
+              <h3 className="font-display mb-6" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>
+                Discusión Académica
+              </h3>
+              <CommentSection researchId={research.id} />
+            </div>
           </article>
 
           {/* Sidebar */}
@@ -339,19 +356,16 @@ const ResearchView = () => {
                 Acciones
               </p>
               <SideAction
-                onClick={handleLike}
+                onClick={() => handleReaction('like')}
                 icon={Heart}
-                label={`Recomendar${likesCount > 0 ? ` · ${likesCount}` : ''}`}
-                active={liked}
+                label={`Recomendar${reactions.like.count > 0 ? ` · ${reactions.like.count}` : ''}`}
+                active={reactions.like.active}
               />
               <SideAction
-                onClick={() => {
-                  setShowComments(!showComments);
-                  if (!showComments) setTimeout(() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
-                }}
+                onClick={() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' })}
                 icon={MessageCircle}
                 label="Debatir"
-                active={showComments}
+                active={false}
               />
               <SideAction onClick={() => setShowShareModal(true)} icon={Share2} label="Compartir" active={false} />
               <SideAction
@@ -384,10 +398,10 @@ const ResearchView = () => {
             padding: '0.5rem 1rem',
           }}
         >
-          <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: liked ? 'var(--accent)' : 'var(--muted)' }}>
+          <button onClick={() => handleReaction('like')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: reactions.like.active ? 'var(--accent)' : 'var(--muted)' }}>
             <Heart size={18} />
           </button>
-          <button onClick={() => setShowComments(!showComments)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
+          <button onClick={() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
             <MessageCircle size={18} />
           </button>
           <button onClick={() => setReadingMode(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>

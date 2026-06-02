@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
 import CollaborationInvitation from '../components/CollaborationInvitation';
 import CommentSection from '../components/CommentSection';
+import ReactionButtons from '../components/ReactionButtons';
 import ContentActions from '../components/ContentActions';
 import ReadingMode from '../components/ReadingMode';
 import ScrollToTop from '../components/ScrollToTop';
@@ -49,8 +50,7 @@ const ArticleView = () => {
 
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const [reactions, setReactions] = useState({ like: { count: 0, active: false }, heart: { count: 0, active: false }, clap: { count: 0, active: false }, laugh: { count: 0, active: false } });
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -63,6 +63,7 @@ const ArticleView = () => {
 
   useEffect(() => { fetchArticle(); }, [id]);
   useEffect(() => {
+    if (article) { fetchReactionCounts(); }
     if (user && article) { checkFollowStatus(); fetchReadingProgress(); checkReactionStatus(); }
   }, [user, article]);
 
@@ -114,10 +115,22 @@ const ArticleView = () => {
       if (res.status === 403 && data.error === 'limit_reached') { setLimitReached(true); return; }
       if (data.ok) {
         setArticle(data.article);
-        setLikesCount(data.article.likesCount || 0);
+        setReactions(prev => ({ ...prev, like: { ...prev.like, count: data.article.likesCount || 0 } }));
       }
     } catch (_) {}
     finally { setLoading(false); }
+  };
+
+  const fetchReactionCounts = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reactions/counts?articleId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) {
+        setReactions(prev => Object.fromEntries(
+          Object.keys(prev).map(t => [t, { ...prev[t], count: data.counts[t] || 0 }])
+        ));
+      }
+    } catch (_) {}
   };
 
   const checkReactionStatus = async () => {
@@ -125,28 +138,30 @@ const ArticleView = () => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/reactions/user?articleId=${id}`, { credentials: 'include' });
       const data = await res.json();
-      if (data.ok) setLiked(data.reactions.some(r => r.type === 'like'));
+      if (data.ok) {
+        const active = new Set(data.reactions.map(r => r.type));
+        setReactions(prev => Object.fromEntries(
+          Object.keys(prev).map(t => [t, { ...prev[t], active: active.has(t) }])
+        ));
+      }
     } catch (_) {}
   };
 
-  const handleLike = async () => {
+  const handleReaction = async (type) => {
     if (!user) { navigate('/auth'); return; }
-    const prevLiked = liked;
-    const prevCount = likesCount;
-    setLiked(l => !l);
-    setLikesCount(n => prevLiked ? n - 1 : n + 1);
+    const snap = reactions[type];
+    setReactions(r => ({ ...r, [type]: { count: snap.active ? snap.count - 1 : snap.count + 1, active: !snap.active } }));
     try {
       const res = await fetch(`${BACKEND_URL}/api/reactions/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
-        body: JSON.stringify({ articleId: id, type: 'like' }),
+        body: JSON.stringify({ articleId: id, type }),
       });
       const data = await res.json();
-      if (!data.ok) { setLiked(prevLiked); setLikesCount(prevCount); }
+      if (!data.ok) setReactions(r => ({ ...r, [type]: snap }));
     } catch (_) {
-      setLiked(prevLiked);
-      setLikesCount(prevCount);
+      setReactions(r => ({ ...r, [type]: snap }));
     }
   };
 
@@ -395,6 +410,18 @@ const ArticleView = () => {
               </div>
             )}
 
+            {/* Reactions */}
+            <div
+              className="mt-10 pt-8"
+              style={{ borderTop: '1px solid var(--border)' }}
+            >
+              <ReactionButtons
+                reactions={reactions}
+                onReaction={handleReaction}
+                disabled={!user}
+              />
+            </div>
+
             {/* Comments — always visible; sidebar button scrolls here */}
             <div
               id="comments-section"
@@ -421,7 +448,7 @@ const ArticleView = () => {
                 Acciones
               </p>
               <div>
-                <SideAction onClick={handleLike} icon={Heart} label="Me gusta" active={liked} count={likesCount} />
+                <SideAction onClick={() => handleReaction('like')} icon={Heart} label="Me gusta" active={reactions.like.active} count={reactions.like.count} />
                 <SideAction
                   onClick={() => {
                     setShowComments(v => !v);
@@ -455,7 +482,7 @@ const ArticleView = () => {
           }}
         >
           {[
-            { icon: Heart, action: handleLike, active: liked },
+            { icon: Heart, action: () => handleReaction('like'), active: reactions.like.active },
             { icon: MessageCircle, action: () => setShowComments(v => !v) },
             { icon: BookOpen, action: () => setReadingMode(true) },
             { icon: Share2, action: () => setShowShareModal(true) },

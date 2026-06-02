@@ -64,18 +64,19 @@ exports.toggleReaction = async (req, res) => {
   }
 };
 
-// Get reaction counts for post or article
+// Get reaction counts for post, article, or research
 exports.getReactionCounts = async (req, res) => {
   try {
-    const { postId, articleId } = req.query;
+    const { postId, articleId, researchId } = req.query;
 
-    if (!postId && !articleId) {
-      return res.status(400).json({ ok: false, message: 'postId or articleId is required' });
+    if (!postId && !articleId && !researchId) {
+      return res.status(400).json({ ok: false, message: 'postId, articleId, or researchId is required' });
     }
 
     const where = {};
     if (postId) where.postId = postId;
     if (articleId) where.articleId = articleId;
+    if (researchId) where.researchId = researchId;
 
     const reactions = await prisma.reaction.groupBy({
       by: ['type'],
