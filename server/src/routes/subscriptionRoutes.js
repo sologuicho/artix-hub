@@ -140,4 +140,41 @@ router.post('/reactivate', protect, verifyCsrf, async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/subscription/invoices
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get('/invoices', protect, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { stripeCustomerId: true },
+    });
+
+    if (!user?.stripeCustomerId || !stripe) {
+      return res.json({ ok: true, invoices: [] });
+    }
+
+    const list = await stripe.invoices.list({
+      customer: user.stripeCustomerId,
+      limit: 10,
+    });
+
+    const invoices = list.data.map(inv => ({
+      id: inv.id,
+      date: new Date(inv.created * 1000).toISOString(),
+      description: inv.lines.data[0]?.description || 'Suscripción Artix Hub',
+      amount: inv.amount_paid / 100,
+      currency: inv.currency.toUpperCase(),
+      status: inv.status,
+      pdfUrl: inv.invoice_pdf || null,
+    }));
+
+    res.json({ ok: true, invoices });
+  } catch (err) {
+    console.error('[Subscription] Error fetching invoices:', err);
+    res.status(500).json({ ok: false, message: err.message || 'Error al obtener facturas' });
+  }
+});
+
 module.exports = router;
