@@ -36,7 +36,9 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import ResetPassword from './pages/ResetPassword';
 import SubscriptionSettings from './pages/SubscriptionSettings';
 import FeedPage from './pages/FeedPage';
+import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function AppRoutes() {
   const { isAuthenticated, needsProfileSetup } = useAuth();
@@ -171,6 +173,7 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/auth" element={<Auth />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
@@ -186,17 +189,19 @@ function AppRoutes() {
 
 function App() {
   return (
-    <DarkModeProvider>
-      <WallpaperProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <NotificationProvider>
-              <AppRoutes />
-            </NotificationProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </WallpaperProvider>
-    </DarkModeProvider>
+    <ErrorBoundary>
+      <DarkModeProvider>
+        <WallpaperProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                <AppRoutes />
+              </NotificationProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </WallpaperProvider>
+      </DarkModeProvider>
+    </ErrorBoundary>
   );
 }
 
