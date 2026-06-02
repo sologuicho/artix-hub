@@ -145,6 +145,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api', require('./routes/collaborationRoutes'));
 app.use('/api/saved', require('./routes/savedItemRoutes'));
 app.use('/api/follow', require('./routes/followRoutes'));
+app.use('/api/feed', require('./routes/feedRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
