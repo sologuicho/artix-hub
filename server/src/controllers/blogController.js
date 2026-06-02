@@ -76,6 +76,9 @@ exports.getAllBlogPosts = async (req, res) => {
               avatar: true,
             },
           },
+          _count: {
+            select: { comments: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
       }),
