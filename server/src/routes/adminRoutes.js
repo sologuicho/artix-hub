@@ -177,4 +177,68 @@ router.patch('/users/:id/ban', verifyCsrf, async (req, res) => {
   }
 });
 
+// GET /api/admin/content
+router.get('/content', async (req, res) => {
+  try {
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 20);
+    const type  = req.query.type; // article | research | event | blogpost
+
+    const AUTHOR_SEL = { select: { id: true, name: true, email: true } };
+
+    const fetchArticles  = () => prisma.article.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { id: true, title: true, status: true, createdAt: true, authorId: true, author: AUTHOR_SEL } }).then(rs => rs.map(r => ({ ...r, type: 'article' })));
+    const fetchResearch  = () => prisma.research.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { id: true, title: true, status: true, createdAt: true, authorId: true, author: AUTHOR_SEL } }).then(rs => rs.map(r => ({ ...r, type: 'research' })));
+    const fetchEvents    = () => prisma.event.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { id: true, title: true, createdAt: true, creatorId: true, creator: AUTHOR_SEL } }).then(rs => rs.map(r => ({ ...r, status: 'published', authorId: r.creatorId, author: r.creator, type: 'event' })));
+    const fetchBlogPosts = () => prisma.blogPost.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { id: true, title: true, createdAt: true, authorId: true, author: AUTHOR_SEL } }).then(rs => rs.map(r => ({ ...r, status: 'published', type: 'blogpost' })));
+
+    let items = [];
+    if (!type || type === 'article')  items.push(...await fetchArticles());
+    if (!type || type === 'research') items.push(...await fetchResearch());
+    if (!type || type === 'event')    items.push(...await fetchEvents());
+    if (!type || type === 'blogpost') items.push(...await fetchBlogPosts());
+
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const total   = items.length;
+    const offset  = (page - 1) * limit;
+    const content = items.slice(offset, offset + limit).map(({ authorId, creatorId, creator, ...rest }) => rest);
+
+    res.json({ ok: true, content, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  } catch (err) {
+    console.error('Error fetching admin content:', err);
+    res.status(500).json({ ok: false, message: 'Failed to fetch content' });
+  }
+});
+
+// DELETE /api/admin/content/:type/:id
+router.delete('/content/:type/:id', verifyCsrf, async (req, res) => {
+  const { type, id } = req.params;
+  const adminId = req.user.id;
+
+  const MODELS = {
+    article:  { model: 'article',  authorField: 'authorId' },
+    research: { model: 'research', authorField: 'authorId' },
+    event:    { model: 'event',    authorField: 'creatorId' },
+    blogpost: { model: 'blogPost', authorField: 'authorId' },
+  };
+
+  const def = MODELS[type];
+  if (!def) return res.status(400).json({ ok: false, message: 'Tipo de contenido inválido' });
+
+  try {
+    const item = await prisma[def.model].findUnique({ where: { id }, select: { [def.authorField]: true } });
+    if (!item) return res.status(404).json({ ok: false, message: 'Contenido no encontrado' });
+
+    if (item[def.authorField] === adminId) {
+      return res.status(400).json({ ok: false, message: 'No puedes eliminar tu propio contenido desde el panel admin' });
+    }
+
+    await prisma[def.model].delete({ where: { id } });
+    res.json({ ok: true, message: 'Contenido eliminado correctamente' });
+  } catch (err) {
+    console.error('Error deleting content:', err);
+    res.status(500).json({ ok: false, message: 'Failed to delete content' });
+  }
+});
+
 module.exports = router;
