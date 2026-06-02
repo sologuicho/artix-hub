@@ -395,22 +395,20 @@ const ArticleView = () => {
               </div>
             )}
 
-            {/* Comments */}
-            {showComments && (
-              <div
-                id="comments-section"
-                className="mt-12 pt-10"
-                style={{ borderTop: '1px solid var(--border)' }}
+            {/* Comments — always visible; sidebar button scrolls here */}
+            <div
+              id="comments-section"
+              className="mt-12 pt-10"
+              style={{ borderTop: '1px solid var(--border)' }}
+            >
+              <h3
+                className="font-display mb-8"
+                style={{ fontSize: '1.5rem', color: 'var(--text)' }}
               >
-                <h3
-                  className="font-display mb-8"
-                  style={{ fontSize: '1.5rem', color: 'var(--text)' }}
-                >
-                  Discusión
-                </h3>
-                <CommentSection articleId={article.id} />
-              </div>
-            )}
+                Discusión
+              </h3>
+              <CommentSection articleId={article.id} />
+            </div>
           </article>
 
           {/* Sticky sidebar */}

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 import { BACKEND_URL } from '../config/client';
 
-const CommentSection = ({ postId, articleId, researchId, discussionId }) => {
+const CommentSection = ({ postId, articleId, researchId, discussionId, eventId }) => {
   const { isAuthenticated, user } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ const CommentSection = ({ postId, articleId, researchId, discussionId }) => {
 
   useEffect(() => {
     fetchComments();
-  }, [postId, articleId, researchId, discussionId]);
+  }, [postId, articleId, researchId, discussionId, eventId]);
 
   const fetchComments = async () => {
     try {
@@ -26,6 +26,7 @@ const CommentSection = ({ postId, articleId, researchId, discussionId }) => {
       if (articleId) params.append('articleId', articleId);
       if (researchId) params.append('researchId', researchId);
       if (discussionId) params.append('discussionId', discussionId);
+      if (eventId) params.append('eventId', eventId);
 
       const response = await fetch(`${BACKEND_URL}/api/comments?${params.toString()}`, {
         credentials: 'include'
@@ -67,6 +68,7 @@ const CommentSection = ({ postId, articleId, researchId, discussionId }) => {
           articleId: articleId || null,
           researchId: researchId || null,
           discussionId: discussionId || null,
+          eventId: eventId || null,
           content: newComment.trim()
         })
       });
@@ -110,6 +112,7 @@ const CommentSection = ({ postId, articleId, researchId, discussionId }) => {
           articleId: articleId || null,
           researchId: researchId || null,
           discussionId: discussionId || null,
+          eventId: eventId || null,
           parentId,
           content: replyText.trim()
         })
