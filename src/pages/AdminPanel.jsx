@@ -31,6 +31,11 @@ const AdminPanel = () => {
   const [contentType, setContentType] = useState('');
   const [loadingContent, setLoadingContent] = useState(false);
 
+  // Students tab state
+  const [studentVerifications, setStudentVerifications] = useState([]);
+  const [studentPagination, setStudentPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [loadingStudents, setLoadingStudents] = useState(false);
+
   const getCsrfToken = () =>
     document.cookie.split('; ').find(r => r.startsWith('csrf='))?.split('=')[1] || '';
 
@@ -43,6 +48,7 @@ const AdminPanel = () => {
 
   useEffect(() => {
     if (activeTab === 'content') fetchContent(1, contentType);
+    if (activeTab === 'students') fetchStudents(1);
   }, [activeTab, contentType]);
 
   const fetchStats = async () => {
@@ -133,6 +139,50 @@ const AdminPanel = () => {
     } catch { setError('Error de conexión'); }
   };
 
+  const fetchStudents = async (page = 1) => {
+    setLoadingStudents(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/student-verifications?page=${page}&limit=20`, { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok) {
+        setStudentVerifications(data.verifications);
+        setStudentPagination({ page: data.pagination.page, totalPages: data.pagination.totalPages || 1, total: data.pagination.total });
+      } else setError(data.message || 'Error al cargar verificaciones');
+    } catch { setError('Error de conexión'); }
+    finally { setLoadingStudents(false); }
+  };
+
+  const handleApproveStudent = async (id) => {
+    setError(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/student-verifications/${id}/approve`, {
+        method: 'POST',
+        headers: { 'x-csrf-token': getCsrfToken() },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok) setStudentVerifications(vs => vs.filter(v => v.id !== id));
+      else setError(data.message || 'Error al aprobar');
+    } catch { setError('Error de conexión'); }
+  };
+
+  const handleRejectStudent = async (id) => {
+    const reason = window.prompt('Motivo del rechazo (opcional):');
+    if (reason === null) return;
+    setError(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/student-verifications/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() },
+        credentials: 'include',
+        body: JSON.stringify({ reason }),
+      });
+      const data = await res.json();
+      if (res.ok) setStudentVerifications(vs => vs.filter(v => v.id !== id));
+      else setError(data.message || 'Error al rechazar');
+    } catch { setError('Error de conexión'); }
+  };
+
   const handleBanToggle = async (userId, currentBan) => {
     setError(null);
     try {
@@ -207,7 +257,11 @@ const AdminPanel = () => {
 
         {/* Tab navigation */}
         <div className="flex gap-6 mb-8" style={{ borderBottom: '1px solid var(--border)' }}>
-          {[{ id: 'users', label: 'Usuarios' }, { id: 'content', label: 'Contenido' }].map(tab => (
+          {[
+            { id: 'users', label: 'Usuarios' },
+            { id: 'content', label: 'Contenido' },
+            { id: 'students', label: studentPagination.total > 0 ? `Estudiantes (${studentPagination.total})` : 'Estudiantes' },
+          ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -333,6 +387,136 @@ const AdminPanel = () => {
                   disabled={contentPagination.page >= contentPagination.totalPages}
                   className="btn btn-ghost"
                   style={{ padding: 0, opacity: contentPagination.page >= contentPagination.totalPages ? 0.4 : 1 }}
+                >
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Students tab */}
+        {activeTab === 'students' && (
+          <section>
+            <div
+              className="flex items-center justify-between mb-6"
+              style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}
+            >
+              <h2 className="font-display" style={{ fontSize: '1.5rem', color: 'var(--text)' }}>
+                Verificaciones pendientes
+              </h2>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table-editorial">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Fecha solicitud</th>
+                    <th>Documento</th>
+                    <th style={{ textAlign: 'center' }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingStudents ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <td key={j}><div style={{ height: 14, backgroundColor: 'var(--surface)' }} /></td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : studentVerifications.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>
+                        No hay solicitudes pendientes.
+                      </td>
+                    </tr>
+                  ) : studentVerifications.map(v => (
+                    <tr key={v.id}>
+                      <td>
+                        <div>
+                          <p className="font-sans text-sm" style={{ color: 'var(--text)', fontWeight: 500 }}>
+                            {v.user?.name || 'Sin nombre'}
+                          </p>
+                          <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                            @{v.user?.username || 'n/a'}
+                          </p>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="font-sans text-sm" style={{ color: 'var(--muted)' }}>
+                          {v.user?.email}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                          {new Date(v.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </td>
+                      <td>
+                        {v.documentUrl ? (
+                          <a
+                            href={v.documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-sans text-xs"
+                            style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+                          >
+                            Ver imagen →
+                          </a>
+                        ) : (
+                          <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                            {v.email ? `Email: ${v.email}` : '—'}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="flex items-center justify-center gap-4">
+                          <button
+                            onClick={() => handleApproveStudent(v.id)}
+                            className="font-sans text-xs uppercase tracking-wider transition-colors duration-150"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)' }}
+                          >
+                            Aprobar
+                          </button>
+                          <button
+                            onClick={() => handleRejectStudent(v.id)}
+                            className="font-sans text-xs uppercase tracking-wider transition-colors duration-150"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
+                            onMouseEnter={e => { e.currentTarget.style.color = '#e05252'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; }}
+                          >
+                            Rechazar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div
+              className="flex items-center justify-between mt-6 pt-4 font-sans text-xs"
+              style={{ borderTop: '1px solid var(--border)', color: 'var(--muted)' }}
+            >
+              <span>Página {studentPagination.page} de {studentPagination.totalPages}</span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { const p = Math.max(1, studentPagination.page - 1); setStudentPagination(prev => ({ ...prev, page: p })); fetchStudents(p); }}
+                  disabled={studentPagination.page <= 1}
+                  className="btn btn-ghost"
+                  style={{ padding: 0, opacity: studentPagination.page <= 1 ? 0.4 : 1 }}
+                >
+                  <ArrowLeft size={13} />
+                </button>
+                <button
+                  onClick={() => { const p = Math.min(studentPagination.totalPages, studentPagination.page + 1); setStudentPagination(prev => ({ ...prev, page: p })); fetchStudents(p); }}
+                  disabled={studentPagination.page >= studentPagination.totalPages}
+                  className="btn btn-ghost"
+                  style={{ padding: 0, opacity: studentPagination.page >= studentPagination.totalPages ? 0.4 : 1 }}
                 >
                   <ArrowRight size={13} />
                 </button>

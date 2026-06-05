@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, Calendar, BookOpen, ArrowRight, Building2, Sparkles } from 'lucide-react';
+import { FileText, Calendar, BookOpen, ArrowRight, Building2, Sparkles, X } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import usePermissions from '../hooks/usePermissions';
@@ -57,6 +57,8 @@ const ContentRow = ({ title, meta, to, thumbnail }) => (
 );
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
+const STUDENT_BANNER_KEY = 'student_banner_dismissed';
+
 const Dashboard = () => {
   const { t } = useLanguage();
   const { user, loading: authLoading } = useAuth();
@@ -64,6 +66,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showStudentBanner, setShowStudentBanner] = useState(false);
 
   const [stats, setStats] = useState({ articles: 0, posts: 0, events: 0 });
   const [recentArticles, setRecentArticles] = useState([]);
@@ -73,8 +76,16 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       setIsAdmin(user.email === 'floresescobedoluisalberto@gmail.com');
+      if (user.subscriptionTier === 'OBSERVER') {
+        setShowStudentBanner(localStorage.getItem(STUDENT_BANNER_KEY) !== 'true');
+      }
     }
   }, [user]);
+
+  const dismissStudentBanner = () => {
+    localStorage.setItem(STUDENT_BANNER_KEY, 'true');
+    setShowStudentBanner(false);
+  };
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -131,6 +142,33 @@ const Dashboard = () => {
 
   return (
     <div className="site-container py-16" style={{ minHeight: '100vh' }}>
+
+      {/* Student banner for OBSERVER users */}
+      {showStudentBanner && (
+        <div
+          className="flex items-center justify-between mb-8 font-sans text-sm"
+          style={{
+            padding: '0.875rem 1rem',
+            backgroundColor: 'var(--surface)',
+            borderLeft: '3px solid var(--accent)',
+          }}
+        >
+          <Link
+            to="/student-verification"
+            style={{ color: 'var(--text)', textDecoration: 'none' }}
+          >
+            ¿Eres estudiante? Obtén el plan Miembro gratis{' '}
+            <span style={{ color: 'var(--accent)' }}>→</span>
+          </Link>
+          <button
+            onClick={dismissStudentBanner}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', lineHeight: 1, padding: '0 0 0 1rem' }}
+            aria-label="Cerrar"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Welcome heading */}
       <div className="mb-12" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '2rem' }}>

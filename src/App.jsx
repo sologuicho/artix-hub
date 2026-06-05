@@ -39,6 +39,7 @@ import FeedPage from './pages/FeedPage';
 import NotFound from './pages/NotFound';
 import SearchResults from './pages/SearchResults';
 import VerifyEmail from './pages/VerifyEmail';
+import StudentVerification from './pages/StudentVerification';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -176,6 +177,14 @@ function AppRoutes() {
             }
           />
           <Route path="search" element={<SearchResults />} />
+          <Route
+            path="student-verification"
+            element={
+              <ProtectedRoute>
+                <StudentVerification />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/auth" element={<Auth />} />
