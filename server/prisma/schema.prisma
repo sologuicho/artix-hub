@@ -52,9 +52,30 @@ model User {
   dailyUsage             DailyUsage[]
   passwordResetTokens    PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  studentVerification    StudentVerification?
 
   @@index([username])
   @@index([email])
+}
+
+model StudentVerification {
+  id          String                      @id @default(cuid())
+  userId      String                      @unique
+  user        User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email       String?
+  documentUrl String?                     @db.Text
+  status      StudentVerificationStatus   @default(PENDING)
+  reviewNote  String?
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+
+  @@index([status])
+}
+
+enum StudentVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum Role {

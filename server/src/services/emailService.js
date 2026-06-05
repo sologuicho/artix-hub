@@ -237,6 +237,64 @@ exports.sendEmailVerification = async (user, rawToken) => {
   if (user.email) await sendEmail(user.email, 'Verifica tu correo — Artix Hub', html);
 };
 
+exports.sendStudentApproved = async (user) => {
+  const name = user.name || user.username || 'Usuario';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+    <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:#1A1917;padding:30px;text-align:center;">
+        <h1 style="color:#FAFAF8;margin:0;font-size:1.5rem;letter-spacing:0.05em;">ARTIX HUB</h1>
+      </div>
+      <div style="background:#F2F0EC;padding:30px;">
+        <h2 style="color:#1A1917;margin-top:0;">Tu plan Estudiante está activo</h2>
+        <p>Hola <strong>${name}</strong>,</p>
+        <p>Tu verificación estudiantil fue aprobada. Ahora tienes acceso completo al plan Estudiante: publicar artículos, investigaciones y usar el asistente de escritura con IA.</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${frontendUrl}" style="background:#C4451A;color:white;padding:12px 30px;text-decoration:none;display:inline-block;font-family:Arial,sans-serif;font-size:0.875rem;letter-spacing:0.05em;text-transform:uppercase;">
+            Ir a Artix Hub
+          </a>
+        </div>
+        <p>Saludos,<br><strong>El equipo de Artix Hub</strong></p>
+      </div>
+    </body>
+    </html>
+  `;
+  if (user.email) await sendEmail(user.email, 'Tu plan Estudiante está activo — Artix Hub', html);
+};
+
+exports.sendStudentRejected = async (user, reason) => {
+  const name = user.name || user.username || 'Usuario';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+    <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:#1A1917;padding:30px;text-align:center;">
+        <h1 style="color:#FAFAF8;margin:0;font-size:1.5rem;letter-spacing:0.05em;">ARTIX HUB</h1>
+      </div>
+      <div style="background:#F2F0EC;padding:30px;">
+        <h2 style="color:#1A1917;margin-top:0;">Tu solicitud no fue aprobada</h2>
+        <p>Hola <strong>${name}</strong>,</p>
+        <p>Revisamos tu solicitud de verificación estudiantil y no pudimos aprobarla en este momento.</p>
+        ${reason ? `<div style="background:white;padding:16px;border-left:3px solid #C4451A;margin:20px 0;"><p style="margin:0;color:#555;"><strong>Motivo:</strong> ${reason}</p></div>` : ''}
+        <p>Puedes intentarlo de nuevo con un email institucional válido o subiendo un documento actualizado.</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${frontendUrl}/student-verification" style="background:#C4451A;color:white;padding:12px 30px;text-decoration:none;display:inline-block;font-family:Arial,sans-serif;font-size:0.875rem;letter-spacing:0.05em;text-transform:uppercase;">
+            Intentar de nuevo
+          </a>
+        </div>
+        <p>Saludos,<br><strong>El equipo de Artix Hub</strong></p>
+      </div>
+    </body>
+    </html>
+  `;
+  if (user.email) await sendEmail(user.email, 'Sobre tu solicitud de verificación — Artix Hub', html);
+};
+
 exports.sendPasswordReset = async (user, rawToken) => {
   const name = user.name || user.username || 'Usuario';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';

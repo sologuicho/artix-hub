@@ -155,6 +155,7 @@ app.use('/api/feed', require('./routes/feedRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 
 // User routes

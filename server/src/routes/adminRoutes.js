@@ -4,6 +4,7 @@ const prisma = require('../prismaClient');
 const { protect } = require('../middleware/authMiddleware');
 const { checkAdmin } = require('../middleware/checkAdmin');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
+const emailService = require('../services/emailService');
 
 // Base middlewares for all admin routes: protect + checkAdmin
 router.use(protect);
@@ -238,6 +239,86 @@ router.delete('/content/:type/:id', verifyCsrf, async (req, res) => {
   } catch (err) {
     console.error('Error deleting content:', err);
     res.status(500).json({ ok: false, message: 'Failed to delete content' });
+  }
+});
+
+// GET /api/admin/student-verifications
+router.get('/student-verifications', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(50, parseInt(req.query.limit) || 20);
+    const skip = (page - 1) * limit;
+
+    const [verifications, total] = await Promise.all([
+      prisma.studentVerification.findMany({
+        where: { status: 'PENDING' },
+        skip,
+        take: limit,
+        include: {
+          user: { select: { id: true, name: true, email: true, username: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.studentVerification.count({ where: { status: 'PENDING' } }),
+    ]);
+
+    res.json({
+      ok: true,
+      verifications,
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) || 1 },
+    });
+  } catch (err) {
+    console.error('Error fetching student verifications:', err);
+    res.status(500).json({ ok: false, message: 'Failed to fetch student verifications' });
+  }
+});
+
+// POST /api/admin/student-verifications/:id/approve
+router.post('/student-verifications/:id/approve', verifyCsrf, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const verification = await prisma.studentVerification.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+    if (!verification) return res.status(404).json({ ok: false, message: 'Verificación no encontrada.' });
+
+    await prisma.$transaction([
+      prisma.studentVerification.update({ where: { id }, data: { status: 'APPROVED' } }),
+      prisma.user.update({ where: { id: verification.userId }, data: { subscriptionTier: 'STUDENT' } }),
+    ]);
+
+    try { await emailService.sendStudentApproved(verification.user); } catch (_) {}
+
+    res.json({ ok: true, message: 'Verificación aprobada.' });
+  } catch (err) {
+    console.error('Error approving student verification:', err);
+    res.status(500).json({ ok: false, message: 'Failed to approve verification' });
+  }
+});
+
+// POST /api/admin/student-verifications/:id/reject
+router.post('/student-verifications/:id/reject', verifyCsrf, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const verification = await prisma.studentVerification.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+    if (!verification) return res.status(404).json({ ok: false, message: 'Verificación no encontrada.' });
+
+    await prisma.studentVerification.update({
+      where: { id },
+      data: { status: 'REJECTED', reviewNote: reason || '' },
+    });
+
+    try { await emailService.sendStudentRejected(verification.user, reason); } catch (_) {}
+
+    res.json({ ok: true, message: 'Verificación rechazada.' });
+  } catch (err) {
+    console.error('Error rejecting student verification:', err);
+    res.status(500).json({ ok: false, message: 'Failed to reject verification' });
   }
 });
 
