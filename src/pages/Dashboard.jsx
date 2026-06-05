@@ -67,6 +67,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showStudentBanner, setShowStudentBanner] = useState(false);
+  const [studentResult, setStudentResult] = useState(null); // 'verified' | 'pending' | 'already_active'
 
   const [stats, setStats] = useState({ articles: 0, posts: 0, events: 0 });
   const [recentArticles, setRecentArticles] = useState([]);
@@ -79,6 +80,11 @@ const Dashboard = () => {
       if (user.subscriptionTier === 'OBSERVER') {
         setShowStudentBanner(localStorage.getItem(STUDENT_BANNER_KEY) !== 'true');
       }
+    }
+    const result = sessionStorage.getItem('student_result');
+    if (result) {
+      setStudentResult(result);
+      sessionStorage.removeItem('student_result');
     }
   }, [user]);
 
@@ -164,6 +170,54 @@ const Dashboard = () => {
             onClick={dismissStudentBanner}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', lineHeight: 1, padding: '0 0 0 1rem' }}
             aria-label="Cerrar"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Student verification result banners */}
+      {studentResult === 'verified' && (
+        <div
+          className="flex items-center justify-between mb-8 font-sans text-sm"
+          style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--surface)', borderLeft: '3px solid #6dbf6d' }}
+        >
+          <span style={{ color: 'var(--text)' }}>
+            ¡Tu plan Estudiante está activo! Ya puedes publicar artículos y usar el asistente de escritura con IA.
+          </span>
+          <button
+            onClick={() => setStudentResult(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', paddingLeft: '1rem', lineHeight: 1 }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {studentResult === 'pending' && (
+        <div
+          className="flex items-center justify-between mb-8 font-sans text-sm"
+          style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--surface)', borderLeft: '3px solid var(--accent)' }}
+        >
+          <span style={{ color: 'var(--text)' }}>
+            Solicitud enviada — revisaremos tu credencial en 24-48 horas y te notificaremos por email.
+          </span>
+          <button
+            onClick={() => setStudentResult(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', paddingLeft: '1rem', lineHeight: 1 }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {studentResult === 'already_active' && (
+        <div
+          className="flex items-center justify-between mb-8 font-sans text-sm"
+          style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--surface)', borderLeft: '3px solid var(--border)' }}
+        >
+          <span style={{ color: 'var(--muted)' }}>Ya tienes el plan Estudiante activo.</span>
+          <button
+            onClick={() => setStudentResult(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', paddingLeft: '1rem', lineHeight: 1 }}
           >
             <X size={14} />
           </button>

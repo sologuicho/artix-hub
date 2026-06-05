@@ -73,6 +73,8 @@ const Auth = () => {
   const [forgotLoading, setForgotLoading] = useState(false);
 
   const verifiedParam = searchParams.get('verified');
+  const intentParam   = searchParams.get('intent');
+  const isStudentIntent = intentParam === 'student';
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -83,6 +85,7 @@ const Auth = () => {
       oauth_cancelled: 'La autenticación fue cancelada.',
     };
     if (errorParam) setError(msgs[errorParam] || 'Ocurrió un error durante la autenticación.');
+    if (isStudentIntent) setActiveTab('signup');
   }, [searchParams]);
 
   const checkUsername = async (username) => {
@@ -172,7 +175,7 @@ const Auth = () => {
       const data = await res.json();
       if (data.ok) {
         await checkAuth();
-        navigate('/profile/setup');
+        navigate(isStudentIntent ? '/student-verification' : '/profile/setup');
       } else {
         setError(data.message || 'Error al registrar el usuario');
       }
@@ -282,6 +285,23 @@ const Auth = () => {
               style={{ padding: '0.75rem 1rem', border: '1px solid #22c55e', color: '#22c55e', backgroundColor: 'transparent' }}
             >
               Correo verificado correctamente. Ya puedes iniciar sesión.
+            </div>
+          )}
+
+          {/* Student intent banner */}
+          {isStudentIntent && (
+            <div
+              className="mb-6 font-sans text-sm"
+              style={{
+                padding: '0.75rem 1rem',
+                backgroundColor: 'var(--surface)',
+                borderLeft: '3px solid var(--accent)',
+                color: 'var(--muted)',
+                lineHeight: 1.6,
+              }}
+            >
+              Estás creando una cuenta para acceder al{' '}
+              <span style={{ color: 'var(--text)', fontWeight: 500 }}>plan Estudiante gratuito</span>.
             </div>
           )}
 

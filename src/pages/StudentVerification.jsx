@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config/client';
+
+const SUPERIOR_TIERS = ['RESEARCHER', 'VISIONARY', 'TEAM'];
 
 const StudentVerification = () => {
   const { user, refreshUser } = useAuth();
@@ -11,15 +13,19 @@ const StudentVerification = () => {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(null); // null | 'auto' | 'pending'
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
 
+  const isAlreadyStudent = user?.subscriptionTier === 'STUDENT';
+  const isSuperiorTier = user && SUPERIOR_TIERS.includes(user.subscriptionTier);
+
   useEffect(() => {
-    if (user?.subscriptionTier === 'STUDENT') {
+    // Redirect away only if it would be confusing — STUDENT goes to dashboard
+    if (isAlreadyStudent) {
+      sessionStorage.setItem('student_result', 'already_active');
       navigate('/', { replace: true });
     }
-  }, [user, navigate]);
+  }, [isAlreadyStudent, navigate]);
 
   const getCsrf = () =>
     document.cookie.split('; ').find(r => r.startsWith('csrf='))?.split('=')[1] || '';
@@ -38,7 +44,8 @@ const StudentVerification = () => {
       const data = await res.json();
       if (res.ok && data.autoApproved) {
         await refreshUser?.();
-        setDone('auto');
+        sessionStorage.setItem('student_result', 'verified');
+        navigate('/');
       } else {
         setError(data.message || 'Error al verificar el email.');
       }
@@ -80,7 +87,8 @@ const StudentVerification = () => {
         });
         const data = await res.json();
         if (res.ok) {
-          setDone('pending');
+          sessionStorage.setItem('student_result', 'pending');
+          navigate('/');
         } else {
           setError(data.message || 'Error al enviar la solicitud.');
         }
@@ -93,40 +101,24 @@ const StudentVerification = () => {
     reader.onerror = () => { setError('Error al leer el archivo.'); setLoading(false); };
   };
 
-  if (done === 'auto') {
+  // Already has a superior plan — show message in place of the form
+  if (isSuperiorTier) {
     return (
       <div className="site-container py-24" style={{ minHeight: '100vh' }}>
         <div style={{ maxWidth: 480 }}>
-          <span className="category-tag">Verificación</span>
+          <span className="category-tag">Plan Estudiante</span>
           <h1 className="font-display mt-2" style={{ fontSize: '2rem', color: 'var(--text)' }}>
-            Plan Estudiante activo
+            Ya tienes un plan superior
           </h1>
           <p className="font-sans mt-4" style={{ color: 'var(--muted)', lineHeight: 1.7 }}>
-            Tu email institucional fue verificado. Ya tienes acceso completo para publicar artículos,
-            investigaciones y usar el asistente de escritura con IA.
+            Tu plan actual incluye todas las funciones del plan Estudiante y más. No necesitas verificar tu estatus estudiantil.
           </p>
-          <Link to="/" className="btn btn-primary mt-8 inline-block">
-            Ir al Dashboard →
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (done === 'pending') {
-    return (
-      <div className="site-container py-24" style={{ minHeight: '100vh' }}>
-        <div style={{ maxWidth: 480 }}>
-          <span className="category-tag">Verificación</span>
-          <h1 className="font-display mt-2" style={{ fontSize: '2rem', color: 'var(--text)' }}>
-            Solicitud enviada
-          </h1>
-          <p className="font-sans mt-4" style={{ color: 'var(--muted)', lineHeight: 1.7 }}>
-            Revisaremos tu documento en 24–48 horas. Te notificaremos por email cuando tu plan Estudiante esté activo.
-          </p>
-          <Link to="/" className="btn btn-outline mt-8 inline-block">
-            Volver al inicio
-          </Link>
+          <button
+            onClick={() => navigate('/')}
+            className="btn btn-outline mt-8"
+          >
+            Ir al Dashboard
+          </button>
         </div>
       </div>
     );
@@ -135,18 +127,24 @@ const StudentVerification = () => {
   return (
     <div className="site-container py-16" style={{ minHeight: '100vh' }}>
       <div style={{ maxWidth: 520 }}>
+
+        {/* Contextual header */}
         <span className="category-tag">Plan Estudiante</span>
         <h1 className="font-display mt-2" style={{ fontSize: '2rem', color: 'var(--text)', lineHeight: 1.15 }}>
-          Verifica que eres estudiante
+          Verifica tu estatus estudiantil
         </h1>
-        <p className="font-sans mt-3 mb-12" style={{ color: 'var(--muted)', lineHeight: 1.7 }}>
-          Obtén acceso gratuito para publicar y colaborar.
+        <p className="font-sans mt-3" style={{ color: 'var(--muted)', lineHeight: 1.7 }}>
+          Una vez verificado, tu cuenta tendrá acceso gratuito a todo lo del plan Miembro — publicar artículos, investigaciones y el asistente de escritura con IA.
         </p>
 
         {/* Step indicator */}
-        <div className="flex items-center gap-3 mb-10">
-          {[1, 2].map(n => (
+        <div className="flex items-center gap-3 mt-10 mb-10">
+          {[
+            { n: 1, label: 'Email institucional' },
+            { n: 2, label: 'Credencial' },
+          ].map(({ n, label }, i) => (
             <div key={n} className="flex items-center gap-3">
+              {i > 0 && <span style={{ color: 'var(--border)' }}>—</span>}
               <div
                 style={{
                   width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -157,22 +155,27 @@ const StudentVerification = () => {
               >
                 {n}
               </div>
-              <span className="font-sans text-xs uppercase tracking-wider" style={{ color: step === n ? 'var(--text)' : 'var(--muted)' }}>
-                {n === 1 ? 'Email institucional' : 'Credencial'}
+              <span
+                className="font-sans text-xs uppercase tracking-wider"
+                style={{ color: step === n ? 'var(--text)' : 'var(--muted)' }}
+              >
+                {label}
               </span>
-              {n < 2 && <span style={{ color: 'var(--border)', margin: '0 0.25rem' }}>—</span>}
             </div>
           ))}
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-6 font-sans text-sm" style={{ color: 'var(--accent)', padding: '0.75rem', border: '1px solid var(--accent)' }}>
+          <div
+            className="mb-6 font-sans text-sm"
+            style={{ color: 'var(--accent)', padding: '0.75rem', border: '1px solid var(--accent)' }}
+          >
             {error}
           </div>
         )}
 
-        {/* Step 1 */}
+        {/* Step 1 — institutional email */}
         {step === 1 && (
           <form onSubmit={handleEmailSubmit} className="flex flex-col gap-5">
             <div>
@@ -203,7 +206,7 @@ const StudentVerification = () => {
             <button
               type="button"
               onClick={() => { setStep(2); setError(''); }}
-              className="font-sans text-sm text-left transition-colors"
+              className="font-sans text-sm text-left"
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
             >
               No tengo email institucional →
@@ -211,14 +214,13 @@ const StudentVerification = () => {
           </form>
         )}
 
-        {/* Step 2 */}
+        {/* Step 2 — document upload */}
         {step === 2 && (
           <form onSubmit={handleDocumentSubmit} className="flex flex-col gap-5">
             <p className="font-sans text-sm" style={{ color: 'var(--muted)', lineHeight: 1.7 }}>
               Sube una foto de tu credencial estudiantil o constancia de estudios vigente.
             </p>
 
-            {/* Drop zone */}
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -227,14 +229,11 @@ const StudentVerification = () => {
               style={{
                 border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
                 aspectRatio: '4/3',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer',
                 backgroundColor: 'var(--surface)',
                 overflow: 'hidden',
-                position: 'relative',
                 transition: 'border-color 0.15s',
               }}
             >
@@ -275,7 +274,7 @@ const StudentVerification = () => {
             <button
               type="button"
               onClick={() => { setStep(1); setError(''); setFile(null); setPreview(null); }}
-              className="font-sans text-sm text-left transition-colors"
+              className="font-sans text-sm text-left"
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
             >
               ← Tengo email institucional

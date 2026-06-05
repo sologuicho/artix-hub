@@ -124,17 +124,30 @@ const PricingSection = () => {
   const [annual, setAnnual] = useState(false);
   const [planType, setPlanType] = useState('individual');
   const [openFaq, setOpenFaq] = useState(null);
+  const [studentMsg, setStudentMsg] = useState('');
 
   const isStudent = user?.subscriptionTier === 'STUDENT';
   const isResearcher = user?.subscriptionTier === 'RESEARCHER';
 
   const handleSelectPlan = async (plan) => {
-    if (!user) { window.location.href = '/auth'; return; }
-
     if (plan.ctaAction === 'verify') {
+      if (!user) {
+        navigate('/auth?intent=student');
+        return;
+      }
+      if (user.subscriptionTier === 'STUDENT') {
+        setStudentMsg('Ya tienes el plan Estudiante activo.');
+        return;
+      }
+      if (['RESEARCHER', 'VISIONARY', 'TEAM'].includes(user.subscriptionTier)) {
+        setStudentMsg('Ya tienes un plan superior al Estudiante.');
+        return;
+      }
       navigate('/student-verification');
       return;
     }
+
+    if (!user) { navigate('/auth'); return; }
 
     if (plan.ctaAction === 'free') return;
 
@@ -337,6 +350,22 @@ const PricingSection = () => {
                 );
               })}
             </div>
+
+            {/* Student plan inline message */}
+            {studentMsg && (
+              <div
+                className="flex items-center justify-between mt-4 font-sans text-sm"
+                style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--surface)', borderLeft: '3px solid var(--accent)' }}
+              >
+                <span style={{ color: 'var(--text)' }}>{studentMsg}</span>
+                <button
+                  onClick={() => setStudentMsg('')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', paddingLeft: '1rem', lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
 
             {/* Comparison table */}
             <div className="mt-20 mb-6">
