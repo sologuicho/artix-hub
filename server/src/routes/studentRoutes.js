@@ -11,7 +11,7 @@ const logger = require('../lib/logger');
 const applyLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: 3,
-  keyGenerator: (req) => req.user?.id || req.ip,
+  keyGenerator: (req) => req.user.id,
   standardHeaders: true,
   legacyHeaders: false,
   message: { ok: false, message: 'Máximo 3 solicitudes por día.' },
