@@ -27,13 +27,16 @@ const SideAction = ({ onClick, icon: Icon, label, active, disabled }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider w-full text-left"
+    className="flex items-center gap-2 font-sans w-full text-left"
     style={{
       background: 'none', border: 'none',
       borderBottom: '1px solid var(--border)',
-      padding: '0.875rem 0',
+      padding: '0.75rem 0',
       cursor: disabled ? 'wait' : 'pointer',
       color: active ? 'var(--text)' : 'var(--muted)',
+      fontSize: '0.6875rem',
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
       transition: 'color 0.15s',
       opacity: disabled ? 0.5 : 1,
     }}
@@ -218,6 +221,7 @@ const ResearchView = () => {
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
       <div className="site-container py-12">
+
         {/* Back */}
         <button
           onClick={() => navigate('/research')}
@@ -230,118 +234,225 @@ const ResearchView = () => {
         <CollaborationInvitation type="research" itemId={id} onUpdate={fetchResearch} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-12 items-start">
+
           {/* Article */}
-          <article style={{ maxWidth: '720px' }}>
-            {/* Tags + status */}
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              {research.category && <span className="category-tag">{research.category}</span>}
-              {research.status && (
-                <span className="font-sans text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
-                  {research.status}
-                </span>
-              )}
-              {research.tags?.map((tag, i) => (
-                <span key={i} className="font-sans text-xs" style={{ color: 'var(--muted)' }}>#{tag}</span>
-              ))}
-            </div>
+          <article>
 
-            {/* Title */}
-            <h1
-              className="font-display"
-              style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', lineHeight: 1.15, color: 'var(--text)', marginBottom: '1.5rem' }}
+            {/* ── Paper header ── */}
+            <header
+              style={{
+                borderTop: '4px solid var(--accent)',
+                borderBottom: '1px solid var(--border)',
+                padding: '2rem 0',
+                marginBottom: '2.5rem',
+              }}
             >
-              {research.title}
-            </h1>
+              {/* Journal label */}
+              <p
+                className="font-sans text-xs uppercase tracking-widest"
+                style={{ color: 'var(--accent)', marginBottom: '0.75rem' }}
+              >
+                Investigación{research.category ? ` · ${research.category}` : ''}
+              </p>
 
-            {/* Byline */}
-            <div
-              className="flex items-center justify-between gap-4 flex-wrap py-5 mb-6"
-              style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
-            >
-              <Link to={`/profile/${research.author?.id}`} className="flex items-center gap-3">
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
-                  overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  {research.author?.avatar ? (
-                    <img src={research.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <User size={16} style={{ color: 'var(--muted)' }} />
+              {/* Title */}
+              <h1
+                className="font-display"
+                style={{
+                  fontSize: 'clamp(1.6rem, 4vw, 2.75rem)',
+                  lineHeight: 1.15,
+                  color: 'var(--text)',
+                  marginBottom: '1.75rem',
+                }}
+              >
+                {research.title}
+              </h1>
+
+              {/* Meta row: author left, key-value grid right */}
+              <div
+                className="flex items-start justify-between gap-6 flex-wrap"
+              >
+                {/* Author + date */}
+                <div className="flex items-center gap-3">
+                  <Link to={`/profile/${research.author?.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: '50%',
+                      backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+                      overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {research.author?.avatar ? (
+                        <img src={research.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <User size={16} style={{ color: 'var(--muted)' }} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-sans text-sm font-medium" style={{ color: 'var(--text)', marginBottom: '0.2rem' }}>
+                        {research.author?.name || 'Investigador'}
+                      </p>
+                      <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                        {formatDate(research.createdAt)}
+                      </p>
+                      <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                        <Clock size={10} style={{ display: 'inline', marginRight: '0.25rem', verticalAlign: 'middle' }} />
+                        Tiempo de lectura: {Math.ceil((research.content?.length || 0) / 1000)} min
+                      </p>
+                    </div>
+                  </Link>
+
+                  {user && research.author?.id && user.id !== research.author.id && (
+                    <button
+                      onClick={handleFollow}
+                      className="btn btn-ghost"
+                      style={{
+                        fontSize: '0.6875rem', padding: '0.375rem 0', marginLeft: '0.5rem',
+                        borderBottom: `1px solid ${following ? 'var(--border)' : 'var(--text)'}`,
+                        color: following ? 'var(--muted)' : 'var(--text)',
+                      }}
+                    >
+                      {following ? 'Siguiendo' : 'Seguir'}
+                    </button>
+                  )}
+
+                  {user && (
+                    <ContentActions
+                      type="research"
+                      itemId={research.id}
+                      authorId={research.authorId || research.author?.id}
+                      author={research.author}
+                      onDelete={() => navigate('/research')}
+                    />
                   )}
                 </div>
-                <div>
-                  <p className="font-sans text-sm font-medium" style={{ color: 'var(--text)' }}>
-                    {research.author?.name || 'Investigador'}
-                  </p>
-                  <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
-                    {formatDate(research.createdAt)} · {Math.ceil((research.content?.length || 0) / 1000)} min de lectura
-                  </p>
+
+                {/* Mini metadata grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: '0.75rem', rowGap: '0.35rem', alignItems: 'baseline' }}>
+                  {research.status && (
+                    <>
+                      <span className="font-mono text-xs" style={{ color: 'var(--muted)', whiteSpace: 'nowrap' }}>Status</span>
+                      <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>{research.status}</span>
+                    </>
+                  )}
+                  {research.category && (
+                    <>
+                      <span className="font-mono text-xs" style={{ color: 'var(--muted)', whiteSpace: 'nowrap' }}>Campo</span>
+                      <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>{research.category}</span>
+                    </>
+                  )}
+                  {research.tags?.length > 0 && (
+                    <>
+                      <span className="font-mono text-xs" style={{ color: 'var(--muted)', whiteSpace: 'nowrap' }}>Tags</span>
+                      <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>
+                        {research.tags.map(tag => `#${tag}`).join(' ')}
+                      </span>
+                    </>
+                  )}
                 </div>
-              </Link>
-
-              <div className="flex items-center gap-3">
-                {user && research.author?.id && user.id !== research.author.id && (
-                  <button
-                    onClick={handleFollow}
-                    className="btn btn-ghost"
-                    style={{
-                      fontSize: '0.6875rem', padding: '0.375rem 0',
-                      borderBottom: `1px solid ${following ? 'var(--border)' : 'var(--text)'}`,
-                      color: following ? 'var(--muted)' : 'var(--text)',
-                    }}
-                  >
-                    {following ? 'Siguiendo' : 'Seguir'}
-                  </button>
-                )}
-                {user && (
-                  <ContentActions
-                    type="research"
-                    itemId={research.id}
-                    authorId={research.authorId || research.author?.id}
-                    author={research.author}
-                    onDelete={() => navigate('/research')}
-                  />
-                )}
               </div>
-            </div>
+            </header>
 
-            {/* Abstract */}
+            {/* ── Abstract ── */}
             {research.abstract && (
-              <div style={{ padding: '1.25rem 1.5rem', borderLeft: '3px solid var(--accent)', backgroundColor: 'var(--surface)', marginBottom: '2rem' }}>
-                <p className="font-sans text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--accent)' }}>Abstract</p>
-                <p className="font-sans text-sm" style={{ color: 'var(--text)', lineHeight: 1.7 }}>
+              <div
+                style={{
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--surface)',
+                  padding: '1.5rem 2rem',
+                  marginBottom: '2.5rem',
+                  position: 'relative',
+                }}
+              >
+                <p
+                  className="font-sans text-xs uppercase tracking-widest"
+                  style={{ color: 'var(--accent)', marginBottom: '0.75rem' }}
+                >
+                  Abstract
+                </p>
+                <p
+                  className="font-sans text-sm"
+                  style={{ color: 'var(--text)', lineHeight: 1.8 }}
+                >
                   {research.abstract}
                 </p>
               </div>
             )}
 
-            {/* Cover image */}
+            {/* ── Cover image ── */}
             {research.coverUrl && (
-              <div style={{ marginBottom: '2rem', aspectRatio: '16/9', overflow: 'hidden' }}>
-                <img src={research.coverUrl} alt={research.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ marginBottom: '2.5rem' }}>
+                <div style={{ width: '100%', overflow: 'hidden' }}>
+                  <img
+                    src={research.coverUrl}
+                    alt={research.title}
+                    style={{ width: '100%', display: 'block', objectFit: 'cover' }}
+                  />
+                </div>
+                <p
+                  className="font-sans text-xs"
+                  style={{ color: 'var(--muted)', textAlign: 'center', marginTop: '0.5rem' }}
+                >
+                  Fig. 1 — {research.title}
+                </p>
               </div>
             )}
 
-            {/* Paginated reader */}
-            <div className="my-8">
-              <PaginatedReader
-                content={research.content}
-                title={research.title}
-                contentId={research.id}
-                contentType="research"
-                initialProgress={readingProgress}
-              />
+            {/* ── Content ── */}
+            <div
+              style={{
+                fontSize: '1rem',
+                lineHeight: 1.85,
+                maxWidth: '65ch',
+                color: 'var(--text)',
+              }}
+            >
+              <div className="my-8">
+                <PaginatedReader
+                  content={research.content}
+                  title={research.title}
+                  contentId={research.id}
+                  contentType="research"
+                  initialProgress={readingProgress}
+                />
+              </div>
             </div>
 
-            {/* Reactions */}
+            {/* ── Reactions ── */}
             <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
               <ReactionButtons reactions={reactions} onReaction={handleReaction} disabled={!user} />
             </div>
 
-            {/* Comments */}
+            {/* ── Citation box ── */}
+            <div
+              style={{
+                border: '1px solid var(--border)',
+                padding: '1rem 1.5rem',
+                backgroundColor: 'var(--surface)',
+                marginTop: '2rem',
+              }}
+            >
+              <p
+                className="font-sans text-xs uppercase tracking-widest"
+                style={{ color: 'var(--muted)', marginBottom: '0.5rem' }}
+              >
+                Citar como
+              </p>
+              <p
+                className="font-mono text-xs"
+                style={{ color: 'var(--text)', lineHeight: 1.6 }}
+              >
+                {research.author?.name || 'Autor'} ({new Date(research.createdAt).getFullYear()}). {research.title}. <em>Artix Hub</em>.
+              </p>
+            </div>
+
+            {/* ── Comments ── */}
             <div id="comments-section" style={{ paddingTop: '2rem', borderTop: '1px solid var(--border)', marginTop: '2rem' }}>
+              <p
+                className="font-sans text-xs uppercase tracking-widest"
+                style={{ color: 'var(--muted)', marginBottom: '0.5rem' }}
+              >
+                Foro de debate
+              </p>
               <h3 className="font-display mb-6" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>
                 Discusión Académica
               </h3>
@@ -349,7 +460,7 @@ const ResearchView = () => {
             </div>
           </article>
 
-          {/* Sidebar */}
+          {/* ── Sidebar ── */}
           <aside className="hidden lg:block" style={{ paddingTop: '0.5rem' }}>
             <div style={{ position: 'sticky', top: '6rem' }}>
               <p className="font-sans text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
@@ -387,29 +498,6 @@ const ResearchView = () => {
               />
             </div>
           </aside>
-        </div>
-
-        {/* Mobile floating bar */}
-        <div
-          className="fixed lg:hidden z-40 flex items-center gap-1"
-          style={{
-            bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
-            backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
-            padding: '0.5rem 1rem',
-          }}
-        >
-          <button onClick={() => handleReaction('like')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: reactions.like.active ? 'var(--accent)' : 'var(--muted)' }}>
-            <Heart size={18} />
-          </button>
-          <button onClick={() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
-            <MessageCircle size={18} />
-          </button>
-          <button onClick={() => setReadingMode(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
-            <BookOpen size={18} />
-          </button>
-          <button onClick={() => setShowShareModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
-            <Share2 size={18} />
-          </button>
         </div>
       </div>
 

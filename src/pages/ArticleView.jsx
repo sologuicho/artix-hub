@@ -22,16 +22,25 @@ const SideAction = ({ onClick, icon: Icon, label, active, count, disabled }) => 
     disabled={disabled}
     className="w-full flex items-center gap-3 font-sans text-xs uppercase tracking-wider transition-colors duration-150"
     style={{
-      padding: '0.625rem 0',
+      padding: '0.5rem 0.75rem',
       background: 'none',
       border: 'none',
-      borderBottom: '1px solid var(--border)',
+      borderRadius: 0,
       color: active ? 'var(--accent)' : 'var(--muted)',
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.5 : 1,
+      width: '100%',
     }}
-    onMouseEnter={e => { if (!disabled && !active) e.currentTarget.style.color = 'var(--text)'; }}
-    onMouseLeave={e => { if (!disabled && !active) e.currentTarget.style.color = 'var(--muted)'; }}
+    onMouseEnter={e => {
+      if (!disabled) {
+        e.currentTarget.style.backgroundColor = 'var(--surface)';
+        if (!active) e.currentTarget.style.color = 'var(--text)';
+      }
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.backgroundColor = 'transparent';
+      if (!disabled && !active) e.currentTarget.style.color = 'var(--muted)';
+    }}
   >
     <Icon size={14} />
     <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
@@ -61,11 +70,27 @@ const ArticleView = () => {
   const [limitReached, setLimitReached] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
 
+  // Reading progress bar state
+  const [scrollProgress, setScrollProgress] = useState(0);
+
   useEffect(() => { fetchArticle(); }, [id]);
   useEffect(() => {
     if (article) { fetchReactionCounts(); }
     if (user && article) { checkFollowStatus(); fetchReadingProgress(); checkReactionStatus(); }
   }, [user, article]);
+
+  // Scroll progress effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      const windowHeight = window.innerHeight;
+      const progress = (scrollY / (docHeight - windowHeight)) * 100;
+      setScrollProgress(Math.min(100, Math.max(0, progress)));
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const getCsrfToken = () => {
     for (const c of document.cookie.split(';')) {
@@ -249,132 +274,265 @@ const ArticleView = () => {
 
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+
+      {/* Reading progress bar */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          height: '3px',
+          width: `${scrollProgress}%`,
+          backgroundColor: 'var(--accent)',
+          zIndex: 100,
+          transition: 'width 0.1s',
+        }}
+      />
+
+      {/* Hero section */}
+      {article.coverUrl ? (
+        <div style={{ position: 'relative', aspectRatio: '21/9', overflow: 'hidden', width: '100%' }}>
+          <img
+            src={article.coverUrl}
+            alt={article.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          {/* Dark gradient overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)',
+            }}
+          />
+          {/* Hero content: back nav + title + byline */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              padding: '1.75rem 2rem',
+            }}
+          >
+            {/* Back nav inside hero */}
+            <button
+              onClick={() => navigate('/articles')}
+              className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider transition-colors duration-150 self-start"
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
+            >
+              <ArrowLeft size={12} /> Artículos
+            </button>
+
+            {/* Title + byline at bottom of hero */}
+            <div style={{ maxWidth: '860px' }}>
+              {article.category && (
+                <span className="category-tag mb-4" style={{ display: 'inline-block' }}>
+                  {article.category}
+                </span>
+              )}
+              <h1
+                className="font-display"
+                style={{
+                  fontSize: 'clamp(1.75rem, 4vw, 3.25rem)',
+                  color: '#fff',
+                  lineHeight: 1.1,
+                  marginBottom: '1.25rem',
+                  textShadow: '0 2px 12px rgba(0,0,0,0.4)',
+                }}
+              >
+                {article.title}
+              </h1>
+
+              {/* Byline */}
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <Link to={`/profile/${article.author?.id}`} className="flex items-center gap-3">
+                  {article.author?.avatar ? (
+                    <img
+                      src={article.author.avatar}
+                      alt=""
+                      style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.3)' }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        backgroundColor: 'rgba(255,255,255,0.15)',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <span className="font-sans text-xs" style={{ color: '#fff' }}>
+                        {(article.author?.name || 'A').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-sans text-sm font-medium" style={{ color: '#fff', lineHeight: 1.3 }}>
+                      {article.author?.name || 'Anónimo'}
+                    </p>
+                    <p className="font-sans text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                      {formatDate(article.createdAt)}
+                      {' · '}
+                      <Clock size={10} style={{ display: 'inline', marginBottom: 1 }} />
+                      {' '}{Math.ceil((article.content?.length || 0) / 1000)} min
+                    </p>
+                  </div>
+                </Link>
+
+                <div className="flex items-center gap-3">
+                  {user && article.author?.id && user.id !== article.author.id && (
+                    <button
+                      onClick={handleFollow}
+                      className={`btn ${following ? 'btn-ghost' : 'btn-outline'}`}
+                      style={{ padding: '0.375rem 1rem', fontSize: '0.625rem', color: following ? 'rgba(255,255,255,0.7)' : '#fff', borderColor: 'rgba(255,255,255,0.5)' }}
+                    >
+                      {following ? 'Siguiendo' : 'Seguir'}
+                    </button>
+                  )}
+                  {user && (
+                    <ContentActions
+                      type="article"
+                      itemId={article.id}
+                      authorId={article.authorId || article.author?.id}
+                      author={article.author}
+                      onDelete={() => navigate('/articles')}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* No cover fallback: regular title section */
+        <div className="site-container pt-12 pb-0">
+          {/* Back nav */}
+          <button
+            onClick={() => navigate('/articles')}
+            className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10 transition-colors duration-150"
+            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
+          >
+            <ArrowLeft size={12} /> Artículos
+          </button>
+
+          {/* Meta */}
+          <div className="flex flex-wrap items-center gap-3 mb-5">
+            {article.category && (
+              <span className="category-tag">{article.category}</span>
+            )}
+            {article.tags?.map((tag, i) => (
+              <span
+                key={i}
+                className="font-sans text-xs"
+                style={{ color: 'var(--muted)' }}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+
+          {/* Title */}
+          <h1
+            className="font-display mb-6"
+            style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', color: 'var(--text)', lineHeight: 1.15, maxWidth: '720px' }}
+          >
+            {article.title}
+          </h1>
+
+          {/* Byline */}
+          <div
+            className="flex items-center justify-between py-5 mb-0"
+            style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+          >
+            <Link to={`/profile/${article.author?.id}`} className="flex items-center gap-3 group">
+              {article.author?.avatar ? (
+                <img
+                  src={article.author.avatar}
+                  alt=""
+                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    backgroundColor: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                    {(article.author?.name || 'A').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div>
+                <p
+                  className="font-sans text-sm font-medium transition-colors duration-150"
+                  style={{ color: 'var(--text)' }}
+                >
+                  {article.author?.name || 'Anónimo'}
+                </p>
+                <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                  {formatDate(article.createdAt)}
+                  {' · '}
+                  <Clock size={10} style={{ display: 'inline', marginBottom: 1 }} />
+                  {' '}{Math.ceil((article.content?.length || 0) / 1000)} min
+                </p>
+              </div>
+            </Link>
+
+            <div className="flex items-center gap-3">
+              {user && article.author?.id && user.id !== article.author.id && (
+                <button
+                  onClick={handleFollow}
+                  className={`btn ${following ? 'btn-ghost' : 'btn-outline'}`}
+                  style={{ padding: '0.375rem 1rem', fontSize: '0.625rem' }}
+                >
+                  {following ? 'Siguiendo' : 'Seguir'}
+                </button>
+              )}
+              {user && (
+                <ContentActions
+                  type="article"
+                  itemId={article.id}
+                  authorId={article.authorId || article.author?.id}
+                  author={article.author}
+                  onDelete={() => navigate('/articles')}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content area */}
       <div className="site-container py-12">
 
-        {/* Back nav */}
-        <button
-          onClick={() => navigate('/articles')}
-          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10 transition-colors duration-150"
-          style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
-        >
-          <ArrowLeft size={12} /> Artículos
-        </button>
-
         <CollaborationInvitation type="article" itemId={id} onUpdate={fetchArticle} />
+
+        {/* Back nav for cover case — keep spacing consistent */}
+        {article.coverUrl && (
+          <div className="mb-8">
+            {/* CollaborationInvitation already provides top spacing; just a subtle top rule */}
+          </div>
+        )}
 
         {/* Main layout: article + sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-16">
 
           {/* Article */}
           <article>
-            {/* Meta */}
-            <div className="flex flex-wrap items-center gap-3 mb-5">
-              {article.category && (
-                <span className="category-tag">{article.category}</span>
-              )}
-              {article.tags?.map((tag, i) => (
-                <span
-                  key={i}
-                  className="font-sans text-xs"
-                  style={{ color: 'var(--muted)' }}
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Title */}
-            <h1
-              className="font-display mb-6"
-              style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', color: 'var(--text)', lineHeight: 1.15, maxWidth: '720px' }}
-            >
-              {article.title}
-            </h1>
-
-            {/* Byline */}
-            <div
-              className="flex items-center justify-between py-5 mb-8"
-              style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
-            >
-              <Link to={`/profile/${article.author?.id}`} className="flex items-center gap-3 group">
-                {article.author?.avatar ? (
-                  <img
-                    src={article.author.avatar}
-                    alt=""
-                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: 32, height: 32, borderRadius: '50%',
-                      backgroundColor: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}
-                  >
-                    <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
-                      {(article.author?.name || 'A').charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <div>
-                  <p
-                    className="font-sans text-sm font-medium transition-colors duration-150"
-                    style={{ color: 'var(--text)' }}
-                  >
-                    {article.author?.name || 'Anónimo'}
-                  </p>
-                  <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
-                    {formatDate(article.createdAt)}
-                    {' · '}
-                    <Clock size={10} style={{ display: 'inline', marginBottom: 1 }} />
-                    {' '}{Math.ceil((article.content?.length || 0) / 1000)} min
-                  </p>
-                </div>
-              </Link>
-
-              <div className="flex items-center gap-3">
-                {user && article.author?.id && user.id !== article.author.id && (
-                  <button
-                    onClick={handleFollow}
-                    className={`btn ${following ? 'btn-ghost' : 'btn-outline'}`}
-                    style={{ padding: '0.375rem 1rem', fontSize: '0.625rem' }}
-                  >
-                    {following ? 'Siguiendo' : 'Seguir'}
-                  </button>
-                )}
-                {user && (
-                  <ContentActions
-                    type="article"
-                    itemId={article.id}
-                    authorId={article.authorId || article.author?.id}
-                    author={article.author}
-                    onDelete={() => navigate('/articles')}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Cover image */}
-            {article.coverUrl && (
-              <div
-                className="mb-10 overflow-hidden"
-                style={{ aspectRatio: '16/9', maxWidth: '720px' }}
-              >
-                <img
-                  src={article.coverUrl}
-                  alt={article.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              </div>
-            )}
 
             {/* Body */}
             <div
               className="font-sans"
-              style={{ maxWidth: '720px', fontSize: '1.0625rem', lineHeight: 1.8, color: 'var(--text)' }}
+              style={{ maxWidth: '68ch', fontSize: '1.125rem', lineHeight: 1.85, color: 'var(--text)' }}
             >
               <PaginatedReader
                 content={article.content}
@@ -401,7 +559,15 @@ const ArticleView = () => {
                   {article.tags.map((tag, i) => (
                     <span
                       key={i}
-                      className="badge badge-observer"
+                      className="font-sans"
+                      style={{
+                        backgroundColor: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        padding: '0.25rem 0.75rem',
+                        fontSize: '0.75rem',
+                        color: 'var(--muted)',
+                        letterSpacing: '0.04em',
+                      }}
                     >
                       {tag}
                     </span>
@@ -422,7 +588,7 @@ const ArticleView = () => {
               />
             </div>
 
-            {/* Comments — always visible; sidebar button scrolls here */}
+            {/* Comments */}
             <div
               id="comments-section"
               className="mt-12 pt-10"
@@ -440,9 +606,12 @@ const ArticleView = () => {
 
           {/* Sticky sidebar */}
           <aside className="hidden lg:block">
-            <div className="sticky top-20">
+            <div
+              className="sticky top-20"
+              style={{ borderLeft: '2px solid var(--border)', paddingLeft: '1.5rem' }}
+            >
               <p
-                className="font-sans text-xs uppercase tracking-wider mb-4"
+                className="font-sans text-xs uppercase tracking-wider mb-3 px-3"
                 style={{ color: 'var(--muted)' }}
               >
                 Acciones
@@ -472,32 +641,7 @@ const ArticleView = () => {
           </aside>
         </div>
 
-        {/* Mobile floating actions */}
-        <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 lg:hidden z-40 flex items-center gap-1"
-          style={{
-            backgroundColor: 'var(--darkBg, #111110)',
-            border: '1px solid var(--darkBorder, #2E2C2A)',
-            padding: '0.5rem 0.75rem',
-          }}
-        >
-          {[
-            { icon: Heart, action: () => handleReaction('like'), active: reactions.like.active },
-            { icon: MessageCircle, action: () => setShowComments(v => !v) },
-            { icon: BookOpen, action: () => setReadingMode(true) },
-            { icon: Share2, action: () => setShowShareModal(true) },
-          ].map(({ icon: Icon, action, active }, i) => (
-            <button
-              key={i}
-              onClick={action}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: active ? 'var(--accent)' : '#8C8A86' }}
-            >
-              <Icon size={16} />
-            </button>
-          ))}
-        </div>
-
-        <div className="lg:hidden"><ScrollToTop showAfter={300} /></div>
+        <ScrollToTop showAfter={300} />
       </div>
 
       {/* Modals */}

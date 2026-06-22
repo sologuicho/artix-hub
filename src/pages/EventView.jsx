@@ -26,8 +26,35 @@ const EventView = () => {
   const [registered, setRegistered] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false });
 
   useEffect(() => { fetchEvent(); }, [id]);
+
+  useEffect(() => {
+    if (!event?.date) return;
+
+    const tick = () => {
+      const now = new Date();
+      const target = new Date(event.date);
+      const diff = target - now;
+
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setCountdown({ days, hours, minutes, seconds, isPast: false });
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [event]);
 
   const fetchEvent = async () => {
     try {
@@ -112,96 +139,258 @@ const EventView = () => {
 
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
-      <div className="site-container py-12">
-        {/* Back */}
+
+      {/* ── Hero ── */}
+      <div style={{ width: '100%', position: 'relative', overflow: 'hidden', minHeight: '420px', maxHeight: '520px' }}>
+        {event.bannerUrl ? (
+          <img
+            src={event.bannerUrl}
+            alt={event.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+          />
+        ) : (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(135deg, var(--surface) 0%, #111 100%)',
+          }} />
+        )}
+
+        {/* Gradient overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 100%)',
+        }} />
+
+        {/* Back button */}
         <button
           onClick={() => navigate('/events')}
-          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider"
+          style={{
+            position: 'absolute', top: '1.5rem', left: '1.5rem',
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#fff', padding: 0, zIndex: 2,
+          }}
         >
-          <ArrowLeft size={13} /> Volver a Eventos
+          <ArrowLeft size={13} style={{ color: '#fff' }} /> Volver a Eventos
         </button>
+
+        {/* Bottom content */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          padding: '2rem 2rem 2.5rem',
+          zIndex: 2,
+        }}>
+          {event.type && (
+            <span
+              className="category-tag"
+              style={{
+                color: '#fff',
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                marginBottom: '0.75rem',
+                display: 'inline-block',
+              }}
+            >
+              {event.type}
+            </span>
+          )}
+          <h1
+            className="font-display"
+            style={{
+              fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+              lineHeight: 1.1,
+              color: '#fff',
+              margin: 0,
+            }}
+          >
+            {event.title}
+          </h1>
+        </div>
+      </div>
+
+      {/* ── Main layout ── */}
+      <div className="site-container" style={{ paddingTop: '2.5rem', paddingBottom: '4rem' }}>
 
         <CollaborationInvitation type="event" itemId={id} onUpdate={fetchEvent} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12 items-start">
-          {/* Main content */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 items-start">
+
+          {/* ── Left column ── */}
           <div>
-            {/* Banner */}
-            {event.bannerUrl && (
-              <div style={{ marginBottom: '2rem', aspectRatio: '16/7', overflow: 'hidden' }}>
-                <img
-                  src={event.bannerUrl}
-                  alt={event.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              </div>
-            )}
 
-            {/* Type tag */}
-            {event.type && <span className="category-tag">{event.type}</span>}
-
-            {/* Title */}
-            <h1
-              className="font-display"
-              style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', lineHeight: 1.15, color: 'var(--text)', margin: '1rem 0 1.5rem' }}
-            >
-              {event.title}
-            </h1>
-
-            {/* Meta */}
+            {/* Info cards row */}
             <div
-              className="flex flex-col gap-3 py-5 mb-8"
-              style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+              style={{
+                display: 'flex',
+                gap: '1px',
+                flexWrap: 'wrap',
+                marginBottom: '2.5rem',
+                backgroundColor: 'var(--border)',
+                border: '1px solid var(--border)',
+              }}
             >
+              {/* Date card */}
               {event.date && (
-                <div className="flex items-center gap-3">
-                  <Calendar size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-                  <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>{formatDate(event.date)}</span>
-                  {event.time && (
-                    <span className="font-sans text-sm" style={{ color: 'var(--muted)' }}>· {event.time}</span>
-                  )}
-                </div>
-              )}
-              {event.location && (
-                <div className="flex items-center gap-3">
-                  <MapPin size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-                  <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>{event.location}</span>
-                </div>
-              )}
-              {event.registrations?.length > 0 && (
-                <div className="flex items-center gap-3">
-                  <Users size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-                  <span className="font-sans text-sm" style={{ color: 'var(--muted)' }}>
-                    {event.registrations.length} asistentes
-                  </span>
-                </div>
-              )}
-              {(event.creator?.name || event.creator?.username) && (
-                <div className="flex items-center gap-3">
-                  <Building2 size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-                  <span className="font-sans text-sm" style={{ color: 'var(--muted)' }}>
-                    Organizado por{' '}
-                    <span style={{ color: 'var(--text)' }}>
-                      {event.creator.name || event.creator.username}
+                <div style={{
+                  flex: 1, minWidth: '160px', padding: '1rem 1.25rem',
+                  backgroundColor: 'var(--surface)',
+                }}>
+                  <div className="flex items-center gap-2" style={{ marginBottom: '0.4rem' }}>
+                    <Calendar size={12} style={{ color: 'var(--muted)' }} />
+                    <span
+                      className="font-sans text-xs uppercase tracking-widest"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      Fecha
                     </span>
-                  </span>
+                  </div>
+                  <p className="font-sans text-sm" style={{ color: 'var(--text)', margin: 0 }}>
+                    {formatDate(event.date)}
+                    {event.time && (
+                      <span style={{ color: 'var(--muted)' }}> · {event.time}</span>
+                    )}
+                  </p>
                 </div>
               )}
+
+              {/* Location card */}
+              <div style={{
+                flex: 1, minWidth: '160px', padding: '1rem 1.25rem',
+                backgroundColor: 'var(--surface)',
+              }}>
+                <div className="flex items-center gap-2" style={{ marginBottom: '0.4rem' }}>
+                  <MapPin size={12} style={{ color: 'var(--muted)' }} />
+                  <span
+                    className="font-sans text-xs uppercase tracking-widest"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    Lugar
+                  </span>
+                </div>
+                <p className="font-sans text-sm" style={{ color: 'var(--text)', margin: 0 }}>
+                  {event.location || 'Por definir'}
+                </p>
+              </div>
+
+              {/* Attendees card */}
+              <div style={{
+                flex: 1, minWidth: '160px', padding: '1rem 1.25rem',
+                backgroundColor: 'var(--surface)',
+              }}>
+                <div className="flex items-center gap-2" style={{ marginBottom: '0.4rem' }}>
+                  <Users size={12} style={{ color: 'var(--muted)' }} />
+                  <span
+                    className="font-sans text-xs uppercase tracking-widest"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    Asistentes
+                  </span>
+                </div>
+                <p className="font-sans text-sm" style={{ color: 'var(--text)', margin: 0 }}>
+                  {event.registrations?.length || 0}{' '}
+                  <span style={{ color: 'var(--muted)' }}>asistentes</span>
+                </p>
+              </div>
             </div>
 
+            {/* Countdown */}
+            {event.date && (
+              countdown.isPast ? (
+                <div style={{
+                  marginBottom: '2rem',
+                  borderTop: '1px solid var(--border)',
+                  borderBottom: '1px solid var(--border)',
+                  padding: '1rem 0',
+                  textAlign: 'center',
+                }}>
+                  <span
+                    className="font-sans text-xs uppercase tracking-widest"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    Evento finalizado
+                  </span>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  gap: '0',
+                  marginBottom: '2rem',
+                  borderTop: '1px solid var(--border)',
+                  borderBottom: '1px solid var(--border)',
+                  padding: '1rem 0',
+                }}>
+                  {[
+                    { value: countdown.days, label: 'Días' },
+                    { value: countdown.hours, label: 'Horas' },
+                    { value: countdown.minutes, label: 'Min' },
+                    { value: countdown.seconds, label: 'Seg' },
+                  ].map((unit, i, arr) => (
+                    <div
+                      key={unit.label}
+                      style={{
+                        flex: 1,
+                        textAlign: 'center',
+                        borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                      }}
+                    >
+                      <div
+                        className="font-mono"
+                        style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}
+                      >
+                        {String(unit.value).padStart(2, '0')}
+                      </div>
+                      <div
+                        className="font-sans text-xs uppercase tracking-widest"
+                        style={{ color: 'var(--muted)', marginTop: '0.3rem' }}
+                      >
+                        {unit.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
             {/* Description */}
-            <div>
-              <h2 className="font-sans text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--muted)' }}>
-                Sobre el evento
-              </h2>
-              <p className="font-sans" style={{ color: 'var(--text)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+            <div style={{ marginBottom: '2.5rem' }}>
+              <p
+                className="font-sans text-xs uppercase tracking-widest"
+                style={{ color: 'var(--muted)', marginBottom: '1rem' }}
+              >
+                Acerca del evento
+              </p>
+              <p
+                className="font-sans"
+                style={{ color: 'var(--text)', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontSize: '1.0625rem', margin: 0 }}
+              >
                 {event.description}
               </p>
             </div>
 
+            {/* Organizer */}
+            {(event.creator?.name || event.creator?.username) && (
+              <div
+                className="flex items-center gap-3"
+                style={{ marginBottom: '2.5rem' }}
+              >
+                <Building2 size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                  Organizado por
+                </span>
+                <span className="font-sans text-sm font-medium" style={{ color: 'var(--text)' }}>
+                  {event.creator.name || event.creator.username}
+                </span>
+              </div>
+            )}
+
             {/* Comments */}
-            <div className="mt-12 pt-10" style={{ borderTop: '1px solid var(--border)' }}>
+            <div
+              style={{
+                borderTop: '1px solid var(--border)',
+                paddingTop: '2.5rem',
+                marginTop: '2.5rem',
+              }}
+            >
               <h3 className="font-display mb-8" style={{ fontSize: '1.5rem', color: 'var(--text)' }}>
                 Discusión
               </h3>
@@ -209,57 +398,64 @@ const EventView = () => {
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* ── Sidebar ── */}
           <aside>
             <div style={{ position: 'sticky', top: '6rem' }}>
-              {/* Registration */}
-              <div style={{ padding: '1.5rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', marginBottom: '1rem' }}>
-                <div className="flex items-center justify-between mb-4">
-                  <p className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-                    Inscripción
-                  </p>
-                  <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
-                    {event.registrations?.length || 0} inscritos
-                  </span>
-                </div>
+
+              {/* Registration card */}
+              <div style={{
+                backgroundColor: 'var(--surface)',
+                border: '2px solid var(--border)',
+                padding: '2rem',
+                marginBottom: '1rem',
+              }}>
+                <p
+                  className="font-display"
+                  style={{ fontSize: '1rem', color: 'var(--text)', marginBottom: '1rem', marginTop: 0 }}
+                >
+                  Inscripción
+                </p>
 
                 {!registered ? (
-                  <button onClick={handleRegister} className="btn btn-primary w-full">
+                  <button
+                    onClick={handleRegister}
+                    className="btn btn-primary w-full"
+                    style={{ padding: '0.875rem' }}
+                  >
                     Inscribirme
                   </button>
                 ) : (
                   <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <Check size={14} style={{ color: 'var(--accent)' }} />
-                      <p className="font-sans text-sm" style={{ color: 'var(--text)' }}>Inscrito</p>
+                    <div className="flex items-center gap-2" style={{ marginBottom: '1rem' }}>
+                      <Check size={15} style={{ color: 'var(--accent)' }} />
+                      <span className="font-sans text-sm font-medium" style={{ color: 'var(--accent)' }}>
+                        Estás inscrito/a
+                      </span>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => handleToggleReminder('day_before')}
-                        className="flex items-center gap-2 font-sans text-xs"
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                          color: reminderEnabled ? 'var(--accent)' : 'var(--muted)',
-                          textDecoration: 'underline', textUnderlineOffset: 3,
-                        }}
-                      >
-                        <Bell size={12} />
+                    <button
+                      onClick={() => handleToggleReminder('day_before')}
+                      className="btn btn-ghost w-full"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    >
+                      <Bell size={13} style={{ color: reminderEnabled ? 'var(--accent)' : 'var(--muted)' }} />
+                      <span style={{ color: reminderEnabled ? 'var(--accent)' : 'var(--muted)' }}>
                         {reminderEnabled ? 'Quitar recordatorio' : 'Recordatorio (1 día antes)'}
-                      </button>
-                    </div>
+                      </span>
+                    </button>
                   </div>
                 )}
               </div>
 
-              {/* Share + Actions */}
+              {/* Share */}
               <button
                 onClick={() => setShowShareModal(true)}
-                className="btn btn-outline w-full mb-3"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                className="btn btn-outline w-full"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}
               >
                 <Share2 size={13} /> Compartir evento
               </button>
 
+              {/* Content actions */}
               {isAuthenticated() && (
                 <div className="flex justify-end">
                   <ContentActions

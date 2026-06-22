@@ -212,167 +212,259 @@ const BlogPostView = () => {
           <ArrowLeft size={13} /> Volver al Blog
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-12 items-start">
-          {/* Article */}
-          <article style={{ maxWidth: '720px' }}>
-            {/* Cover */}
-            {post.coverUrl && (
-              <div style={{ marginBottom: '2rem', aspectRatio: '16/9', overflow: 'hidden' }}>
-                <img src={post.coverUrl} alt={post.title || 'Blog cover'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-            )}
+        {/* Single-column centered layout */}
+        <article style={{ maxWidth: '720px', margin: '0 auto' }}>
 
-            {/* Category */}
-            {post.category && <span className="category-tag">{post.category}</span>}
+          {/* Cover image — full-bleed, no rounding */}
+          {post.coverUrl && (
+            <div style={{
+              borderRadius: 0,
+              aspectRatio: '16/9',
+              overflow: 'hidden',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+            }}>
+              <img
+                src={post.coverUrl}
+                alt={post.title || 'Blog cover'}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+          )}
 
-            {/* Title */}
-            {post.title && (
-              <h1
-                className="font-display"
-                style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', lineHeight: 1.15, color: 'var(--text)', margin: '1rem 0 1.5rem' }}
-              >
-                {post.title}
-              </h1>
-            )}
+          {/* Category pill */}
+          {post.category && (
+            <span style={{
+              display: 'inline-block',
+              backgroundColor: 'var(--accent)',
+              color: '#fff',
+              fontSize: '0.6875rem',
+              fontFamily: 'var(--font-sans)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              padding: '0.25rem 0.875rem',
+              marginTop: '1.5rem',
+              marginBottom: '0.75rem',
+            }}>
+              {post.category}
+            </span>
+          )}
 
-            {/* Byline */}
-            <div
-              className="flex items-center justify-between gap-4 flex-wrap py-5"
-              style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: '2.5rem' }}
+          {/* Title */}
+          {post.title && (
+            <h1
+              className="font-display"
+              style={{
+                fontSize: 'clamp(2rem, 5vw, 3.25rem)',
+                lineHeight: 1.1,
+                color: 'var(--text)',
+                marginBottom: '2rem',
+              }}
             >
-              <Link to={`/profile/${post.author?.id}`} className="flex items-center gap-3">
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
-                  overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  {post.author?.avatar ? (
-                    <img src={post.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <User size={16} style={{ color: 'var(--muted)' }} />
-                  )}
-                </div>
-                <div>
-                  <p className="font-sans text-sm font-medium" style={{ color: 'var(--text)' }}>
-                    {post.author?.name || 'Anónimo'}
-                  </p>
-                  <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
-                    {formatDate(post.createdAt)} · {readTime(post.content)} min de lectura
-                  </p>
-                </div>
-              </Link>
+              {post.title}
+            </h1>
+          )}
 
-              <div className="flex items-center gap-3">
-                {user && post.author?.id && user.id !== post.author.id && (
-                  <button
-                    onClick={handleFollow}
-                    className="btn btn-ghost"
+          {/* Author card */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            padding: '1.25rem 1.5rem',
+            backgroundColor: 'var(--surface)',
+            border: '1px solid var(--border)',
+            marginBottom: '2.5rem',
+          }}>
+            {/* Left: avatar + meta */}
+            <Link to={`/profile/${post.author?.id}`} className="flex items-center gap-3" style={{ textDecoration: 'none' }}>
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                backgroundColor: 'var(--bg)',
+                border: '1px solid var(--border)',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                {post.author?.avatar ? (
+                  <img src={post.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <User size={20} style={{ color: 'var(--muted)' }} />
+                )}
+              </div>
+              <div>
+                <p className="font-sans font-medium text-sm" style={{ color: 'var(--text)', marginBottom: '0.125rem' }}>
+                  {post.author?.name || 'Anónimo'}
+                </p>
+                <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                  {formatDate(post.createdAt)}
+                  {' · '}
+                  <Clock size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.2rem' }} />
+                  {readTime(post.content)} min de lectura
+                </p>
+              </div>
+            </Link>
+
+            {/* Right: Follow + ContentActions */}
+            <div className="flex items-center gap-3">
+              {user && post.author?.id && user.id !== post.author.id && (
+                <button
+                  onClick={handleFollow}
+                  className="btn btn-ghost"
+                  style={{
+                    fontSize: '0.6875rem',
+                    padding: '0.375rem 0',
+                    borderBottom: `1px solid ${following ? 'var(--border)' : 'var(--text)'}`,
+                    color: following ? 'var(--muted)' : 'var(--text)',
+                  }}
+                >
+                  {following ? 'Siguiendo' : 'Seguir'}
+                </button>
+              )}
+              {user && (
+                <ContentActions
+                  type="blog"
+                  itemId={post.id}
+                  authorId={post.authorId || post.author?.id}
+                  author={post.author}
+                  onDelete={() => navigate('/blog')}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Body content */}
+          <div
+            className="font-sans prose-editorial"
+            style={{
+              fontSize: '1.0625rem',
+              lineHeight: 1.85,
+              color: 'var(--text)',
+              fontFamily: 'var(--font-sans)',
+            }}
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+
+          {/* Embedded video */}
+          {post.videoUrl && (
+            <div style={{ marginTop: '2rem', aspectRatio: '16/9', overflow: 'hidden' }}>
+              <iframe src={post.videoUrl} className="w-full h-full" allowFullScreen title="Video" />
+            </div>
+          )}
+
+          {/* Tags — colorful pills with "Temas" label */}
+          {post.tags?.length > 0 && (
+            <div style={{ marginTop: '2.5rem' }}>
+              <p
+                className="font-sans text-xs uppercase tracking-widest"
+                style={{ color: 'var(--muted)', marginBottom: '0.75rem' }}
+              >
+                Temas
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {post.tags.map((tag, i) => (
+                  <span
+                    key={i}
                     style={{
-                      fontSize: '0.6875rem', padding: '0.375rem 0',
-                      borderBottom: `1px solid ${following ? 'var(--border)' : 'var(--text)'}`,
-                      color: following ? 'var(--muted)' : 'var(--text)',
+                      display: 'inline-block',
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--muted)',
+                      fontSize: '0.75rem',
+                      padding: '0.3rem 0.875rem',
+                      fontFamily: 'var(--font-mono)',
                     }}
                   >
-                    {following ? 'Siguiendo' : 'Seguir'}
-                  </button>
-                )}
-                {user && (
-                  <ContentActions
-                    type="blog"
-                    itemId={post.id}
-                    authorId={post.authorId || post.author?.id}
-                    author={post.author}
-                    onDelete={() => navigate('/blog')}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Content */}
-            <div
-              className="font-sans prose-editorial"
-              style={{ color: 'var(--text)', lineHeight: 1.75, fontSize: '1.0625rem' }}
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
-
-            {/* Video */}
-            {post.videoUrl && (
-              <div style={{ marginTop: '2rem', aspectRatio: '16/9', overflow: 'hidden' }}>
-                <iframe src={post.videoUrl} className="w-full h-full" allowFullScreen title="Video" />
-              </div>
-            )}
-
-            {/* Tags */}
-            {post.tags?.length > 0 && (
-              <div className="flex flex-wrap gap-3 mt-8 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
-                {post.tags.map((tag, i) => (
-                  <span key={i} className="font-sans text-xs" style={{ color: 'var(--muted)' }}>#{tag}</span>
+                    #{tag}
+                  </span>
                 ))}
               </div>
-            )}
-
-            {/* Reactions */}
-            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-              <ReactionButtons reactions={reactions} onReaction={handleReaction} disabled={!user} />
             </div>
+          )}
 
-            {/* Comments */}
-            <div id="blog-comments" style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
-              <h3 className="font-display mb-6" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>Comentarios</h3>
-              <CommentSection postId={post.id} />
-            </div>
-          </article>
+          {/* Reactions bar with inline save / share / comment actions */}
+          <div style={{
+            marginTop: '2.5rem',
+            borderTop: '1px solid var(--border)',
+            borderBottom: '1px solid var(--border)',
+            padding: '1.25rem 0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <ReactionButtons reactions={reactions} onReaction={handleReaction} disabled={!user} />
 
-          {/* Sidebar actions */}
-          <aside className="hidden lg:block" style={{ paddingTop: '0.5rem' }}>
-            <div style={{ position: 'sticky', top: '6rem' }}>
-              <p className="font-sans text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
-                Acciones
-              </p>
-              <SideAction
-                onClick={() => handleReaction('like')}
-                icon={Heart}
-                label={`Me gusta${reactions.like.count > 0 ? ` · ${reactions.like.count}` : ''}`}
-                active={reactions.like.active}
-              />
-              <SideAction
+            <div className="flex items-center gap-1">
+              {/* Comment */}
+              <button
                 onClick={() => {
                   setShowComments(!showComments);
                   if (!showComments) setTimeout(() => document.getElementById('blog-comments')?.scrollIntoView({ behavior: 'smooth' }), 100);
                 }}
-                icon={MessageCircle}
-                label="Comentar"
-                active={showComments}
-              />
-              <SideAction onClick={handleSave} icon={Bookmark} label={saved ? 'Guardado' : 'Guardar'} active={saved} />
-              <SideAction onClick={() => setShowShareModal(true)} icon={Share2} label="Compartir" active={false} />
-            </div>
-          </aside>
-        </div>
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  color: showComments ? 'var(--accent)' : 'var(--muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Comentarios"
+              >
+                <MessageCircle size={18} />
+              </button>
 
-        {/* Mobile floating bar */}
-        <div
-          className="fixed lg:hidden z-40 flex items-center gap-1"
-          style={{
-            bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
-            backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
-            padding: '0.5rem 1rem',
-          }}
-        >
-          <button onClick={() => handleReaction('like')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: reactions.like.active ? 'var(--accent)' : 'var(--muted)' }}>
-            <Heart size={18} />
-          </button>
-          <button onClick={() => setShowComments(!showComments)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
-            <MessageCircle size={18} />
-          </button>
-          <button onClick={handleSave} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: saved ? 'var(--accent)' : 'var(--muted)' }}>
-            <Bookmark size={18} />
-          </button>
-          <button onClick={() => setShowShareModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--muted)' }}>
-            <Share2 size={18} />
-          </button>
-        </div>
+              {/* Save */}
+              <button
+                onClick={handleSave}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  color: saved ? 'var(--accent)' : 'var(--muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label={saved ? 'Guardado' : 'Guardar'}
+              >
+                <Bookmark size={18} />
+              </button>
+
+              {/* Share */}
+              <button
+                onClick={() => setShowShareModal(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  color: 'var(--muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Compartir"
+              >
+                <Share2 size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Comments section */}
+          <div id="blog-comments" style={{ marginTop: '3rem' }}>
+            <h3
+              className="font-display"
+              style={{ fontSize: '1.25rem', color: 'var(--text)', marginBottom: '1.5rem' }}
+            >
+              Comentarios
+            </h3>
+            <CommentSection postId={post.id} />
+          </div>
+        </article>
       </div>
 
       {showShareModal && (
