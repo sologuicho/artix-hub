@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, ChevronDown } from 'lucide-react';
+import { User, LogOut, ChevronDown, CreditCard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const UserMenu = () => {
@@ -28,6 +28,11 @@ const UserMenu = () => {
 
   const handleProfile = () => {
     navigate('/profile');
+    setIsOpen(false);
+  };
+
+  const handleSubscription = () => {
+    navigate('/subscription');
     setIsOpen(false);
   };
 
@@ -65,6 +70,13 @@ const UserMenu = () => {
           >
             <User className="w-4 h-4" />
             Ver perfil
+          </button>
+          <button
+            onClick={handleSubscription}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-white/20 dark:hover:bg-black/20 transition-colors rounded-lg mx-2"
+          >
+            <CreditCard className="w-4 h-4" />
+            Mi Suscripción
           </button>
           <div className="border-t border-white/20 dark:border-white/10 my-2"></div>
           <button

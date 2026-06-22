@@ -2,134 +2,184 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
-import { User, MapPin, Briefcase, FileText, Settings, Users, UserPlus } from 'lucide-react';
+import { MapPin, Briefcase, FileText, Settings } from 'lucide-react';
 import { BACKEND_URL } from '../config/client';
 
 const Profile = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [followers, setFollowers] = useState([]);
-  const [following, setFollowing] = useState([]);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchFollowStats();
-    }
+    if (user?.id) fetchFollowStats();
   }, [user]);
 
   const fetchFollowStats = async () => {
     try {
-      const [followersRes, followingRes] = await Promise.all([
+      const [fwrs, fwng] = await Promise.all([
         fetch(`${BACKEND_URL}/api/follow/${user.id}/followers`, { credentials: 'include' }),
-        fetch(`${BACKEND_URL}/api/follow/${user.id}/following`, { credentials: 'include' })
+        fetch(`${BACKEND_URL}/api/follow/${user.id}/following`, { credentials: 'include' }),
       ]);
+      const [fdrs, fdng] = await Promise.all([fwrs.json(), fwng.json()]);
+      if (fdrs.ok) setFollowersCount(fdrs.followers?.length || 0);
+      if (fdng.ok) setFollowingCount(fdng.following?.length || 0);
+    } catch (_) {}
+  };
 
-      const followersData = await followersRes.json();
-      const followingData = await followingRes.json();
+  const tierLabel = {
+    OBSERVER: 'Lector',
+    STUDENT: 'Miembro',
+    RESEARCHER: 'Pro',
+    VISIONARY: 'Visionary',
+    TEAM: 'Team',
+  };
 
-      if (followersData.ok) {
-        setFollowers(followersData.followers || []);
-        setFollowersCount(followersData.followers?.length || 0);
-      }
-      if (followingData.ok) {
-        setFollowing(followingData.following || []);
-        setFollowingCount(followingData.following?.length || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching follow stats:', error);
-    }
+  const tierBadgeClass = {
+    OBSERVER: 'badge badge-observer',
+    STUDENT: 'badge badge-observer',
+    RESEARCHER: 'badge badge-researcher',
+    VISIONARY: 'badge badge-visionary',
+    TEAM: 'badge badge-team',
   };
 
   return (
     <ProtectedRoute>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold text-white">Mi Perfil</h1>
-          <button
-            onClick={() => navigate('/profile/settings')}
-            className="glass-button flex items-center gap-2 text-white"
-          >
-            <Settings className="w-5 h-5" />
-            Configuración
-          </button>
-        </div>
+      <div className="site-container py-16" style={{ minHeight: '100vh' }}>
 
-        <div className="glass-card p-8 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl">
-          <div className="flex items-center gap-6 mb-8">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden">
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user.name || user.username} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-white text-3xl font-semibold">
-                  {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-white">
-                {user?.name || user?.username || 'Usuario'}
-              </h2>
-              <p className="text-gray-400 mb-4">@{user?.username || 'usuario'}</p>
+        {/* Profile header */}
+        <div
+          className="pb-10 mb-10"
+          style={{ borderBottom: '1px solid var(--border)' }}
+        >
+          <div className="flex items-start justify-between gap-6 flex-wrap">
+            <div className="flex items-center gap-6">
+              {/* Avatar */}
+              <div
+                style={{
+                  width: 72, height: 72, borderRadius: '50%',
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  overflow: 'hidden',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name || user.username}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span
+                    className="font-display"
+                    style={{ fontSize: '1.75rem', color: 'var(--muted)' }}
+                  >
+                    {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
 
-              {/* Follow Stats */}
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={() => navigate(`/profile/${user.id}/followers`)}
-                  className="flex items-center gap-1 hover:text-blue-400 transition-colors"
+              {/* Name + tier */}
+              <div>
+                <h1
+                  className="font-display"
+                  style={{ fontSize: '2rem', color: 'var(--text)', lineHeight: 1.1 }}
                 >
-                  <Users className="w-4 h-4 text-gray-400" />
-                  <span className="font-semibold text-white">{followersCount}</span>
-                  <span className="text-gray-500">seguidores</span>
-                </button>
-                <button
-                  onClick={() => navigate(`/profile/${user.id}/following`)}
-                  className="flex items-center gap-1 hover:text-blue-400 transition-colors"
-                >
-                  <UserPlus className="w-4 h-4 text-gray-400" />
-                  <span className="font-semibold text-white">{followingCount}</span>
-                  <span className="text-gray-500">siguiendo</span>
-                </button>
+                  {user?.name || user?.username || 'Usuario'}
+                </h1>
+                <p className="font-sans text-sm mt-1" style={{ color: 'var(--muted)' }}>
+                  @{user?.username || 'usuario'}
+                </p>
+                {user?.subscriptionTier && (
+                  <span className={`${tierBadgeClass[user.subscriptionTier] || 'badge badge-observer'} mt-2 inline-block`}>
+                    {tierLabel[user.subscriptionTier] || user.subscriptionTier}
+                  </span>
+                )}
               </div>
             </div>
+
+            <button
+              onClick={() => navigate('/profile/settings')}
+              className="btn btn-outline"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Settings size={13} /> Configuración
+            </button>
           </div>
 
-          <div className="space-y-4">
+          {/* Stats row */}
+          <div
+            className="flex items-center gap-8 mt-8 pt-6"
+            style={{ borderTop: '1px solid var(--border)' }}
+          >
+            <button
+              onClick={() => navigate(`/profile/${user?.id}/followers`)}
+              className="text-left"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <p className="font-display" style={{ fontSize: '1.5rem', color: 'var(--text)', lineHeight: 1 }}>
+                {followersCount}
+              </p>
+              <p className="font-sans text-xs uppercase tracking-wider mt-1" style={{ color: 'var(--muted)' }}>
+                Seguidores
+              </p>
+            </button>
+            <div style={{ width: 1, height: 36, backgroundColor: 'var(--border)' }} />
+            <button
+              onClick={() => navigate(`/profile/${user?.id}/following`)}
+              className="text-left"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <p className="font-display" style={{ fontSize: '1.5rem', color: 'var(--text)', lineHeight: 1 }}>
+                {followingCount}
+              </p>
+              <p className="font-sans text-xs uppercase tracking-wider mt-1" style={{ color: 'var(--muted)' }}>
+                Siguiendo
+              </p>
+            </button>
+          </div>
+        </div>
+
+        {/* Profile details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="flex flex-col gap-5">
             {user?.country && (
               <div className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-gray-500" />
-                <span className="text-gray-300">{user.country}</span>
+                <MapPin size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>{user.country}</span>
               </div>
             )}
             {user?.occupation && (
               <div className="flex items-center gap-3">
-                <Briefcase className="w-5 h-5 text-gray-500" />
-                <span className="text-gray-300">{user.occupation}</span>
+                <Briefcase size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>{user.occupation}</span>
               </div>
             )}
             {user?.bio && (
               <div className="flex items-start gap-3">
-                <FileText className="w-5 h-5 text-gray-500 mt-1" />
-                <p className="text-gray-300">{user.bio}</p>
-              </div>
-            )}
-            {user?.interests && user.interests.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Intereses</h3>
-                <div className="flex flex-wrap gap-2">
-                  {user.interests.map((interest, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-blue-900/30 text-blue-200 border border-blue-500/20 rounded-full text-sm"
-                    >
-                      {interest}
-                    </span>
-                  ))}
-                </div>
+                <FileText size={14} style={{ color: 'var(--muted)', flexShrink: 0, marginTop: 3 }} />
+                <p className="font-sans text-sm" style={{ color: 'var(--text)', lineHeight: 1.7 }}>{user.bio}</p>
               </div>
             )}
           </div>
+
+          {user?.interests?.length > 0 && (
+            <div>
+              <p
+                className="font-sans text-xs uppercase tracking-wider mb-4"
+                style={{ color: 'var(--muted)' }}
+              >
+                Intereses
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {user.interests.map((interest, i) => (
+                  <span key={i} className="badge badge-observer">{interest}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </ProtectedRoute>
@@ -137,4 +187,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

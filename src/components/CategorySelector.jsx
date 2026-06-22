@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Check } from 'lucide-react';
-
 import { BACKEND_URL } from '../config/client';
 
-// Predefined categories based on content type
 const getPredefinedCategories = (contentType = 'general') => {
   const allCategories = {
     article: [
@@ -40,60 +38,42 @@ const getPredefinedCategories = (contentType = 'general') => {
       'Desarrollo', 'Diseño', 'Arte', 'Cultura', 'Salud', 'Medio Ambiente'
     ]
   };
-
   return allCategories[contentType] || allCategories.general;
 };
 
-const CategorySelector = ({ 
-  category = '', 
-  onChange, 
+const CategorySelector = ({
+  category = '',
+  onChange,
   contentType = 'general',
   placeholder = 'Buscar o escribir categoría...',
-  className = '' 
+  className = ''
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [existingCategories, setExistingCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [hoveredCat, setHoveredCat] = useState(null);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
   const predefinedCategories = getPredefinedCategories(contentType);
 
-  // Fetch existing categories from backend
   useEffect(() => {
     const fetchCategories = async () => {
-      setLoading(true);
       try {
-        const endpoint = contentType === 'article' ? 'articles' : 
-                        contentType === 'research' ? 'research' : 
-                        contentType === 'event' ? 'events' : 'blog';
-        
-        const response = await fetch(`${BACKEND_URL}/api/${endpoint}/categories`, {
-          credentials: 'include'
-        });
-        
+        const endpoint = contentType === 'article' ? 'articles'
+          : contentType === 'research' ? 'research'
+          : contentType === 'event' ? 'events' : 'blog';
+        const response = await fetch(`${BACKEND_URL}/api/${endpoint}/categories`, { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
-          if (data.ok && data.categories) {
-            setExistingCategories(data.categories);
-          }
+          if (data.ok && data.categories) setExistingCategories(data.categories);
         }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      } finally {
-        setLoading(false);
-      }
+      } catch (_) {}
     };
-
     fetchCategories();
   }, [contentType]);
 
-  // Combine predefined and existing categories, remove duplicates
-  const allCategories = [
-    ...new Set([...predefinedCategories, ...existingCategories])
-  ];
-
+  const allCategories = [...new Set([...predefinedCategories, ...existingCategories])];
   const filteredSuggestions = allCategories.filter(cat =>
     cat.toLowerCase().includes(searchQuery.toLowerCase()) &&
     cat.toLowerCase() !== category.toLowerCase()
@@ -131,26 +111,21 @@ const CategorySelector = ({
     setSearchQuery('');
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target)
+        dropdownRef.current && !dropdownRef.current.contains(event.target) &&
+        inputRef.current && !inputRef.current.contains(event.target)
       ) {
         setShowSuggestions(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      {/* Input Field */}
+    <div className={className}>
       <div className="relative">
         <input
           ref={inputRef}
@@ -159,7 +134,6 @@ const CategorySelector = ({
           onChange={(e) => {
             const value = e.target.value;
             if (category) {
-              // If category is selected, clear it and start searching
               onChange('');
               setSearchQuery(value);
             } else {
@@ -169,75 +143,96 @@ const CategorySelector = ({
           }}
           onKeyPress={handleKeyPress}
           onFocus={() => {
-            if (category) {
-              setSearchQuery(category);
-              onChange('');
-            }
+            if (category) { setSearchQuery(category); onChange(''); }
             setShowSuggestions(searchQuery.length > 0 || filteredSuggestions.length > 0);
           }}
           placeholder={placeholder}
-          className="w-full glass-input text-gray-900 dark:text-gray-100 pr-10"
+          className="input-field w-full"
+          style={{ paddingRight: category ? '2.5rem' : undefined }}
         />
-        
-        {/* Remove button when category is selected */}
+
         {category && (
           <button
             type="button"
             onClick={handleRemoveCategory}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+            style={{
+              position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0.25rem',
+            }}
           >
-            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <X size={14} />
           </button>
         )}
-        
-        {/* Suggestions Dropdown */}
+
         {showSuggestions && (filteredSuggestions.length > 0 || searchQuery.trim()) && (
-          <div 
+          <div
             ref={dropdownRef}
-            className="absolute z-50 w-full mt-1 glass-card shadow-xl max-h-60 overflow-y-auto"
+            style={{
+              position: 'absolute', zIndex: 50, width: '100%', top: '100%', marginTop: '0.25rem',
+              backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+              maxHeight: '15rem', overflowY: 'auto',
+            }}
           >
-            <div className="py-1">
-              {/* Existing categories suggestions */}
-              {filteredSuggestions.slice(0, 10).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => handleSelectCategory(cat)}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                >
-                  <Check className="w-3 h-3 text-green-500" />
-                  <span>{cat}</span>
-                </button>
-              ))}
-              
-              {/* Create new category option */}
-              {searchQuery.trim() && 
-               !allCategories.some(c => c.toLowerCase() === searchQuery.trim().toLowerCase()) && (
-                <button
-                  type="button"
-                  onClick={handleCreateCategory}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-blue-600 dark:text-blue-400 flex items-center gap-2 border-t border-gray-200 dark:border-gray-700"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Crear "{searchQuery.trim()}"</span>
-                </button>
-              )}
-            </div>
+            {filteredSuggestions.slice(0, 10).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => handleSelectCategory(cat)}
+                onMouseEnter={() => setHoveredCat(cat)}
+                onMouseLeave={() => setHoveredCat(null)}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '0.5rem 0.875rem',
+                  background: hoveredCat === cat ? 'var(--bg)' : 'transparent',
+                  border: 'none', cursor: 'pointer', color: 'var(--text)',
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  fontFamily: '"DM Sans", sans-serif', fontSize: '0.8125rem',
+                }}
+              >
+                <Check size={11} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                {cat}
+              </button>
+            ))}
+
+            {searchQuery.trim() && !allCategories.some(c => c.toLowerCase() === searchQuery.trim().toLowerCase()) && (
+              <button
+                type="button"
+                onClick={handleCreateCategory}
+                onMouseEnter={() => setHoveredCat('__create__')}
+                onMouseLeave={() => setHoveredCat(null)}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '0.5rem 0.875rem',
+                  background: hoveredCat === '__create__' ? 'var(--bg)' : 'transparent',
+                  border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer',
+                  color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  fontFamily: '"DM Sans", sans-serif', fontSize: '0.8125rem',
+                }}
+              >
+                <Plus size={11} style={{ flexShrink: 0 }} />
+                Crear "{searchQuery.trim()}"
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Selected Category Badge */}
       {category && (
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+        <div className="flex items-center gap-2 mt-2">
+          <span
+            className="font-sans text-xs"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+              padding: '0.25rem 0.625rem',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+            }}
+          >
             {category}
             <button
               type="button"
               onClick={handleRemoveCategory}
-              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, display: 'flex' }}
             >
-              <X className="w-3 h-3" />
+              <X size={10} />
             </button>
           </span>
         </div>
@@ -247,6 +242,3 @@ const CategorySelector = ({
 };
 
 export default CategorySelector;
-
-
-

@@ -132,79 +132,70 @@ const SetupUsername = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="glass-card p-8 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Elige tu nombre de usuario
-            </h1>
-            <p className="text-gray-400">
-              Este será tu nombre único en Artix Hub
-            </p>
-          </div>
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ maxWidth: '400px', width: '100%' }}>
+        <div style={{ padding: '2rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <h1 className="font-display mb-1" style={{ fontSize: '1.75rem', color: 'var(--text)', lineHeight: 1.15 }}>
+            Elige tu nombre de usuario
+          </h1>
+          <p className="font-sans text-sm mb-8" style={{ color: 'var(--muted)' }}>
+            Este será tu nombre único en Artix Hub
+          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
-                Nombre de usuario
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <label htmlFor="username" className="input-label">Nombre de usuario</label>
+              <div style={{ position: 'relative' }}>
+                <User size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
                 <input
                   id="username"
                   type="text"
                   value={username}
                   onChange={handleUsernameChange}
-                  className={`w-full pl-10 pr-10 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${isAvailable === true ? 'border-green-500/50' :
-                      isAvailable === false ? 'border-red-500/50' : 'border-white/10'
-                    }`}
+                  className="input-field"
+                  style={{
+                    paddingLeft: '2.25rem', paddingRight: '2.25rem',
+                    borderColor: isAvailable === true ? 'var(--accent)' : isAvailable === false ? '#ef4444' : undefined,
+                  }}
                   placeholder="username"
                   minLength={3}
                   maxLength={20}
                   pattern="[a-zA-Z0-9_-]{3,20}"
                   required
                 />
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  {isChecking && <Loader className="w-5 h-5 text-gray-400 animate-spin" />}
-                  {!isChecking && isAvailable === true && <Check className="w-5 h-5 text-green-500" />}
-                  {!isChecking && isAvailable === false && <X className="w-5 h-5 text-red-500" />}
+                <div style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                  {isChecking && <Loader size={14} style={{ color: 'var(--muted)', animation: 'spin 0.8s linear infinite' }} />}
+                  {!isChecking && isAvailable === true && <Check size={14} style={{ color: 'var(--accent)' }} />}
+                  {!isChecking && isAvailable === false && <X size={14} style={{ color: '#ef4444' }} />}
                 </div>
               </div>
 
               {username.length > 0 && username.length < 3 && (
-                <p className="mt-2 text-sm text-gray-400">
-                  Mínimo 3 caracteres
-                </p>
+                <p className="font-sans text-xs mt-2" style={{ color: 'var(--muted)' }}>Mínimo 3 caracteres</p>
               )}
-
               {username.length >= 3 && isAvailable === true && (
-                <p className="mt-2 text-sm text-green-400">
-                  ✓ Username disponible
-                </p>
+                <p className="font-sans text-xs mt-2" style={{ color: 'var(--accent)' }}>Username disponible</p>
               )}
-
               {error && (
-                <p className="mt-2 text-sm text-red-400 bg-red-900/20 p-2 rounded-lg border border-red-800">
-                  {error}
-                </p>
+                <p className="font-sans text-xs mt-2" style={{ color: '#ef4444' }}>{error}</p>
               )}
-
-              <p className="mt-2 text-xs text-gray-500">
-                Solo letras, números, guiones y guiones bajos. 3-20 caracteres.
+              <p className="font-sans text-xs mt-2" style={{ color: 'var(--muted)' }}>
+                Solo letras, números, guiones y guiones bajos. 3–20 caracteres.
               </p>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting || isAvailable !== true || username.length < 3}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-900/20 text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary w-full"
+              style={{ opacity: isSubmitting || isAvailable !== true || username.length < 3 ? 0.5 : 1 }}
             >
-              {isSubmitting ? 'Configurando...' : 'Continuar'}
+              {isSubmitting ? 'Configurando…' : 'Continuar'}
             </button>
           </form>
         </div>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };

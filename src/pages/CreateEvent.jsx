@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Save, Upload, Calendar, MapPin, Clock, X, Building2, User, ToggleLeft, ToggleRight, Sparkles, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, ToggleLeft, ToggleRight, Sparkles, ArrowLeft, MapPin } from 'lucide-react';
 import useAIValidation from '../hooks/useAIValidation';
 import AIValidationPanel from '../components/AIValidationPanel';
 import AIAssistantOverlay from '../components/AIAssistantOverlay';
@@ -8,10 +8,49 @@ import RichTextEditorWithMentions from '../components/RichTextEditorWithMentions
 import CollaboratorSelector from '../components/CollaboratorSelector';
 import TagSelector from '../components/TagSelector';
 import CategorySelector from '../components/CategorySelector';
-import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 import { useAuth } from '../context/AuthContext';
-
 import { BACKEND_URL } from '../config/client';
+
+const PAGE_STYLES = `
+  .artix-editor-event .ql-toolbar {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.375rem 0;
+  }
+  .artix-editor-event .ql-container {
+    border: 1px solid var(--border);
+    border-top: none;
+    background: transparent;
+    font-size: 1rem;
+  }
+  .artix-editor-event .ql-editor {
+    padding: 1rem;
+    min-height: 180px;
+    line-height: 1.75;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .artix-editor-event .ql-stroke { stroke: var(--muted) !important; }
+  .artix-editor-event .ql-fill { fill: var(--muted) !important; }
+  .artix-editor-event .ql-picker-label { color: var(--muted) !important; }
+  .artix-editor-event .ql-editor.ql-blank::before { color: var(--muted); font-style: normal; }
+  .artix-editor-event .ql-toolbar button:hover .ql-stroke,
+  .artix-editor-event .ql-toolbar button.ql-active .ql-stroke { stroke: var(--accent) !important; }
+  .artix-editor-event .ql-toolbar button:hover .ql-fill,
+  .artix-editor-event .ql-toolbar button.ql-active .ql-fill { fill: var(--accent) !important; }
+  .artix-editor-event .ql-picker-options {
+    background-color: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+  }
+  .artix-create-input::placeholder { color: var(--muted); opacity: 1; }
+`;
+
+const STEPS = [
+  { n: 1, label: 'Información básica' },
+  { n: 2, label: 'Lugar y fecha' },
+  { n: 3, label: 'Imagen y configuración' },
+];
 
 const CreateEvent = () => {
   const { id } = useParams();
@@ -23,12 +62,12 @@ const CreateEvent = () => {
   const [publishAsArtixResearch, setPublishAsArtixResearch] = useState(
     searchParams.get('asArtixResearch') === 'true'
   );
-
   const eventValidation = useAIValidation('event');
   const [validationMessage, setValidationMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
-
+  const [step, setStep] = useState(1);
+  const [hoverBanner, setHoverBanner] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -42,34 +81,28 @@ const CreateEvent = () => {
   });
   const [collaborators, setCollaborators] = useState([]);
 
-  // Load event data if in edit mode
   useEffect(() => {
     if (isEditMode && id) {
       const fetchEvent = async () => {
         try {
-          const response = await fetch(`${BACKEND_URL}/api/events/${id}`, {
-            credentials: 'include'
-          });
+          const response = await fetch(`${BACKEND_URL}/api/events/${id}`, { credentials: 'include' });
           const data = await response.json();
           if (data.ok && data.event) {
-            const event = data.event;
-            const eventDate = new Date(event.date);
+            const ev = data.event;
             setFormData({
-              title: event.title || '',
-              description: event.description || '',
-              date: eventDate.toISOString().split('T')[0] || '',
-              time: event.time || '',
-              location: event.location || '',
-              type: event.type || '',
-              tags: event.tags || [],
-              bannerUrl: event.bannerUrl || '',
-              isCollaborative: event.isCollaborative || false,
+              title: ev.title || '',
+              description: ev.description || '',
+              date: new Date(ev.date).toISOString().split('T')[0] || '',
+              time: ev.time || '',
+              location: ev.location || '',
+              type: ev.type || '',
+              tags: ev.tags || [],
+              bannerUrl: ev.bannerUrl || '',
+              isCollaborative: ev.isCollaborative || false,
             });
-            if (event.collaborators) setCollaborators(event.collaborators);
+            if (ev.collaborators) setCollaborators(ev.collaborators);
           }
-        } catch (error) {
-          console.error('Error loading event:', error);
-        }
+        } catch (err) { console.error(err); }
       };
       fetchEvent();
     }
@@ -77,7 +110,7 @@ const CreateEvent = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleBannerChange = async (e) => {
@@ -85,57 +118,50 @@ const CreateEvent = () => {
     if (file) {
       try {
         const { compressImage } = await import('../utils/imageCompression');
-        const compressedDataUrl = await compressImage(file, 1200, 1200, 0.85);
-        setFormData({ ...formData, bannerUrl: compressedDataUrl });
-      } catch (error) {
-        console.error('Error compressing image:', error);
+        const url = await compressImage(file, 1200, 1200, 0.85);
+        setFormData(prev => ({ ...prev, bannerUrl: url }));
+      } catch {
         const reader = new FileReader();
-        reader.onloadend = () => {
-          setFormData({ ...formData, bannerUrl: reader.result });
-        };
+        reader.onloadend = () => setFormData(prev => ({ ...prev, bannerUrl: reader.result }));
         reader.readAsDataURL(file);
       }
     }
   };
 
-  // AI Assistant Handlers
   const handleInsertText = (text) => {
-    setFormData(prev => ({
-      ...prev,
-      description: prev.description + '\n\n' + text
-    }));
+    setFormData(prev => ({ ...prev, description: prev.description + '\n\n' + text }));
   };
 
   const extractMentions = (html) => {
-    const mentionRegex = /@(\w+)/g;
-    const matches = html.match(mentionRegex);
+    const matches = html.match(/@(\w+)/g);
     return matches ? matches.map(m => m.substring(1)) : [];
   };
 
+  const handleNext = () => {
+    if (step === 1 && !formData.title.trim()) {
+      setValidationMessage('El título del evento es requerido');
+      return;
+    }
+    setValidationMessage('');
+    setStep(s => s + 1);
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setValidationMessage('');
     setIsSubmitting(true);
-
     try {
       const getCsrfToken = () => {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
+        for (let cookie of document.cookie.split(';')) {
           const [name, value] = cookie.trim().split('=');
           if (name === 'csrf') return value;
         }
         return null;
       };
-
       const url = isEditMode ? `${BACKEND_URL}/api/events/${id}` : `${BACKEND_URL}/api/events`;
-      const method = isEditMode ? 'PUT' : 'POST';
-
       const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': getCsrfToken() || ''
-        },
+        method: isEditMode ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
         body: JSON.stringify({
           title: formData.title || '',
@@ -148,256 +174,345 @@ const CreateEvent = () => {
           bannerUrl: formData.bannerUrl || null,
           isCollaborative: formData.isCollaborative || collaborators.length > 0,
           publishAsArtixResearch: publishAsArtixResearch && !isEditMode,
-          mentions: extractMentions(formData.description)
-        })
+          mentions: extractMentions(formData.description),
+        }),
       });
-
       const data = await response.json();
-
       if (data.ok) {
         const eventId = isEditMode ? id : data.event?.id;
-
-        // Handle collaborators
         if (!isEditMode && collaborators.length > 0 && eventId) {
-          for (const collaborator of collaborators) {
+          const csrfToken = getCsrfToken() || '';
+          for (const c of collaborators) {
             await fetch(`${BACKEND_URL}/api/events/${eventId}/collaborators`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-csrf-token': getCsrfToken() || ''
-              },
+              headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
               credentials: 'include',
-              body: JSON.stringify({
-                userId: collaborator.id,
-                role: 'collaborator'
-              })
+              body: JSON.stringify({ userId: c.id, role: 'collaborator' }),
             });
           }
         }
         navigate(`/events/${eventId}`);
       } else {
-        setValidationMessage(data.message || 'Error saving event');
+        setValidationMessage(data.message || 'Error al guardar el evento');
       }
     } catch (err) {
-      setValidationMessage(err.message || 'Error submitting event');
+      setValidationMessage(err.message || 'Error al enviar el evento');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const currentStep = STEPS.find(s => s.n === step);
+
   return (
-    <PremiumPageLayout>
-      {/* Editor Toolbar */}
-      <div className="sticky top-0 z-50 bg-[#030303]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between mb-8 -mx-4 sm:-mx-6 lg:-mx-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/events')}
-            className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="h-6 w-px bg-white/10" />
-          <span className="text-sm font-medium text-gray-400">
-            {isEditMode ? 'Edit Event' : 'Create Event'}
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <style>{PAGE_STYLES}</style>
+
+      {/* Nav */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 30,
+        height: '44px', display: 'flex', alignItems: 'center',
+        padding: '0 1.5rem', gap: '1rem',
+        backgroundColor: 'var(--bg)', borderBottom: '1px solid var(--border)',
+      }}>
+        <button
+          onClick={() => navigate('/events')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0.25rem', display: 'flex' }}
+        >
+          <ArrowLeft size={16} />
+        </button>
+
+        <div style={{ flex: 1 }}>
+          <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+            {isEditMode ? 'Editar evento' : `Paso ${step} de 3`}
           </span>
+          {!isEditMode && (
+            <span className="font-sans text-xs" style={{ color: 'var(--border)', marginLeft: '0.5rem' }}>
+              · {currentStep?.label}
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsAIPanelOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 transition-all"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">AI Assistant</span>
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex items-center gap-2 px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-900/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-            Publish
-          </button>
+
+        <button
+          onClick={() => setIsAIPanelOpen(v => !v)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? 'var(--accent)' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+        >
+          <Sparkles size={15} />
+        </button>
+      </nav>
+
+      {/* Step content */}
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '3rem 1.5rem 8rem' }}>
+        {/* Step indicator line */}
+        <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '2.5rem' }}>
+          {STEPS.map(s => (
+            <div
+              key={s.n}
+              style={{
+                height: 2, flex: 1,
+                backgroundColor: s.n <= step ? 'var(--accent)' : 'var(--border)',
+                transition: 'background-color 0.3s',
+              }}
+            />
+          ))}
         </div>
-      </div>
 
-      <div className="max-w-5xl mx-auto pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Editor Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Banner Upload */}
-            <div className="group relative w-full aspect-[21/9] rounded-3xl overflow-hidden border border-white/10 bg-white/5 transition-all hover:border-blue-500/30">
-              {formData.bannerUrl ? (
-                <>
-                  <img src={formData.bannerUrl} alt="Event Banner" className="w-full h-full object-cover object-center" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <label className="cursor-pointer px-6 py-3 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 transition-colors flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5" /> Change Banner
-                      <input type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
-                    </label>
-                  </div>
-                  <button
-                    onClick={(e) => { e.preventDefault(); setFormData({ ...formData, bannerUrl: '' }); }}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-red-500/80 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </>
-              ) : (
-                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
-                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <ImageIcon className="w-8 h-8 text-gray-500 group-hover:text-blue-400" />
-                  </div>
-                  <span className="text-gray-400 font-medium group-hover:text-white">Upload Event Banner</span>
-                  <span className="text-sm text-gray-600 mt-2">1200x600 recommended</span>
-                  <input type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
-                </label>
-              )}
-            </div>
+        {/* ── Step 1: Basic info ── */}
+        {step === 1 && (
+          <div>
+            <p className="font-sans text-xs uppercase tracking-widest mb-6" style={{ color: 'var(--muted)' }}>
+              Información básica
+            </p>
 
-            {/* Title Input */}
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleInputChange}
-              placeholder="Event Title..."
-              className="w-full bg-transparent border-none text-4xl md:text-5xl font-bold text-white placeholder-gray-700 focus:ring-0 p-0"
+              placeholder="Título del evento…"
+              className="font-display artix-create-input"
+              style={{
+                display: 'block', width: '100%',
+                background: 'transparent', border: 'none', outline: 'none',
+                fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', lineHeight: 1.2,
+                color: 'var(--text)', marginBottom: '2rem',
+                borderBottom: '1px solid var(--border)', paddingBottom: '1rem',
+              }}
             />
 
-            {/* Description Editor */}
-            <div className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden min-h-[400px]">
-              <RichTextEditorWithMentions
-                value={formData.description}
-                onChange={(value) => setFormData({ ...formData, description: value })}
-                placeholder="Describe your event details..."
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="input-label">Tipo de evento</label>
+              <CategorySelector
+                category={formData.type}
+                onChange={(type) => setFormData(prev => ({ ...prev, type }))}
+                contentType="event"
+                placeholder="Conferencia, taller, webinar…"
               />
             </div>
-          </div>
 
-          {/* Sidebar Column */}
-          <div className="space-y-6">
-            {/* Event Details Card */}
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/5 space-y-6">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-blue-400" /> Event Details
-              </h3>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Date & Time</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-blue-500 transition-colors"
-                    />
-                    <input
-                      type="time"
-                      name="time"
-                      value={formData.time}
-                      onChange={handleInputChange}
-                      className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-blue-500 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Location</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      placeholder="Add location or link..."
-                      className="w-full bg-black/20 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:border-blue-500 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Type</label>
-                  <CategorySelector
-                    category={formData.type}
-                    onChange={(type) => setFormData({ ...formData, type })}
-                    contentType="event"
-                    placeholder="Select Type..."
-                  />
-                </div>
+            <div>
+              <label className="input-label">Descripción</label>
+              <div className="artix-editor-event">
+                <RichTextEditorWithMentions
+                  value={formData.description}
+                  onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
+                  placeholder="¿De qué trata este evento? ¿A quién va dirigido?"
+                />
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Metadata Card */}
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/5 space-y-6">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <ToggleRight className="w-4 h-4 text-purple-400" /> Settings
-              </h3>
+        {/* ── Step 2: Date & location ── */}
+        {step === 2 && (
+          <div>
+            <p className="font-sans text-xs uppercase tracking-widest mb-6" style={{ color: 'var(--muted)' }}>
+              Lugar y fecha
+            </p>
 
-              {/* Collaborative Toggle */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-300">Collaborative Event</span>
-                <button
-                  onClick={() => setFormData(prev => ({ ...prev, isCollaborative: !prev.isCollaborative }))}
-                  className={`w-10 h-6 rounded-full transition-colors relative ${formData.isCollaborative ? 'bg-blue-600' : 'bg-white/10'}`}
-                >
-                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.isCollaborative ? 'translate-x-4' : ''}`} />
-                </button>
-              </div>
-
-              {formData.isCollaborative && (
-                <div className="pt-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Collaborators</label>
-                  <CollaboratorSelector
-                    selectedCollaborators={collaborators}
-                    onSelect={(user) => setCollaborators([...collaborators, user])}
-                    onRemove={(userId) => setCollaborators(collaborators.filter(c => c.id !== userId))}
-                    placeholder="Add people..."
-                  />
-                </div>
-              )}
-
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Tags</label>
-                <TagSelector
-                  tags={formData.tags}
-                  onChange={(tags) => setFormData({ ...formData, tags })}
-                  context="events"
-                  placeholder="Add tags..."
+                <label className="input-label">Fecha</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  style={{ fontSize: '1rem', padding: '0.75rem' }}
+                />
+              </div>
+              <div>
+                <label className="input-label">Hora</label>
+                <input
+                  type="time"
+                  name="time"
+                  value={formData.time}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  style={{ fontSize: '1rem', padding: '0.75rem' }}
                 />
               </div>
             </div>
 
-            {/* Validation Panel */}
-            <AIValidationPanel
-              status={eventValidation.status}
-              result={eventValidation.result}
-              error={eventValidation.error}
-            />
+            <div>
+              <label className="input-label">Ubicación</label>
+              <div style={{ position: 'relative' }}>
+                <MapPin
+                  size={14}
+                  style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}
+                />
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  placeholder="Lugar físico o URL del evento…"
+                  className="input-field"
+                  style={{ paddingLeft: '2.25rem', fontSize: '1rem', padding: '0.75rem 0.75rem 0.75rem 2.25rem' }}
+                />
+              </div>
+              <p className="font-sans text-xs mt-1" style={{ color: 'var(--muted)' }}>
+                Puede ser una dirección, ciudad o enlace a videoconferencia
+              </p>
+            </div>
+          </div>
+        )}
 
-            {validationMessage && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                {validationMessage}
+        {/* ── Step 3: Banner & settings ── */}
+        {step === 3 && (
+          <div>
+            <p className="font-sans text-xs uppercase tracking-widest mb-6" style={{ color: 'var(--muted)' }}>
+              Imagen y configuración
+            </p>
+
+            {/* Banner upload */}
+            <div style={{ marginBottom: '2rem' }}>
+              <label className="input-label">Banner del evento</label>
+              <div
+                className="group relative overflow-hidden flex items-center justify-center cursor-pointer"
+                style={{
+                  aspectRatio: '16/6',
+                  backgroundColor: 'var(--surface)',
+                  border: hoverBanner ? '1.5px dashed var(--accent)' : '1.5px dashed var(--border)',
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={() => setHoverBanner(true)}
+                onMouseLeave={() => setHoverBanner(false)}
+              >
+                {formData.bannerUrl ? (
+                  <>
+                    <img src={formData.bannerUrl} className="w-full h-full object-cover object-center" alt="Banner" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, bannerUrl: '' })); }}
+                      style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', padding: '0.375rem', color: 'var(--muted)', display: 'flex' }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-center">
+                    <Upload size={22} style={{ color: 'var(--muted)', margin: '0 auto 0.5rem' }} />
+                    <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                      Agregar banner
+                    </span>
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleBannerChange} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="input-label">Etiquetas</label>
+              <TagSelector
+                tags={formData.tags}
+                onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+                context="events"
+                placeholder="Agregar etiquetas…"
+              />
+            </div>
+
+            <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)', marginBottom: '1rem' }}>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, isCollaborative: !prev.isCollaborative }))}
+                className="flex items-center justify-between w-full font-sans text-sm"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+              >
+                Evento colaborativo
+                {formData.isCollaborative
+                  ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                  : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />}
+              </button>
+              {formData.isCollaborative && (
+                <div style={{ marginTop: '1rem' }}>
+                  <label className="input-label">Colaboradores</label>
+                  <CollaboratorSelector
+                    selectedCollaborators={collaborators}
+                    onSelect={(u) => setCollaborators(prev => [...prev, u])}
+                    onRemove={(uid) => setCollaborators(prev => prev.filter(c => c.id !== uid))}
+                    placeholder="Agregar personas…"
+                  />
+                </div>
+              )}
+            </div>
+
+            {isAdmin && !isEditMode && (
+              <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border)', marginBottom: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setPublishAsArtixResearch(v => !v)}
+                  className="flex items-center justify-between w-full font-sans text-sm"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+                >
+                  {publishAsArtixResearch ? 'Publicando como Artix' : 'Publicando como tú'}
+                  {publishAsArtixResearch
+                    ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                    : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />}
+                </button>
               </div>
             )}
+
+            <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+              <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+                Verificación de calidad
+              </p>
+              <AIValidationPanel
+                status={eventValidation.status}
+                result={eventValidation.result}
+                error={eventValidation.error}
+              />
+            </div>
           </div>
-        </div>
+        )}
+
+        {validationMessage && (
+          <p className="font-sans text-sm mt-4" style={{ color: 'var(--accent)' }}>{validationMessage}</p>
+        )}
       </div>
 
-      {/* AI Overlay */}
+      {/* Fixed bottom navigation */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '1rem 1.5rem',
+        backgroundColor: 'var(--bg)', borderTop: '1px solid var(--border)',
+      }}>
+        {step > 1 ? (
+          <button
+            onClick={() => { setValidationMessage(''); setStep(s => s - 1); }}
+            className="btn btn-ghost"
+            style={{ fontSize: '0.75rem' }}
+          >
+            ← Anterior
+          </button>
+        ) : (
+          <div />
+        )}
+
+        {step < 3 ? (
+          <button onClick={handleNext} className="btn btn-primary">
+            Siguiente →
+          </button>
+        ) : (
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="btn btn-primary"
+            style={{ opacity: isSubmitting ? 0.5 : 1 }}
+          >
+            {isSubmitting ? 'Publicando…' : 'Publicar evento'}
+          </button>
+        )}
+      </div>
+
       <AIAssistantOverlay
         isOpen={isAIPanelOpen}
         onClose={() => setIsAIPanelOpen(false)}
         onInsertText={handleInsertText}
-        contextData={{
-          title: formData.title,
-          contentType: 'event',
-          type: formData.type
-        }}
+        contextData={{ title: formData.title, contentType: 'event', type: formData.type }}
       />
-    </PremiumPageLayout>
+    </div>
   );
 };
 

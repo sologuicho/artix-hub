@@ -9,39 +9,25 @@ const AuthCallback = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const success = urlParams.get('success');
+      const success = new URLSearchParams(window.location.search).get('success');
 
-      if (success === 'true') {
-        // OAuth was successful, check auth status
-        try {
-          const response = await fetch(`${BACKEND_URL}/me`, {
-            method: 'GET',
-            credentials: 'include',
-          });
+      if (success !== 'true') {
+        navigate('/auth?error=oauth_cancelled');
+        return;
+      }
 
-          if (response.ok) {
-            const data = await response.json();
-            if (data.ok && data.user) {
-              // User is authenticated, redirect to dashboard or profile setup
-              if (!data.user.profileComplete) {
-                navigate('/profile/setup');
-              } else {
-                navigate('/');
-              }
-            } else {
-              navigate('/auth?error=authentication_failed');
-            }
-          } else {
-            navigate('/auth?error=authentication_failed');
-          }
-        } catch (error) {
-          console.error('Error checking auth:', error);
+      try {
+        const res = await fetch(`${BACKEND_URL}/me`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (res.ok && data.ok && data.user) {
+          await checkAuth();
+          navigate(data.user.profileComplete ? '/' : '/profile/setup');
+        } else {
           navigate('/auth?error=authentication_failed');
         }
-      } else {
-        // OAuth failed or was cancelled
-        navigate('/auth?error=oauth_cancelled');
+      } catch {
+        navigate('/auth?error=authentication_failed');
       }
     };
 
@@ -49,14 +35,26 @@ const AuthCallback = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Completing authentication...</p>
-      </div>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-4"
+      style={{ backgroundColor: 'var(--bg)' }}
+    >
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          border: '2px solid var(--border)',
+          borderTopColor: 'var(--accent)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }}
+      />
+      <p className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        Verificando sesión…
+      </p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
 
 export default AuthCallback;
-

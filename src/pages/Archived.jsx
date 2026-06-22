@@ -1,34 +1,31 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, BookOpen, FileText, Calendar, MessageSquare, Search } from 'lucide-react';
+import { Archive, Calendar, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from '../components/ProtectedRoute';
-import SearchBar from '../components/SearchBar';
-import ProfileSidebar from '../components/ProfileSidebar';
 
 import { BACKEND_URL } from '../config/client';
+
+const TABS = [
+  { id: 'articles', label: 'Artículos' },
+  { id: 'research', label: 'Investigaciones' },
+  { id: 'events', label: 'Eventos' },
+  { id: 'posts', label: 'Posts' },
+];
 
 const Archived = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('articles');
-  const [content, setContent] = useState({
-    articles: [],
-    research: [],
-    events: [],
-    posts: []
-  });
+  const [content, setContent] = useState({ articles: [], research: [], events: [], posts: [] });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (user) {
-      fetchArchived();
-    }
+    if (user) fetchArchived();
   }, [user, activeTab, searchQuery]);
 
   const fetchArchived = async () => {
     if (!user) return;
-
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -37,30 +34,19 @@ const Archived = () => {
       if (searchQuery) params.append('search', searchQuery);
 
       let endpoint = '';
-      if (activeTab === 'articles') {
-        params.append('status', 'archived');
-        endpoint = `${BACKEND_URL}/api/articles?${params.toString()}`;
-      } else if (activeTab === 'research') {
-        params.append('status', 'archived');
-        endpoint = `${BACKEND_URL}/api/research?${params.toString()}`;
-      } else if (activeTab === 'events') {
-        endpoint = `${BACKEND_URL}/api/events?${params.toString()}`;
-      } else if (activeTab === 'posts') {
-        endpoint = `${BACKEND_URL}/api/blog?${params.toString()}`;
-      }
+      if (activeTab === 'articles') { params.append('status', 'archived'); endpoint = `${BACKEND_URL}/api/articles?${params}`; }
+      else if (activeTab === 'research') { params.append('status', 'archived'); endpoint = `${BACKEND_URL}/api/research?${params}`; }
+      else if (activeTab === 'events') { endpoint = `${BACKEND_URL}/api/events?${params}`; }
+      else if (activeTab === 'posts') { endpoint = `${BACKEND_URL}/api/blog?${params}`; }
 
       if (endpoint) {
         const response = await fetch(endpoint, { credentials: 'include' });
         const data = await response.json();
         if (data.ok) {
           let items = [];
-          if (activeTab === 'posts') {
-            items = (data.posts || []).filter(p => p.archived);
-          } else if (activeTab === 'events') {
-            items = (data.events || []).filter(e => e.archived);
-          } else {
-            items = data[activeTab] || [];
-          }
+          if (activeTab === 'posts') items = (data.posts || []).filter(p => p.archived);
+          else if (activeTab === 'events') items = (data.events || []).filter(e => e.archived);
+          else items = data[activeTab] || [];
           setContent(prev => ({ ...prev, [activeTab]: items }));
         }
       }
@@ -71,112 +57,106 @@ const Archived = () => {
     }
   };
 
-  if (loading && content[activeTab].length === 0) {
-    return (
-      <ProtectedRoute>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
+  const formatDate = (d) => new Date(d).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
 
   return (
     <ProtectedRoute>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-6">
-          {/* Left Sidebar */}
-          <div className="hidden lg:block">
-            <ProfileSidebar />
+      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+        <div className="site-container py-16">
+          {/* Header */}
+          <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
+            <span className="category-tag">Mi contenido</span>
+            <h1 className="font-display mt-2" style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', color: 'var(--text)', lineHeight: 1.1 }}>
+              Archivado
+            </h1>
+            <p className="font-sans mt-3" style={{ color: 'var(--muted)', fontSize: '1rem' }}>
+              Gestiona tu contenido archivado
+            </p>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-3">
-                <Archive className="w-8 h-8" />
-                Contenido Archivado
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Gestiona tu contenido archivado
+          {/* Search */}
+          <div className="relative mb-8" style={{ maxWidth: '480px' }}>
+            <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+            <input
+              type="text"
+              className="input-field"
+              style={{ paddingLeft: '2.25rem' }}
+              placeholder="Buscar en archivados…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-6 mb-8" style={{ borderBottom: '1px solid var(--border)' }}>
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="font-sans text-xs uppercase tracking-wider pb-3"
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  borderBottom: activeTab === tab.id ? '1px solid var(--text)' : '1px solid transparent',
+                  marginBottom: '-1px',
+                  color: activeTab === tab.id ? 'var(--text)' : 'var(--muted)',
+                  transition: 'color 0.15s',
+                }}
+              >
+                {tab.label} ({content[tab.id]?.length || 0})
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          {loading ? (
+            <div className="py-20 flex items-center justify-center">
+              <div style={{ width: 28, height: 28, border: '2px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          ) : content[activeTab]?.length === 0 ? (
+            <div className="py-20 text-center">
+              <Archive size={32} style={{ color: 'var(--muted)', margin: '0 auto 1rem' }} />
+              <p className="font-display" style={{ fontSize: '1.25rem', color: 'var(--muted)' }}>
+                No hay {TABS.find(t => t.id === activeTab)?.label.toLowerCase()} archivados
               </p>
             </div>
-
-            {/* Search Bar */}
-            <div className="mb-6">
-              <SearchBar 
-                onSearch={setSearchQuery} 
-                placeholder="Buscar en archivados..." 
-              />
-            </div>
-
-            {/* Tabs */}
-            <div className="flex items-center gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-              {[
-                { id: 'articles', label: 'Artículos', icon: BookOpen },
-                { id: 'research', label: 'Investigaciones', icon: FileText },
-                { id: 'events', label: 'Eventos', icon: Calendar },
-                { id: 'posts', label: 'Posts', icon: MessageSquare }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-6 py-3 font-medium transition-colors border-b-2 flex items-center gap-2 ${
-                    activeTab === tab.id
-                      ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-                  }`}
+          ) : (
+            <div>
+              {content[activeTab].map(item => (
+                <Link
+                  key={item.id}
+                  to={`/${activeTab === 'posts' ? 'blog' : activeTab}/${item.id}`}
+                  className="group block py-5"
+                  style={{ borderBottom: '1px solid var(--border)', textDecoration: 'none' }}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label} ({content[tab.id]?.length || 0})
-                </button>
-              ))}
-            </div>
-
-            {/* Content List */}
-            <div className="space-y-6">
-              {content[activeTab]?.length === 0 ? (
-                <div className="text-center py-12">
-                  <Archive className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400">
-                    No hay {activeTab} archivados.
-                  </p>
-                </div>
-              ) : (
-                content[activeTab]?.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/${activeTab === 'posts' ? 'blog' : activeTab}/${item.id}`}
-                    className="glass-card p-6 hover:shadow-xl transition-all duration-300 block"
-                  >
+                  <div className="flex items-start gap-4">
                     {item.coverUrl && (
-                      <div className="mb-4 rounded-xl overflow-hidden">
-                        <img
-                          src={item.coverUrl}
-                          alt={item.title}
-                          className="w-full h-64 object-cover"
-                        />
+                      <div style={{ width: 80, height: 60, flexShrink: 0, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img src={item.coverUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                     )}
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                      {item.title}
-                    </h3>
-                    {item.description && (
-                      <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                        {item.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                      <Calendar className="w-4 h-4" />
-                      <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                    <div className="flex-1 min-w-0">
+                      <h3
+                        className="font-display group-hover:[color:var(--accent)] transition-colors mb-1"
+                        style={{ fontSize: '1.125rem', color: 'var(--text)', lineHeight: 1.3 }}
+                      >
+                        {item.title || 'Sin título'}
+                      </h3>
+                      {item.description && (
+                        <p className="font-sans text-sm mb-2" style={{ color: 'var(--muted)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                          {item.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                        <Calendar size={11} />
+                        <span>{formatDate(item.createdAt)}</span>
+                      </div>
                     </div>
-                  </Link>
-                ))
-              )}
+                  </div>
+                </Link>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </ProtectedRoute>
@@ -184,7 +164,3 @@ const Archived = () => {
 };
 
 export default Archived;
-
-
-
-

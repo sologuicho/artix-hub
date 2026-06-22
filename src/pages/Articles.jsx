@@ -1,41 +1,94 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Clock, Calendar, User, ArrowRight, Sparkles } from 'lucide-react';
+import { Plus, Search, Clock } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import PremiumPageLayout from '../components/layout/PremiumPageLayout';
-import PremiumCard from '../components/ui/PremiumCard';
-import GlassSearchBar from '../components/ui/GlassSearchBar';
+import { usePermissions } from '../hooks/usePermissions';
 import { GLOBAL_CATEGORIES } from '../constants/categories';
-
 import { BACKEND_URL } from '../config/client';
 
+const ArticleRow = ({ article, onClick }) => (
+  <article
+    className="cursor-pointer group"
+    style={{ paddingTop: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid var(--border)' }}
+    onClick={onClick}
+  >
+    <div className="flex flex-col md:flex-row gap-6">
+      {article.coverUrl && (
+        <div
+          className="flex-shrink-0 overflow-hidden"
+          style={{ width: '100%', maxWidth: '220px', aspectRatio: '4/3' }}
+        >
+          <img
+            src={article.coverUrl}
+            alt={article.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </div>
+      )}
+      <div className="flex flex-col justify-center gap-2 flex-1">
+        {article.category && <span className="category-tag">{article.category}</span>}
+        <h3
+          className="font-display group-hover:[color:var(--accent)] transition-colors duration-150"
+          style={{ fontSize: '1.375rem', lineHeight: 1.25, color: 'var(--text)' }}
+        >
+          {article.title}
+        </h3>
+        {article.description && (
+          <p className="font-sans text-sm" style={{ color: 'var(--muted)', lineHeight: 1.65 }}>
+            {article.description.length > 140 ? article.description.slice(0, 140) + '…' : article.description}
+          </p>
+        )}
+        <div className="flex items-center gap-3 mt-1">
+          {article.author?.name && (
+            <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>{article.author.name}</span>
+          )}
+          {article.createdAt && (
+            <>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                {new Date(article.createdAt).toLocaleDateString('es-MX', {
+                  year: 'numeric', month: 'long', day: 'numeric',
+                })}
+              </span>
+            </>
+          )}
+          {article.readTime && (
+            <>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>{article.readTime} min</span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  </article>
+);
 
 const Articles = () => {
   const { t } = useLanguage();
   const { isAuthenticated } = useAuth();
+  const { canPublishArticles } = usePermissions();
   const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
-  const [filters, setFilters] = useState({});
 
   useEffect(() => {
     fetchArticles();
-  }, [filters, activeCategory]);
+  }, [query, activeCategory]);
 
   const fetchArticles = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (filters.query) params.append('search', filters.query);
+      if (query) params.append('search', query);
       if (activeCategory !== 'all') params.append('category', activeCategory);
 
       const response = await fetch(`${BACKEND_URL}/api/articles?${params.toString()}`);
       const data = await response.json();
-      if (data.ok) {
-        setArticles(data.articles || []);
-      }
+      if (data.ok) setArticles(data.articles || []);
     } catch (error) {
       console.error('Error fetching articles:', error);
     } finally {
@@ -43,136 +96,112 @@ const Articles = () => {
     }
   };
 
-  const handleSearch = (searchFilters) => setFilters(prev => ({ ...prev, ...searchFilters }));
-
-  // Separate featured content
-  const featuredArticle = articles.length > 0 ? articles[0] : null;
-  const standardArticles = articles.length > 0 ? articles.slice(1) : [];
+  const categories = ['all', ...(GLOBAL_CATEGORIES || []).filter(c => c.id !== 'all').slice(0, 4).map(c => c.id)];
 
   return (
-    <PremiumPageLayout
-      title={t('articles.title')}
-      subtitle="Explore the frontier of human knowledge through curated research and insights."
-    >
-      {/* Controls Section */}
-      <div className="flex flex-col lg:flex-row justify-between items-start gap-8 mb-16 relative z-20">
-        <div className="w-full lg:max-w-2xl">
-          <GlassSearchBar
-            onSearch={handleSearch}
-            placeholder="Search articles, topics, or authors..."
-            categories={GLOBAL_CATEGORIES}
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-          />
-        </div>
-
-        {isAuthenticated() && (
-          <button
-            onClick={() => navigate('/articles/create')}
-            className="group relative px-6 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40 transition-all hover:-translate-y-1 overflow-hidden"
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <div className="site-container py-16">
+        {/* Header */}
+        <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
+          <span className="category-tag">Artículos</span>
+          <h1
+            className="font-display mt-2"
+            style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', color: 'var(--text)', lineHeight: 1.1 }}
           >
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <span className="relative flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              {t('articles.create')}
-            </span>
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-40">
-          <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+            {t('articles.title') || 'Artículos'}
+          </h1>
+          <p className="font-sans mt-3" style={{ color: 'var(--muted)', fontSize: '1rem', maxWidth: '520px' }}>
+            Explora investigaciones, estudios y perspectivas de nuestra comunidad.
+          </p>
         </div>
-      ) : (
-        <div className="space-y-16">
 
-          {/* Featured Article Section */}
-          {featuredArticle && activeCategory === 'all' && !filters.query && (
-            <div
-              onClick={() => navigate(`/articles/${featuredArticle.id}`)}
-              className="relative rounded-3xl overflow-hidden cursor-pointer group border border-white/10"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
-              <div className="h-[500px] w-full relative">
-                {featuredArticle.coverUrl ? (
-                  <img
-                    src={featuredArticle.coverUrl}
-                    alt={featuredArticle.title}
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-indigo-900 to-black" />
-                )}
-              </div>
-
-              <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 z-20">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 backdrop-blur-md">
-                    FEATURED
-                  </span>
-                  <span className="text-gray-300 text-sm flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-yellow-500" />
-                    Curated Selection
-                  </span>
-                </div>
-                <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 max-w-4xl leading-tight group-hover:text-blue-200 transition-colors">
-                  {featuredArticle.title}
-                </h2>
-                <div className="flex items-center gap-6 text-sm text-gray-300">
-                  <div className="flex items-center gap-2">
-                    {featuredArticle.author?.avatar ? (
-                      <img src={featuredArticle.author.avatar} className="w-8 h-8 rounded-full border border-white/20" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                        <User className="w-4 h-4" />
-                      </div>
-                    )}
-                    <span className="font-medium">{featuredArticle.author?.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span>{featuredArticle.readTime || 5} min read</span>
-                  </div>
-                </div>
-              </div>
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 flex-wrap">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1 flex-wrap">
+            <div className="relative" style={{ maxWidth: '360px', flex: '0 0 auto', width: '100%' }}>
+              <Search
+                size={14}
+                style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}
+              />
+              <input
+                className="input-field"
+                style={{ paddingLeft: '2.25rem' }}
+                placeholder="Buscar artículos..."
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+              />
             </div>
-          )}
-
-          {/* Standard Grid */}
-          <div>
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span className="w-2 h-8 bg-blue-500 rounded-full" />
-                Latest Articles
-              </h3>
-              <button className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-colors">
-                View Archive <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {(activeCategory === 'all' && !filters.query ? standardArticles : articles).map((article, index) => (
-                <PremiumCard
-                  key={article.id}
-                  title={article.title}
-                  description={article.description}
-                  imageUrl={article.coverUrl}
-                  category={article.category}
-                  author={article.author}
-                  date={new Date(article.createdAt).toLocaleDateString()}
-                  stats={[
-                    { icon: Clock, value: `${article.readTime || 5} min`, label: 'Lecture Time' }
-                  ]}
-                  onClick={() => navigate(`/articles/${article.id}`)}
-                  delay={index * 0.05}
-                />
+            <div className="flex items-center gap-2 flex-wrap">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className="font-sans text-xs uppercase tracking-wider"
+                  style={{
+                    background: 'none',
+                    border: activeCategory === cat ? '1px solid var(--text)' : '1px solid var(--border)',
+                    color: activeCategory === cat ? 'var(--text)' : 'var(--muted)',
+                    padding: '0.375rem 0.75rem',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s, color 0.15s',
+                  }}
+                >
+                  {cat === 'all' ? 'Todos' : cat}
+                </button>
               ))}
             </div>
           </div>
+
+          {isAuthenticated() && canPublishArticles && (
+            <button
+              onClick={() => navigate('/articles/create')}
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}
+            >
+              <Plus size={14} />
+              {t('articles.create') || 'Crear Artículo'}
+            </button>
+          )}
         </div>
-      )}
-    </PremiumPageLayout>
+
+        {/* Section label */}
+        <div style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+          <h2 className="font-display" style={{ fontSize: '1.5rem', color: 'var(--text)' }}>
+            Artículos recientes
+          </h2>
+        </div>
+
+        {/* Articles */}
+        {loading ? (
+          <div className="py-20 flex items-center justify-center">
+            <div style={{
+              width: 28, height: 28,
+              border: '2px solid var(--border)',
+              borderTopColor: 'var(--accent)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : articles.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="font-display" style={{ fontSize: '1.25rem', color: 'var(--muted)' }}>
+              {query ? `Sin resultados para "${query}"` : 'Aún no hay artículos publicados'}
+            </p>
+          </div>
+        ) : (
+          <div>
+            {articles.map(article => (
+              <ArticleRow
+                key={article.id}
+                article={article}
+                onClick={() => navigate(`/articles/${article.id}`)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

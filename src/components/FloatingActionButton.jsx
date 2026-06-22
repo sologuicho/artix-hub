@@ -2,40 +2,38 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, FileText, BookOpen, Calendar, X, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import usePermissions from '../hooks/usePermissions';
 
 const FloatingActionButton = () => {
   const { isAuthenticated } = useAuth();
+  const { canPublish, canPublishArticles, canPublishEvents } = usePermissions();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   if (!isAuthenticated()) return null;
 
-  const actions = [
-    {
-      icon: Search,
-      label: 'Crear Investigación',
-      path: '/research/create',
-      color: 'bg-orange-600 hover:bg-orange-700',
-    },
-    {
-      icon: FileText,
-      label: 'Crear Artículo',
-      path: '/articles/create',
-      color: 'bg-blue-600 hover:bg-blue-700',
-    },
-    {
-      icon: BookOpen,
-      label: 'Crear Post del Blog',
-      path: '/blog/create',
-      color: 'bg-purple-600 hover:bg-purple-700',
-    },
-    {
-      icon: Calendar,
-      label: 'Crear Evento',
-      path: '/events/create',
-      color: 'bg-green-600 hover:bg-green-700',
-    },
-  ];
+  const actions = [];
+  
+  if (canPublishArticles) {
+    actions.push(
+      { icon: Search, label: 'Crear Investigación', path: '/research/create', color: 'bg-orange-600 hover:bg-orange-700' },
+      { icon: FileText, label: 'Crear Artículo', path: '/articles/create', color: 'bg-blue-600 hover:bg-blue-700' }
+    );
+  }
+
+  if (canPublish) {
+    actions.push(
+      { icon: BookOpen, label: 'Crear Post del Blog', path: '/blog/create', color: 'bg-purple-600 hover:bg-purple-700' }
+    );
+  }
+
+  if (canPublishEvents) {
+    actions.push(
+      { icon: Calendar, label: 'Crear Evento', path: '/events/create', color: 'bg-green-600 hover:bg-green-700' }
+    );
+  }
+
+  if (actions.length === 0) return null;
 
   const handleAction = (path) => {
     navigate(path);

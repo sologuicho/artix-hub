@@ -1,16 +1,50 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Save, Upload, Image as ImageIcon, Video, FileText, X, Building2, User, ToggleLeft, ToggleRight, Sparkles, ArrowLeft } from 'lucide-react';
+import { Upload, Video, X, Building2, User, ToggleLeft, ToggleRight, Sparkles, ArrowLeft, Image } from 'lucide-react';
 import RichTextEditorWithMentions from '../components/RichTextEditorWithMentions';
 import TagSelector from '../components/TagSelector';
 import CategorySelector from '../components/CategorySelector';
 import useAIValidation from '../hooks/useAIValidation';
 import AIValidationPanel from '../components/AIValidationPanel';
 import AIAssistantOverlay from '../components/AIAssistantOverlay';
-import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 import { useAuth } from '../context/AuthContext';
-
 import { BACKEND_URL } from '../config/client';
+
+const PAGE_STYLES = `
+  .artix-editor-blog .ql-toolbar {
+    background-color: var(--surface);
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0.375rem 0;
+  }
+  .artix-editor-blog .ql-container {
+    border: none;
+    background: transparent;
+    font-size: 1.0625rem;
+  }
+  .artix-editor-blog .ql-editor {
+    padding: 1.25rem 0;
+    min-height: 280px;
+    line-height: 1.85;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .artix-editor-blog .ql-stroke { stroke: var(--muted) !important; }
+  .artix-editor-blog .ql-fill { fill: var(--muted) !important; }
+  .artix-editor-blog .ql-picker-label { color: var(--muted) !important; }
+  .artix-editor-blog .ql-editor.ql-blank::before { color: var(--muted); font-style: normal; left: 0; }
+  .artix-editor-blog .ql-toolbar button:hover .ql-stroke,
+  .artix-editor-blog .ql-toolbar button.ql-active .ql-stroke { stroke: var(--accent) !important; }
+  .artix-editor-blog .ql-toolbar button:hover .ql-fill,
+  .artix-editor-blog .ql-toolbar button.ql-active .ql-fill { fill: var(--accent) !important; }
+  .artix-editor-blog .ql-picker-options {
+    background-color: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+  }
+  .artix-editor-blog .ql-picker-item:hover { color: var(--accent) !important; }
+  .artix-create-input::placeholder { color: var(--muted); opacity: 1; }
+`;
 
 const CreateBlogPost = () => {
   const { id } = useParams();
@@ -26,6 +60,8 @@ const CreateBlogPost = () => {
   const blogValidation = useAIValidation('blog');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
+  const [hoverCover, setHoverCover] = useState(false);
+  const [hoverImage, setHoverImage] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -38,20 +74,17 @@ const CreateBlogPost = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [documents, setDocuments] = useState([]);
 
-  // Load post data if in edit mode
   useEffect(() => {
     if (isEditMode && id) {
       const fetchPost = async () => {
         try {
-          const response = await fetch(`${BACKEND_URL}/api/blog/${id}`, {
-            credentials: 'include'
-          });
+          const response = await fetch(`${BACKEND_URL}/api/blog/${id}`, { credentials: 'include' });
           const data = await response.json();
           if (data.ok && data.post) {
             const post = data.post;
             setFormData({
               title: post.title || '',
-              category: post.category || 'General',
+              category: post.category || '',
               content: post.content || '',
               tags: post.tags || [],
             });
@@ -60,9 +93,7 @@ const CreateBlogPost = () => {
             setVideoUrl(post.videoUrl || '');
             setDocuments(post.documents ? post.documents.map(url => ({ url })) : []);
           }
-        } catch (error) {
-          console.error('Error loading post:', error);
-        }
+        } catch (error) { console.error('Error loading post:', error); }
       };
       fetchPost();
     }
@@ -70,91 +101,70 @@ const CreateBlogPost = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleCoverChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      try {
-        const { compressImage } = await import('../utils/imageCompression');
-        const compressedDataUrl = await compressImage(file, 1200, 1200, 0.85);
-        setCoverUrl(compressedDataUrl);
-      } catch (error) {
-        console.error('Error compressing image:', error);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setCoverUrl(reader.result);
-        };
-        reader.readAsDataURL(file);
-      }
+    if (!file) return;
+    try {
+      const { compressImage } = await import('../utils/imageCompression');
+      const compressed = await compressImage(file, 1200, 1200, 0.85);
+      setCoverUrl(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => setCoverUrl(reader.result);
+      reader.readAsDataURL(file);
     }
   };
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      try {
-        const { compressImage } = await import('../utils/imageCompression');
-        const compressedDataUrl = await compressImage(file, 1200, 1200, 0.85);
-        setImageUrl(compressedDataUrl);
-      } catch (error) {
-        console.error('Error compressing image:', error);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImageUrl(reader.result);
-        };
-        reader.readAsDataURL(file);
-      }
+    if (!file) return;
+    try {
+      const { compressImage } = await import('../utils/imageCompression');
+      const compressed = await compressImage(file, 1200, 1200, 0.85);
+      setImageUrl(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => setImageUrl(reader.result);
+      reader.readAsDataURL(file);
     }
   };
 
-  // AI Assistant Handlers
   const handleInsertText = (text) => {
-    setFormData(prev => ({
-      ...prev,
-      content: prev.content + '\n\n' + text
-    }));
+    setFormData(prev => ({ ...prev, content: prev.content + '\n\n' + text }));
   };
 
   const extractMentions = (html) => {
-    const mentionRegex = /@(\w+)/g;
-    const matches = html.match(mentionRegex);
+    const matches = html.match(/@(\w+)/g);
     return matches ? matches.map(m => m.substring(1)) : [];
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!formData.content.trim() && !coverUrl && !imageUrl && !videoUrl && documents.length === 0) {
       setValidationMessage('Debes agregar contenido o al menos un archivo');
       return;
     }
-
     setValidationMessage('');
     setIsSubmitting(true);
 
     try {
       const getCsrfToken = () => {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
+        for (let cookie of document.cookie.split(';')) {
           const [name, value] = cookie.trim().split('=');
           if (name === 'csrf') return value;
         }
         return null;
       };
 
-      const extractedMentions = extractMentions(formData.content);
       const documentUrls = documents.map(doc => doc.url);
-
       const url = isEditMode ? `${BACKEND_URL}/api/blog/${id}` : `${BACKEND_URL}/api/blog`;
-      const method = isEditMode ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': getCsrfToken() || ''
-        },
+        method: isEditMode ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
         body: JSON.stringify({
           title: formData.title || null,
@@ -165,199 +175,296 @@ const CreateBlogPost = () => {
           imageUrl: imageUrl || null,
           videoUrl: videoUrl || null,
           documents: documentUrls,
-          mentions: extractedMentions,
-          publishAsArtixResearch: publishAsArtixResearch && !isEditMode
-        })
+          mentions: extractMentions(formData.content),
+          publishAsArtixResearch: publishAsArtixResearch && !isEditMode,
+        }),
       });
 
       const data = await response.json();
       if (data.ok) {
         navigate('/blog');
       } else {
-        setValidationMessage(data.message || 'Error creating post');
+        setValidationMessage(data.message || 'Error al crear el post');
       }
     } catch (error) {
-      setValidationMessage(error.message || 'Error saving post');
+      setValidationMessage(error.message || 'Error al guardar el post');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <PremiumPageLayout>
-      {/* Editor Toolbar */}
-      <div className="sticky top-0 z-50 bg-[#030303]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between mb-8 -mx-4 sm:-mx-6 lg:-mx-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/blog')}
-            className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="h-6 w-px bg-white/10" />
-          <span className="text-sm font-medium text-gray-400">
-            {isEditMode ? 'Edit Post' : 'New Post'}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsAIPanelOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 transition-all"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">AI Assistant</span>
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex items-center gap-2 px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-900/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-            Publish
-          </button>
-        </div>
-      </div>
+  const wordCount = formData.content
+    .replace(/<[^>]*>/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(w => w.length > 0).length;
 
-      <div className="max-w-4xl mx-auto pb-20">
-        {/* Admin Author Toggle */}
+  return (
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <style>{PAGE_STYLES}</style>
+
+      {/* Slim nav */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 30,
+        height: '44px', display: 'flex', alignItems: 'center',
+        padding: '0 1.5rem', gap: '0.75rem',
+        backgroundColor: 'var(--bg)', borderBottom: '1px solid var(--border)',
+      }}>
+        <button
+          onClick={() => navigate('/blog')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0.25rem', display: 'flex' }}
+        >
+          <ArrowLeft size={16} />
+        </button>
+
+        <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+          {isEditMode ? 'Editar post' : 'Nuevo post'}
+        </span>
+
+        {wordCount > 0 && (
+          <span className="font-sans text-xs" style={{ color: 'var(--border)' }}>· {wordCount} palabras</span>
+        )}
+
+        <div style={{ flex: 1 }} />
+
+        <button
+          onClick={() => setIsAIPanelOpen(v => !v)}
+          title="Asistente IA"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? 'var(--accent)' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+        >
+          <Sparkles size={15} />
+        </button>
+
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="btn btn-primary"
+          style={{ fontSize: '0.6875rem', padding: '0.5rem 1.25rem', opacity: isSubmitting ? 0.5 : 1 }}
+        >
+          {isSubmitting ? 'Publicando…' : 'Publicar'}
+        </button>
+      </nav>
+
+      {/* Cover zone */}
+      {coverUrl ? (
+        <div style={{ width: '100%', aspectRatio: '16/5', position: 'relative' }}>
+          <img src={coverUrl} alt="Portada" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <button
+            onClick={() => setCoverUrl('')}
+            style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', padding: '0.375rem', color: 'var(--muted)', display: 'flex' }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <label
+          onMouseEnter={() => setHoverCover(true)}
+          onMouseLeave={() => setHoverCover(false)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            width: '100%', padding: '0.625rem 1.5rem',
+            borderBottom: `1px solid ${hoverCover ? 'var(--accent)' : 'var(--border)'}`,
+            cursor: 'pointer', transition: 'border-color 0.15s',
+          }}
+        >
+          <Upload size={12} style={{ color: 'var(--muted)' }} />
+          <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+            Agregar portada
+          </span>
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
+        </label>
+      )}
+
+      {/* Writing area */}
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '3rem 1.5rem 10rem' }}>
+
+        {/* Admin author toggle */}
         {isAdmin && !isEditMode && (
-          <div className="mb-8 p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${publishAsArtixResearch ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                {publishAsArtixResearch ? <Building2 className="w-5 h-5" /> : <User className="w-5 h-5" />}
-              </div>
-              <div>
-                <p className="text-white font-medium">Posting as {publishAsArtixResearch ? 'Artix Research' : (user?.name || user?.username)}</p>
-                <p className="text-sm text-gray-400">Post author will be visible as chosen</p>
-              </div>
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '0.75rem 1rem', marginBottom: '2rem',
+              backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              {publishAsArtixResearch
+                ? <Building2 size={14} style={{ color: 'var(--muted)' }} />
+                : <User size={14} style={{ color: 'var(--muted)' }} />
+              }
+              <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>
+                Publicando como {publishAsArtixResearch ? 'Artix Research' : (user?.name || user?.username)}
+              </span>
             </div>
             <button
-              onClick={() => setPublishAsArtixResearch(!publishAsArtixResearch)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
+              type="button"
+              onClick={() => setPublishAsArtixResearch(v => !v)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, display: 'flex' }}
             >
-              {publishAsArtixResearch ? <ToggleRight className="w-5 h-5 text-purple-400" /> : <ToggleLeft className="w-5 h-5" />}
+              {publishAsArtixResearch
+                ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />
+              }
             </button>
           </div>
         )}
 
-        {/* Main Editor */}
-        <div className="space-y-6">
-          {/* Title */}
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            placeholder="Post Title (Optional)"
-            className="w-full bg-transparent border-none text-4xl font-bold text-white placeholder-gray-700 focus:ring-0 p-0"
+        {/* Title */}
+        <input
+          type="text"
+          name="title"
+          value={formData.title}
+          onChange={handleInputChange}
+          placeholder="Título (opcional)…"
+          className="font-display artix-create-input"
+          style={{
+            display: 'block', width: '100%',
+            background: 'transparent', border: 'none', outline: 'none',
+            fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', lineHeight: 1.2,
+            color: 'var(--text)', marginBottom: '1.75rem',
+          }}
+        />
+
+        {/* Rich text editor */}
+        <div className="artix-editor-blog" style={{ marginBottom: '2rem' }}>
+          <RichTextEditorWithMentions
+            value={formData.content}
+            onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+            placeholder="Escribe algo increíble…"
           />
+        </div>
 
-          {/* Media Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Cover Image Upload */}
-            <div className="group relative aspect-video rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:border-blue-500/30 transition-colors">
-              {coverUrl ? (
-                <img src={coverUrl} alt="Cover" className="w-full h-full object-cover" />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 group-hover:text-gray-400">
-                  <Upload className="w-6 h-6 mb-2" />
-                  <span className="text-xs">Cover Image</span>
-                </div>
-              )}
-              <input type="file" accept="image/*" onChange={handleCoverChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-              {coverUrl && (
-                <button onClick={(e) => { e.preventDefault(); setCoverUrl(''); }} className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-red-500 transition-colors z-10">
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-
-            {/* Content Image Upload */}
-            <div className="group relative aspect-video rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:border-blue-500/30 transition-colors">
+        {/* Media row */}
+        <div
+          style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem',
+            marginBottom: '2rem',
+          }}
+        >
+          {/* Inline image */}
+          <label
+            onMouseEnter={() => setHoverImage(true)}
+            onMouseLeave={() => setHoverImage(false)}
+            style={{ cursor: 'pointer', display: 'block', position: 'relative' }}
+          >
+            <div
+              style={{
+                aspectRatio: '4/3',
+                border: `1.5px dashed ${hoverImage ? 'var(--accent)' : 'var(--border)'}`,
+                backgroundColor: 'var(--surface)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', transition: 'border-color 0.15s', position: 'relative',
+              }}
+            >
               {imageUrl ? (
-                <img src={imageUrl} alt="Content" className="w-full h-full object-cover" />
+                <>
+                  <img src={imageUrl} alt="Imagen" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button
+                    onClick={(e) => { e.preventDefault(); setImageUrl(''); }}
+                    style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', padding: '0.25rem', color: 'var(--muted)', display: 'flex' }}
+                  >
+                    <X size={12} />
+                  </button>
+                </>
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 group-hover:text-gray-400">
-                  <ImageIcon className="w-6 h-6 mb-2" />
-                  <span className="text-xs">Content Image</span>
+                <div style={{ textAlign: 'center' }}>
+                  <Image size={20} style={{ color: 'var(--muted)', margin: '0 auto 0.375rem' }} />
+                  <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Imagen</span>
                 </div>
               )}
-              <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-              {imageUrl && (
-                <button onClick={(e) => { e.preventDefault(); setImageUrl(''); }} className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-red-500 transition-colors z-10">
-                  <X className="w-3 h-3" />
-                </button>
-              )}
             </div>
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
+          </label>
 
-            {/* Video URL Input - Simplified visual */}
-            <div className="relative aspect-video rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:border-blue-500/30 transition-colors p-4 flex flex-col justify-center">
-              <div className="flex flex-col items-center text-gray-500 mb-3">
-                <Video className="w-6 h-6 mb-2" />
-                <span className="text-xs">Video URL</span>
-              </div>
-              <input
-                type="url"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full bg-black/20 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
-              />
+          {/* Video URL */}
+          <div
+            style={{
+              aspectRatio: '4/3', backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)', padding: '1rem',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Video size={14} style={{ color: 'var(--muted)' }} />
+              <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>URL de video</span>
             </div>
-          </div>
-
-          {/* Content Editor */}
-          <div className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden min-h-[400px]">
-            <RichTextEditorWithMentions
-              value={formData.content}
-              onChange={(value) => setFormData({ ...formData, content: value })}
-              placeholder="Write something amazing..."
+            <input
+              type="url"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://…"
+              className="input-field"
+              style={{ fontSize: '0.8125rem' }}
             />
           </div>
-
-          {/* Metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-3xl bg-white/5 border border-white/5">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Category</label>
-              <CategorySelector
-                category={formData.category}
-                onChange={(category) => setFormData({ ...formData, category })}
-                contentType="blog"
-                placeholder="Select category..."
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Tags</label>
-              <TagSelector
-                tags={formData.tags}
-                onChange={(tags) => setFormData({ ...formData, tags })}
-                context="blog"
-                placeholder="Add tags..."
-              />
-            </div>
-          </div>
-
-          {/* Validation Messages */}
-          {validationMessage && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-              {validationMessage}
-            </div>
-          )}
         </div>
+
+        {/* Category + Tags */}
+        <div
+          style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem',
+            marginBottom: '2rem', padding: '1rem',
+            backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+          }}
+        >
+          <div>
+            <label className="input-label">Categoría</label>
+            <CategorySelector
+              category={formData.category}
+              onChange={(category) => setFormData(prev => ({ ...prev, category }))}
+              contentType="blog"
+              placeholder="Seleccionar…"
+            />
+          </div>
+          <div>
+            <label className="input-label">Etiquetas</label>
+            <TagSelector
+              tags={formData.tags}
+              onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+              context="posts"
+              placeholder="Agregar etiquetas…"
+            />
+          </div>
+        </div>
+
+        {/* AI Validation */}
+        <div style={{ marginBottom: '2rem' }}>
+          <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+            Verificación de calidad
+          </p>
+          <AIValidationPanel
+            status={blogValidation.status}
+            result={blogValidation.result}
+            error={blogValidation.error}
+          />
+        </div>
+
+        {validationMessage && (
+          <p className="font-sans text-sm mb-4" style={{ color: 'var(--accent)' }}>{validationMessage}</p>
+        )}
+
+        {/* Publish button — full width, prominent */}
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="btn btn-primary"
+          style={{
+            width: '100%', padding: '0.875rem',
+            fontSize: '0.875rem', letterSpacing: '0.05em',
+            opacity: isSubmitting ? 0.5 : 1,
+          }}
+        >
+          {isSubmitting ? 'Publicando…' : 'Publicar post'}
+        </button>
       </div>
 
-      {/* AI Overlay */}
       <AIAssistantOverlay
         isOpen={isAIPanelOpen}
         onClose={() => setIsAIPanelOpen(false)}
         onInsertText={handleInsertText}
-        contextData={{
-          title: formData.title,
-          contentType: 'blog',
-          category: formData.category
-        }}
+        contextData={{ title: formData.title, contentType: 'blog', category: formData.category }}
       />
-    </PremiumPageLayout>
+    </div>
   );
 };
 

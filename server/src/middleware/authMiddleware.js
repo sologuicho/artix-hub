@@ -7,6 +7,15 @@ async function protect(req, res, next) {
     if (!token) return res.status(401).json({ message: 'Not authorized' });
 
     const { user } = await verifyAuthToken(token);
+
+    if (user.banned) {
+      return res.status(403).json({
+        ok: false,
+        error: 'ACCOUNT_BANNED',
+        message: 'Tu cuenta ha sido suspendida. Contacta a soporte.'
+      });
+    }
+
     req.user = user;
     next();
   } catch (err) {

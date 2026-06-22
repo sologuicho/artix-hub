@@ -6,35 +6,45 @@ const LanguageSelector = () => {
 
   return (
     <div className="relative group">
-      <button className="flex items-center gap-1 px-2 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-        <Globe className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+      <button
+        style={{
+          display: 'flex', alignItems: 'center', gap: '0.25rem',
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: '0.25rem 0.5rem', color: 'var(--muted)',
+        }}
+      >
+        <Globe size={14} style={{ color: 'var(--muted)' }} />
+        <span className="font-sans text-xs font-medium uppercase tracking-wider">
           {language === 'es' ? 'ES' : 'EN'}
         </span>
       </button>
-      <div className="absolute right-0 top-full mt-1 w-28 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-        <button
-          onClick={() => changeLanguage('es')}
-          className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-t-md ${
-            language === 'es' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
-          }`}
-        >
-          Español
-        </button>
-        <button
-          onClick={() => changeLanguage('en')}
-          className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-b-md ${
-            language === 'en' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
-          }`}
-        >
-          English
-        </button>
+
+      <div
+        className="absolute right-0 top-full mt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+        style={{ zIndex: 50, backgroundColor: 'var(--surface)', border: '1px solid var(--border)', minWidth: '7.5rem' }}
+      >
+        {[{ code: 'es', label: 'Español' }, { code: 'en', label: 'English' }].map(({ code, label }) => (
+          <button
+            key={code}
+            onClick={() => changeLanguage(code)}
+            className="w-full text-left font-sans text-xs"
+            style={{
+              display: 'block',
+              padding: '0.5rem 0.75rem',
+              background: 'none',
+              cursor: 'pointer',
+              borderLeft: language === code ? '2px solid var(--text)' : '2px solid transparent',
+              borderTop: 'none', borderRight: 'none', borderBottom: 'none',
+              color: language === code ? 'var(--text)' : 'var(--muted)',
+              transition: 'color 0.15s',
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   );
 };
 
 export default LanguageSelector;
-
-
-

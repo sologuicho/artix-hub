@@ -9,35 +9,29 @@ export default {
     extend: {
       colors: {
         artix: {
-          black: '#000000',
-          dark: '#030303',
-          card: '#0A0A0A',
-          border: '#1F1F1F',
-          text: '#EDEDED',
-          muted: '#888888',
-          accent: '#ffffff',
+          // Light theme
+          bg: '#FAFAF8',
+          surface: '#F2F0EC',
+          border: '#E2DED8',
+          text: '#1A1917',
+          muted: '#6B6760',
+          accent: '#C4451A',
+          accentHover: '#A33814',
+
+          // Dark theme
+          darkBg: '#111110',
+          darkSurface: '#1C1B1A',
+          darkBorder: '#2E2C2A',
+          darkText: '#F0EDE8',
+          darkMuted: '#8C8A86',
+          darkAccent: '#E8572A',
+          darkAccentHover: '#C4451A',
         }
       },
       fontFamily: {
-        sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
-      },
-      animation: {
-        'fade-in': 'fadeIn 1s ease-out forwards',
-        'slide-up': 'slideUp 0.8s ease-out forwards',
-        'slow-pulse': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      },
-      keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        }
-      },
-      transitionProperty: {
-        'colors': 'background-color, border-color, color, fill, stroke',
+        display: ['"DM Serif Display"', 'Georgia', 'serif'],
+        sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
       },
     },
   },

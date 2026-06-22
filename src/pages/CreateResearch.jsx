@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Save, Upload, X, Plus, Building2, User, ToggleLeft, ToggleRight, Sparkles, ArrowLeft, Image as ImageIcon, GraduationCap } from 'lucide-react';
+import { X, Sparkles, ToggleLeft, ToggleRight, ArrowLeft, SlidersHorizontal, Upload } from 'lucide-react';
 import RichTextEditorWithMentions from '../components/RichTextEditorWithMentions';
 import CollaboratorSelector from '../components/CollaboratorSelector';
 import TagSelector from '../components/TagSelector';
@@ -8,10 +8,49 @@ import CategorySelector from '../components/CategorySelector';
 import useAIValidation from '../hooks/useAIValidation';
 import AIValidationPanel from '../components/AIValidationPanel';
 import AIAssistantOverlay from '../components/AIAssistantOverlay';
-import PremiumPageLayout from '../components/layout/PremiumPageLayout';
 import { useAuth } from '../context/AuthContext';
-
 import { BACKEND_URL } from '../config/client';
+
+const PAGE_STYLES = `
+  .artix-editor .ql-toolbar {
+    background-color: var(--surface);
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0.375rem 0;
+    position: sticky;
+    top: 44px;
+    z-index: 15;
+  }
+  .artix-editor .ql-container {
+    border: none;
+    background: transparent;
+    font-size: 1.0625rem;
+  }
+  .artix-editor .ql-editor {
+    padding: 2rem 0;
+    min-height: 420px;
+    line-height: 1.85;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .artix-editor .ql-stroke { stroke: var(--muted) !important; }
+  .artix-editor .ql-fill { fill: var(--muted) !important; }
+  .artix-editor .ql-picker-label { color: var(--muted) !important; }
+  .artix-editor .ql-editor.ql-blank::before { color: var(--muted); font-style: normal; left: 0; }
+  .artix-editor .ql-toolbar button:hover .ql-stroke,
+  .artix-editor .ql-toolbar button.ql-active .ql-stroke { stroke: var(--accent) !important; }
+  .artix-editor .ql-toolbar button:hover .ql-fill,
+  .artix-editor .ql-toolbar button.ql-active .ql-fill { fill: var(--accent) !important; }
+  .artix-editor .ql-picker-options {
+    background-color: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+  }
+  .artix-editor .ql-picker-item:hover { color: var(--accent) !important; }
+  @keyframes artixDrawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .artix-settings-drawer { animation: artixDrawerIn 0.2s ease; }
+  .artix-create-input::placeholder { color: var(--muted); opacity: 1; }
+`;
 
 const CreateResearch = () => {
   const { id } = useParams();
@@ -23,12 +62,12 @@ const CreateResearch = () => {
   const [publishAsArtixResearch, setPublishAsArtixResearch] = useState(
     searchParams.get('asArtixResearch') === 'true'
   );
-
   const researchValidation = useAIValidation('research');
   const [saving, setSaving] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
-
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [hoverCover, setHoverCover] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -42,43 +81,36 @@ const CreateResearch = () => {
   });
   const [collaborators, setCollaborators] = useState([]);
 
-  // Load research data if in edit mode
   useEffect(() => {
     if (isEditMode && id) {
       const fetchResearch = async () => {
         try {
-          const response = await fetch(`${BACKEND_URL}/api/research/${id}`, {
-            credentials: 'include'
-          });
+          const response = await fetch(`${BACKEND_URL}/api/research/${id}`, { credentials: 'include' });
           const data = await response.json();
           if (data.ok && data.research) {
-            const research = data.research;
+            const r = data.research;
             setFormData({
-              title: research.title || '',
-              content: research.content || '',
-              description: research.description || '',
-              category: research.category || '',
-              tags: research.tags || [],
-              documents: research.documents || [],
-              references: research.references || [],
-              coverUrl: research.coverUrl || '',
-              isCollaborative: research.isCollaborative || false,
+              title: r.title || '',
+              content: r.content || '',
+              description: r.description || '',
+              category: r.category || '',
+              tags: r.tags || [],
+              documents: r.documents || [],
+              references: r.references || [],
+              coverUrl: r.coverUrl || '',
+              isCollaborative: r.isCollaborative || false,
             });
-            if (research.collaborators) setCollaborators(research.collaborators);
+            if (r.collaborators) setCollaborators(r.collaborators);
           }
-        } catch (error) {
-          console.error('Error loading research:', error);
-        }
+        } catch (err) { console.error(err); }
       };
       fetchResearch();
-    } else {
-      // Load draft logic removed for simplicity in this version, can be re-added
     }
   }, [isEditMode, id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleCoverChange = async (e) => {
@@ -86,286 +118,343 @@ const CreateResearch = () => {
     if (file) {
       try {
         const { compressImage } = await import('../utils/imageCompression');
-        const compressedDataUrl = await compressImage(file, 1200, 1200, 0.85);
-        setFormData({ ...formData, coverUrl: compressedDataUrl });
-      } catch (error) {
-        console.error('Error compressing image:', error);
+        const url = await compressImage(file, 1200, 1200, 0.85);
+        setFormData(prev => ({ ...prev, coverUrl: url }));
+      } catch {
         const reader = new FileReader();
-        reader.onloadend = () => {
-          setFormData({ ...formData, coverUrl: reader.result });
-        };
+        reader.onloadend = () => setFormData(prev => ({ ...prev, coverUrl: reader.result }));
         reader.readAsDataURL(file);
       }
     }
   };
 
-  // AI Assistant Handlers
   const handleInsertText = (text) => {
-    setFormData(prev => ({
-      ...prev,
-      content: prev.content + '\n\n' + text
-    }));
+    setFormData(prev => ({ ...prev, content: prev.content + '\n\n' + text }));
   };
 
   const extractMentions = (html) => {
-    const mentionRegex = /@(\w+)/g;
-    const matches = html.match(mentionRegex);
+    const matches = html.match(/@(\w+)/g);
     return matches ? matches.map(m => m.substring(1)) : [];
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setSaving(true);
     setValidationMessage('');
-
     try {
       const getCsrfToken = () => {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
+        for (let cookie of document.cookie.split(';')) {
           const [name, value] = cookie.trim().split('=');
           if (name === 'csrf') return value;
         }
         return null;
       };
-
       const url = isEditMode ? `${BACKEND_URL}/api/research/${id}` : `${BACKEND_URL}/api/research`;
-      const method = isEditMode ? 'PUT' : 'POST';
-
       const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': getCsrfToken() || ''
-        },
+        method: isEditMode ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
         body: JSON.stringify({
-          title: formData.title || '',
-          content: formData.content || '',
-          description: formData.description || '',
-          category: formData.category || '',
-          tags: formData.tags || [],
-          documents: formData.documents || [],
-          references: formData.references || [],
-          coverUrl: formData.coverUrl || null,
+          ...formData,
           isCollaborative: formData.isCollaborative || collaborators.length > 0,
           publishAsArtixResearch: publishAsArtixResearch && !isEditMode,
-          mentions: extractMentions(formData.content)
-        })
+          mentions: extractMentions(formData.content),
+        }),
       });
-
       const data = await response.json();
-
       if (data.ok) {
         const researchId = isEditMode ? id : data.research?.id;
-
-        // Invite collaborators if any
         if (!isEditMode && collaborators.length > 0 && researchId) {
-          for (const collaborator of collaborators) {
+          const csrfToken = getCsrfToken() || '';
+          for (const c of collaborators) {
             await fetch(`${BACKEND_URL}/api/research/${researchId}/collaborators`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-csrf-token': getCsrfToken() || ''
-              },
+              headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
               credentials: 'include',
-              body: JSON.stringify({
-                userId: collaborator.id,
-                role: 'collaborator'
-              })
+              body: JSON.stringify({ userId: c.id, role: 'collaborator' }),
             });
           }
         }
         navigate(`/research/${researchId}`);
       } else {
-        setValidationMessage(data.message || `Error saving research`);
+        setValidationMessage(data.message || 'Error al guardar la investigación');
       }
     } catch (err) {
-      setValidationMessage(err.message || 'Error creating research');
+      setValidationMessage(err.message || 'Error al crear la investigación');
     } finally {
       setSaving(false);
     }
   };
 
-  return (
-    <PremiumPageLayout>
-      {/* Editor Toolbar */}
-      <div className="sticky top-0 z-50 bg-[#030303]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between mb-8 -mx-4 sm:-mx-6 lg:-mx-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/research')}
-            className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="h-6 w-px bg-white/10" />
-          <span className="text-sm font-medium text-gray-400">
-            {isEditMode ? 'Edit Research' : 'New Research'}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsAIPanelOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 transition-all"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">AI Assistant</span>
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="flex items-center gap-2 px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-900/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-            Publish
-          </button>
-        </div>
-      </div>
+  const wordCount = formData.content.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(w => w.length > 0).length;
+  const progress = {
+    title: formData.title.trim().length > 0,
+    cover: !!formData.coverUrl,
+    category: !!formData.category,
+    content: wordCount >= 50,
+  };
 
-      <div className="max-w-5xl mx-auto pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Editor Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Banner Upload */}
-            <div className="group relative w-full aspect-[3/1] rounded-3xl overflow-hidden border border-white/10 bg-white/5 transition-all hover:border-blue-500/30">
-              {formData.coverUrl ? (
-                <>
-                  <img src={formData.coverUrl} alt="Cover" className="w-full h-full object-cover object-center" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <label className="cursor-pointer px-6 py-3 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 transition-colors flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5" /> Change Cover
-                      <input type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
-                    </label>
-                  </div>
-                  <button onClick={(e) => { e.preventDefault(); setFormData({ ...formData, coverUrl: '' }); }} className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                    <X className="w-4 h-4" />
-                  </button>
-                </>
-              ) : (
-                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
-                  <ImageIcon className="w-8 h-8 text-gray-500 mb-2" />
-                  <span className="text-gray-400 text-sm">Add Cover Image</span>
-                  <input type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
-                </label>
-              )}
+  return (
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <style>{PAGE_STYLES}</style>
+
+      {/* Settings drawer */}
+      {settingsOpen && (
+        <>
+          <div
+            onClick={() => setSettingsOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 40, backgroundColor: 'rgba(0,0,0,0.18)' }}
+          />
+          <div
+            className="artix-settings-drawer"
+            style={{
+              position: 'fixed', top: 0, right: 0, bottom: 0, width: '340px',
+              backgroundColor: 'var(--bg)', borderLeft: '1px solid var(--border)',
+              zIndex: 50, overflowY: 'auto', padding: '1.5rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+              <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Configuración</span>
+              <button onClick={() => setSettingsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'flex' }}>
+                <X size={16} />
+              </button>
             </div>
 
-            {/* Title Input */}
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder="Research Title..."
-              className="w-full bg-transparent border-none text-4xl font-bold text-white placeholder-gray-700 focus:ring-0 p-0"
-            />
-
-            {/* Abstract/Description */}
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              rows={3}
-              placeholder="Abstract / Short Description..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-gray-300 placeholder-gray-500 focus:outline-none focus:border-blue-500/50 resize-none transition-colors"
-            />
-
-            {/* Content Editor */}
-            <div className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden min-h-[500px]">
-              <RichTextEditorWithMentions
-                value={formData.content}
-                onChange={(value) => setFormData({ ...formData, content: value })}
-                placeholder="Write your research paper..."
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="input-label">Campo de investigación</label>
+              <CategorySelector
+                category={formData.category}
+                onChange={(cat) => setFormData(prev => ({ ...prev, category: cat }))}
+                contentType="research"
+                placeholder="Seleccionar campo…"
               />
             </div>
-          </div>
 
-          {/* Sidebar Column */}
-          <div className="space-y-6">
-            {/* Metadata Card */}
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/5 space-y-6">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-blue-400" /> Details
-              </h3>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Category</label>
-                <CategorySelector
-                  category={formData.category}
-                  onChange={(category) => setFormData({ ...formData, category })}
-                  contentType="research"
-                  placeholder="Select Field..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Tags</label>
-                <TagSelector
-                  tags={formData.tags}
-                  onChange={(tags) => setFormData({ ...formData, tags })}
-                  context="research"
-                  placeholder="Add tags..."
-                />
-              </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="input-label">Etiquetas</label>
+              <TagSelector
+                tags={formData.tags}
+                onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+                context="research"
+                placeholder="Agregar etiquetas…"
+              />
             </div>
 
-            {/* Settings Card */}
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/5 space-y-6">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <ToggleRight className="w-4 h-4 text-purple-400" /> Settings
-              </h3>
-
-              {/* Collaborative Toggle */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-300">Collaborative</span>
-                <button
-                  onClick={() => setFormData(prev => ({ ...prev, isCollaborative: !prev.isCollaborative }))}
-                  className={`w-10 h-6 rounded-full transition-colors relative ${formData.isCollaborative ? 'bg-blue-600' : 'bg-white/10'}`}
-                >
-                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.isCollaborative ? 'translate-x-4' : ''}`} />
-                </button>
-              </div>
+            <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)', marginBottom: '1.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, isCollaborative: !prev.isCollaborative }))}
+                className="flex items-center justify-between w-full font-sans text-sm"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+              >
+                Investigación colaborativa
+                {formData.isCollaborative
+                  ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                  : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />}
+              </button>
 
               {formData.isCollaborative && (
-                <div className="pt-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Collaborators</label>
+                <div style={{ marginTop: '1rem' }}>
+                  <label className="input-label">Colaboradores</label>
                   <CollaboratorSelector
                     selectedCollaborators={collaborators}
-                    onSelect={(user) => setCollaborators([...collaborators, user])}
-                    onRemove={(userId) => setCollaborators(collaborators.filter(c => c.id !== userId))}
-                    placeholder="Add researchers..."
+                    onSelect={(u) => setCollaborators(prev => [...prev, u])}
+                    onRemove={(uid) => setCollaborators(prev => prev.filter(c => c.id !== uid))}
+                    placeholder="Agregar investigadores…"
                   />
                 </div>
               )}
             </div>
 
-            {/* Validation Panel */}
-            <AIValidationPanel
-              status={researchValidation.status}
-              result={researchValidation.result}
-              error={researchValidation.error}
-            />
-
-            {validationMessage && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                {validationMessage}
+            {isAdmin && !isEditMode && (
+              <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)', marginBottom: '1.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setPublishAsArtixResearch(v => !v)}
+                  className="flex items-center justify-between w-full font-sans text-sm"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+                >
+                  {publishAsArtixResearch ? 'Publicando como Artix' : 'Publicando como tú'}
+                  {publishAsArtixResearch
+                    ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                    : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />}
+                </button>
               </div>
             )}
+
+            <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+              <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+                Verificación de calidad
+              </p>
+              <AIValidationPanel
+                status={researchValidation.status}
+                result={researchValidation.result}
+                error={researchValidation.error}
+              />
+            </div>
+
+            {validationMessage && (
+              <p className="font-sans text-sm mt-4" style={{ color: 'var(--accent)' }}>{validationMessage}</p>
+            )}
           </div>
+        </>
+      )}
+
+      {/* Slim nav */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 30,
+        height: '44px', display: 'flex', alignItems: 'center',
+        padding: '0 1.5rem', gap: '0.75rem',
+        backgroundColor: 'var(--bg)', borderBottom: '1px solid var(--border)',
+      }}>
+        <button
+          onClick={() => navigate('/research')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0.25rem', display: 'flex' }}
+        >
+          <ArrowLeft size={16} />
+        </button>
+
+        <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+          {isEditMode ? 'Editar investigación' : 'Nueva investigación'}
+        </span>
+
+        {wordCount > 0 && (
+          <span className="font-sans text-xs" style={{ color: 'var(--border)' }}>· {wordCount} palabras</span>
+        )}
+
+        <div style={{ flex: 1 }} />
+
+        <div className="flex items-center gap-1.5">
+          {[
+            { done: progress.title, label: 'Título' },
+            { done: progress.cover, label: 'Portada' },
+            { done: progress.category, label: 'Campo' },
+            { done: progress.content, label: 'Contenido (min. 50 palabras)' },
+          ].map(({ done, label }) => (
+            <div
+              key={label}
+              title={label}
+              style={{
+                width: 6, height: 6, borderRadius: '50%',
+                backgroundColor: done ? 'var(--accent)' : 'var(--border)',
+                transition: 'background-color 0.2s',
+              }}
+            />
+          ))}
+        </div>
+
+        <div style={{ width: 1, height: 16, backgroundColor: 'var(--border)' }} />
+
+        <button
+          onClick={() => setSettingsOpen(v => !v)}
+          title="Configuración"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: settingsOpen ? 'var(--accent)' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+        >
+          <SlidersHorizontal size={15} />
+        </button>
+
+        <button
+          onClick={() => setIsAIPanelOpen(v => !v)}
+          title="Asistente IA"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? 'var(--accent)' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+        >
+          <Sparkles size={15} />
+        </button>
+
+        <button
+          onClick={handleSubmit}
+          disabled={saving}
+          className="btn btn-primary"
+          style={{ fontSize: '0.6875rem', padding: '0.5rem 1.25rem', opacity: saving ? 0.5 : 1 }}
+        >
+          {saving ? 'Publicando…' : 'Publicar'}
+        </button>
+      </nav>
+
+      {/* Cover */}
+      {formData.coverUrl ? (
+        <div style={{ width: '100%', aspectRatio: '16/5', position: 'relative' }}>
+          <img src={formData.coverUrl} alt="Portada" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <button
+            onClick={() => setFormData(prev => ({ ...prev, coverUrl: '' }))}
+            style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', padding: '0.375rem', color: 'var(--muted)', display: 'flex' }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <label
+          onMouseEnter={() => setHoverCover(true)}
+          onMouseLeave={() => setHoverCover(false)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            width: '100%', padding: '0.625rem 1.5rem',
+            borderBottom: `1px solid ${hoverCover ? 'var(--accent)' : 'var(--border)'}`,
+            cursor: 'pointer', transition: 'border-color 0.15s',
+          }}
+        >
+          <Upload size={12} style={{ color: 'var(--muted)' }} />
+          <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+            Agregar portada
+          </span>
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
+        </label>
+      )}
+
+      {/* Writing area */}
+      <div style={{ maxWidth: '720px', margin: '0 auto', padding: '3rem 1.5rem 8rem' }}>
+        <input
+          type="text"
+          name="title"
+          value={formData.title}
+          onChange={handleInputChange}
+          placeholder="Título de la investigación…"
+          className="font-display artix-create-input"
+          style={{
+            display: 'block', width: '100%',
+            background: 'transparent', border: 'none', outline: 'none',
+            fontSize: 'clamp(1.875rem, 4vw, 2.625rem)', lineHeight: 1.2,
+            color: 'var(--text)', marginBottom: '1rem',
+          }}
+        />
+
+        <div style={{ marginBottom: '2rem' }}>
+          <p className="font-sans text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--muted)' }}>
+            Resumen
+          </p>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder="Describe el objetivo, metodología y hallazgos principales…"
+            rows={4}
+            className="artix-create-input"
+            style={{
+              display: 'block', width: '100%',
+              background: 'transparent', border: 'none', outline: 'none', resize: 'none',
+              borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem',
+              fontSize: '1.0625rem', fontFamily: '"DM Sans", sans-serif',
+              color: 'var(--muted)', lineHeight: 1.7,
+            }}
+          />
+        </div>
+
+        <div className="artix-editor">
+          <RichTextEditorWithMentions
+            value={formData.content}
+            onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+            placeholder="Escribe el cuerpo de tu investigación…"
+          />
         </div>
       </div>
 
-      {/* AI Overlay */}
       <AIAssistantOverlay
         isOpen={isAIPanelOpen}
         onClose={() => setIsAIPanelOpen(false)}
         onInsertText={handleInsertText}
-        contextData={{
-          title: formData.title,
-          contentType: 'research',
-          category: formData.category
-        }}
+        contextData={{ title: formData.title, contentType: 'research', category: formData.category }}
       />
-    </PremiumPageLayout>
+    </div>
   );
 };
 

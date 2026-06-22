@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 
-// Predefined tags based on context
 const getPredefinedTags = (context = 'general') => {
   const allTags = {
     interests: [
@@ -49,24 +48,23 @@ const getPredefinedTags = (context = 'general') => {
       'Desarrollo', 'Diseño', 'Arte', 'Cultura', 'Salud', 'Medio Ambiente'
     ]
   };
-
   return allTags[context] || allTags.general;
 };
 
-const TagSelector = ({ 
-  tags = [], 
-  onChange, 
+const TagSelector = ({
+  tags = [],
+  onChange,
   context = 'general',
   placeholder = 'Buscar o escribir etiqueta...',
-  className = '' 
+  className = ''
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [hoveredTag, setHoveredTag] = useState(null);
 
   const predefinedTags = getPredefinedTags(context);
   const filteredSuggestions = predefinedTags.filter(tag =>
-    !tags.includes(tag) &&
-    tag.toLowerCase().includes(searchQuery.toLowerCase())
+    !tags.includes(tag) && tag.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleAddTag = (tag) => {
@@ -89,8 +87,7 @@ const TagSelector = ({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      {/* Search Input */}
+    <div className={className}>
       <div className="relative">
         <input
           type="text"
@@ -102,57 +99,79 @@ const TagSelector = ({
           onKeyPress={handleKeyPress}
           onFocus={() => setShowSuggestions(searchQuery.length > 0 || filteredSuggestions.length > 0)}
           placeholder={placeholder}
-          className="w-full glass-input text-gray-900 dark:text-gray-100"
+          className="input-field w-full"
         />
-        
-        {/* Suggestions Dropdown */}
+
         {showSuggestions && (filteredSuggestions.length > 0 || searchQuery.trim()) && (
-          <div className="absolute z-50 w-full mt-1 glass-card shadow-xl max-h-60 overflow-y-auto">
-            <div className="py-1">
-              {/* Predefined suggestions */}
-              {filteredSuggestions.slice(0, 8).map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => handleAddTag(tag)}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>{tag}</span>
-                </button>
-              ))}
-              
-              {/* Custom tag option */}
-              {searchQuery.trim() && !predefinedTags.includes(searchQuery.trim()) && !tags.includes(searchQuery.trim()) && (
-                <button
-                  type="button"
-                  onClick={() => handleAddTag(searchQuery)}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-blue-600 dark:text-blue-400 flex items-center gap-2 border-t border-gray-200 dark:border-gray-700"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Crear "{searchQuery.trim()}"</span>
-                </button>
-              )}
-            </div>
+          <div
+            style={{
+              position: 'absolute', zIndex: 50, width: '100%', top: '100%', marginTop: '0.25rem',
+              backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+              maxHeight: '15rem', overflowY: 'auto',
+            }}
+          >
+            {filteredSuggestions.slice(0, 8).map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => handleAddTag(tag)}
+                onMouseEnter={() => setHoveredTag(tag)}
+                onMouseLeave={() => setHoveredTag(null)}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '0.5rem 0.875rem',
+                  background: hoveredTag === tag ? 'var(--bg)' : 'transparent',
+                  border: 'none', cursor: 'pointer', color: 'var(--text)',
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  fontFamily: '"DM Sans", sans-serif', fontSize: '0.8125rem',
+                }}
+              >
+                <Plus size={11} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                {tag}
+              </button>
+            ))}
+
+            {searchQuery.trim() && !predefinedTags.includes(searchQuery.trim()) && !tags.includes(searchQuery.trim()) && (
+              <button
+                type="button"
+                onClick={() => handleAddTag(searchQuery)}
+                onMouseEnter={() => setHoveredTag('__create__')}
+                onMouseLeave={() => setHoveredTag(null)}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '0.5rem 0.875rem',
+                  background: hoveredTag === '__create__' ? 'var(--bg)' : 'transparent',
+                  border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer',
+                  color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  fontFamily: '"DM Sans", sans-serif', fontSize: '0.8125rem',
+                }}
+              >
+                <Plus size={11} style={{ flexShrink: 0 }} />
+                Crear "{searchQuery.trim()}"
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Selected Tags */}
       {tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1 mt-2">
           {tags.map((tag, idx) => (
             <span
               key={idx}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm"
+              className="font-sans text-xs"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                padding: '0.1875rem 0.5rem',
+                border: '1px solid var(--border)',
+                color: 'var(--muted)',
+              }}
             >
               {tag}
               <button
                 type="button"
                 onClick={() => handleRemoveTag(tag)}
-                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, display: 'flex' }}
               >
-                <X className="w-3 h-3" />
+                <X size={10} />
               </button>
             </span>
           ))}
@@ -163,7 +182,3 @@ const TagSelector = ({
 };
 
 export default TagSelector;
-
-
-
-
