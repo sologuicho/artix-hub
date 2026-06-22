@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Clock, User } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Clock, User, Repeat2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CommentSection from '../components/CommentSection';
 import ContentActions from '../components/ContentActions';
@@ -50,14 +50,17 @@ const BlogPostView = () => {
   const [showComments, setShowComments] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
 
   useEffect(() => { fetchPost(); }, [id]);
   useEffect(() => {
-    if (post) { fetchReactionCounts(); }
+    if (post) { fetchReactionCounts(); fetchRepostCount(); }
     if (user && post) {
       checkFollowStatus();
       checkReactionStatus();
       checkSavedStatus();
+      checkRepostStatus();
     }
   }, [user, post]);
 
@@ -163,6 +166,41 @@ const BlogPostView = () => {
       const data = await res.json();
       if (data.ok) setFollowing(data.following);
     } catch (_) {}
+  };
+
+  const fetchRepostCount = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/counts?postId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setRepostCount(data.count);
+    } catch (_) {}
+  };
+
+  const checkRepostStatus = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/check?postId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setReposted(data.reposted);
+    } catch (_) {}
+  };
+
+  const handleRepost = async () => {
+    if (!user) return navigate('/auth');
+    const prev = reposted;
+    setReposted(!prev);
+    setRepostCount(c => prev ? c - 1 : c + 1);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
+        body: JSON.stringify({ postId: id }),
+      });
+      const data = await res.json();
+      if (data.ok) { setReposted(data.reposted); setRepostCount(data.count); }
+      else { setReposted(prev); setRepostCount(c => prev ? c + 1 : c - 1); }
+    } catch (_) { setReposted(prev); }
   };
 
   const formatDate = (dateStr) =>
@@ -433,6 +471,27 @@ const BlogPostView = () => {
                 aria-label={saved ? 'Guardado' : 'Guardar'}
               >
                 <Bookmark size={18} />
+              </button>
+
+              {/* Repost */}
+              <button
+                onClick={handleRepost}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  color: reposted ? 'var(--accent)' : 'var(--muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}
+                aria-label="Repostear"
+              >
+                <Repeat2 size={18} />
+                {repostCount > 0 && (
+                  <span className="font-mono" style={{ fontSize: '0.75rem' }}>{repostCount}</span>
+                )}
               </button>
 
               {/* Share */}

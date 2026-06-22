@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, BookOpen, ArrowLeft, Copy, Check, Download, Clock } from 'lucide-react';
+import { Heart, MessageCircle, Share2, BookOpen, ArrowLeft, Copy, Check, Download, Clock, Repeat2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
@@ -69,14 +69,16 @@ const ArticleView = () => {
   const [readingProgress, setReadingProgress] = useState(null);
   const [limitReached, setLimitReached] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
 
   // Reading progress bar state
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => { fetchArticle(); }, [id]);
   useEffect(() => {
-    if (article) { fetchReactionCounts(); }
-    if (user && article) { checkFollowStatus(); fetchReadingProgress(); checkReactionStatus(); }
+    if (article) { fetchReactionCounts(); fetchRepostCount(); }
+    if (user && article) { checkFollowStatus(); fetchReadingProgress(); checkReactionStatus(); checkRepostStatus(); }
   }, [user, article]);
 
   // Scroll progress effect
@@ -170,6 +172,41 @@ const ArticleView = () => {
         ));
       }
     } catch (_) {}
+  };
+
+  const fetchRepostCount = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/counts?articleId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setRepostCount(data.count);
+    } catch (_) {}
+  };
+
+  const checkRepostStatus = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/check?articleId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setReposted(data.reposted);
+    } catch (_) {}
+  };
+
+  const handleRepost = async () => {
+    if (!user) { navigate('/auth'); return; }
+    const prev = reposted;
+    setReposted(!prev);
+    setRepostCount(c => prev ? c - 1 : c + 1);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
+        body: JSON.stringify({ articleId: id }),
+      });
+      const data = await res.json();
+      if (data.ok) { setReposted(data.reposted); setRepostCount(data.count); }
+      else { setReposted(prev); setRepostCount(c => prev ? c + 1 : c - 1); }
+    } catch (_) { setReposted(prev); }
   };
 
   const handleReaction = async (type) => {
@@ -627,6 +664,7 @@ const ArticleView = () => {
                   label="Comentar"
                   count={article.comments?.length || 0}
                 />
+                <SideAction onClick={handleRepost} icon={Repeat2} label="Repostear" active={reposted} count={repostCount || undefined} />
                 <SideAction onClick={() => setShowShareModal(true)} icon={Share2} label="Compartir" />
                 <SideAction onClick={handleCopyLink} icon={copied ? Check : Copy} label={copied ? 'Copiado' : 'Copiar link'} active={copied} />
                 <SideAction onClick={() => setReadingMode(true)} icon={BookOpen} label="Modo lectura" />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Bell, Check, Share2, ArrowLeft, Building2 } from 'lucide-react';
+import { Calendar, MapPin, Users, Bell, Check, Share2, ArrowLeft, Building2, Repeat2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
 import CollaborationInvitation from '../components/CollaborationInvitation';
@@ -27,6 +27,8 @@ const EventView = () => {
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false });
+  const [reposted, setReposted] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
 
   useEffect(() => { fetchEvent(); }, [id]);
 
@@ -63,6 +65,8 @@ const EventView = () => {
       if (data.ok) {
         setEvent(data.event);
         setRegistered(data.event.registrations?.some(r => r.userId === data.event.userId) || false);
+        fetchRepostCount();
+        checkRepostStatus();
       }
     } catch (error) {
       console.error('Error fetching event:', error);
@@ -100,6 +104,41 @@ const EventView = () => {
     } catch (error) {
       console.error('Error toggling reminder:', error);
     }
+  };
+
+  const fetchRepostCount = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/counts?eventId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setRepostCount(data.count);
+    } catch (_) {}
+  };
+
+  const checkRepostStatus = async () => {
+    if (!isAuthenticated()) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/check?eventId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setReposted(data.reposted);
+    } catch (_) {}
+  };
+
+  const handleRepost = async () => {
+    if (!isAuthenticated()) { navigate('/auth'); return; }
+    const prev = reposted;
+    setReposted(!prev);
+    setRepostCount(c => prev ? c - 1 : c + 1);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
+        body: JSON.stringify({ eventId: id }),
+      });
+      const data = await res.json();
+      if (data.ok) { setReposted(data.reposted); setRepostCount(data.count); }
+      else { setReposted(prev); setRepostCount(c => prev ? c + 1 : c - 1); }
+    } catch (_) { setReposted(prev); }
   };
 
   const formatDate = (dateString) =>
@@ -445,6 +484,22 @@ const EventView = () => {
                   </div>
                 )}
               </div>
+
+              {/* Repost */}
+              <button
+                onClick={handleRepost}
+                className="btn btn-ghost w-full"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  marginBottom: '0.5rem',
+                  color: reposted ? 'var(--accent)' : 'var(--muted)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <Repeat2 size={13} />
+                {reposted ? 'Reposteado' : 'Repostear'}
+                {repostCount > 0 && <span className="font-mono" style={{ fontSize: '0.7rem' }}>· {repostCount}</span>}
+              </button>
 
               {/* Share */}
               <button

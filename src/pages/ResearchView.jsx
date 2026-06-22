@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Share2, Copy, Check, BookOpen, Download, User, Clock } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Copy, Check, BookOpen, Download, User, Clock, Repeat2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
@@ -60,14 +60,17 @@ const ResearchView = () => {
   const [readingMode, setReadingMode] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [readingProgress, setReadingProgress] = useState(null);
+  const [reposted, setReposted] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
 
   useEffect(() => { fetchResearch(); }, [id]);
   useEffect(() => {
-    if (research) { fetchReactionCounts(); }
+    if (research) { fetchReactionCounts(); fetchRepostCount(); }
     if (user && research?.author?.id) {
       checkFollowStatus();
       fetchReadingProgress();
       checkReactionStatus();
+      checkRepostStatus();
     }
   }, [user, research?.author?.id]);
 
@@ -165,6 +168,41 @@ const ResearchView = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const fetchRepostCount = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/counts?researchId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setRepostCount(data.count);
+    } catch (_) {}
+  };
+
+  const checkRepostStatus = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/check?researchId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setReposted(data.reposted);
+    } catch (_) {}
+  };
+
+  const handleRepost = async () => {
+    if (!user) { navigate('/auth'); return; }
+    const prev = reposted;
+    setReposted(!prev);
+    setRepostCount(c => prev ? c - 1 : c + 1);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
+        body: JSON.stringify({ researchId: id }),
+      });
+      const data = await res.json();
+      if (data.ok) { setReposted(data.reposted); setRepostCount(data.count); }
+      else { setReposted(prev); setRepostCount(c => prev ? c + 1 : c - 1); }
+    } catch (_) { setReposted(prev); }
   };
 
   const handleDownloadPDF = async () => {
@@ -478,6 +516,7 @@ const ResearchView = () => {
                 label="Debatir"
                 active={false}
               />
+              <SideAction onClick={handleRepost} icon={Repeat2} label={`Repostear${repostCount > 0 ? ` · ${repostCount}` : ''}`} active={reposted} />
               <SideAction onClick={() => setShowShareModal(true)} icon={Share2} label="Compartir" active={false} />
               <SideAction
                 onClick={handleCopyLink}

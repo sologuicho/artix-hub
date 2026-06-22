@@ -157,6 +157,7 @@ app.use('/api/subscription', require('./routes/subscriptionRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/repost', require('./routes/repostRoutes'));
 
 // User routes
 app.get('/me', protect, async (req, res) => {

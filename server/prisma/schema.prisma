@@ -44,7 +44,8 @@ model User {
   updatedAt              DateTime               @updatedAt
 
   readingProgress        ReadingProgress[]
-  
+  reposts                Repost[]
+
   emailVerified          Boolean                @default(false)
   subscriptionTier       SubscriptionTier       @default(OBSERVER)
   stripeCustomerId       String?                @unique
@@ -187,6 +188,7 @@ model Article {
   reactions       Reaction[]
   savedItems      SavedItem[]
   readingProgress ReadingProgress[]
+  reposts         Repost[]
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
 
@@ -217,6 +219,7 @@ model Research {
   reactions       Reaction[]
   savedItems      SavedItem[]
   readingProgress ReadingProgress[]
+  reposts         Repost[]
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 
@@ -279,6 +282,7 @@ model Event {
   registrations   EventRegistration[]
   reminders       EventReminder[]
   savedItems      SavedItem[]
+  reposts         Repost[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
@@ -324,6 +328,7 @@ model BlogPost {
   comments   Comment[]
   savedItems SavedItem[]
   readingProgress ReadingProgress[]
+  reposts    Repost[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
@@ -475,4 +480,29 @@ model StripeEvent {
 model MpEvent {
   id          String   @id        // x-request-id de MercadoPago
   processedAt DateTime @default(now())
+}
+
+model Repost {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId  String?
+  article    Article?  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  researchId String?
+  research   Research? @relation(fields: [researchId], references: [id], onDelete: Cascade)
+  postId     String?
+  post       BlogPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  eventId    String?
+  event      Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, articleId])
+  @@unique([userId, researchId])
+  @@unique([userId, postId])
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([articleId])
+  @@index([researchId])
+  @@index([postId])
+  @@index([eventId])
 }
