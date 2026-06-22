@@ -13,6 +13,10 @@ server/node_modules
 /build
 /dist
 
+# large media files
+public/videos/*.mp4
+public/videos/*.mov
+
 # misc
 .DS_Store
 
