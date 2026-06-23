@@ -4,6 +4,7 @@ const userController = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 
+router.get('/suggested', userController.getSuggestedUsers); // optionally auth
 router.get('/search', protect, userController.searchUsers);
 router.get('/:userId', userController.getUserProfile); // Public route
 

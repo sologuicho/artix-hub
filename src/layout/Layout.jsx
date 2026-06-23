@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import FloatingActionButton from '../components/FloatingActionButton';
@@ -63,17 +63,20 @@ const UnverifiedBanner = () => {
 
 const Layout = () => {
   const { user, isAuthenticated } = useAuth();
+  const { pathname } = useLocation();
   const showBanner = isAuthenticated() && user && user.emailVerified === false;
+  // Hide Layout chrome on the public home page so it can render its own full-page design
+  const isPublicHome = pathname === '/' && !isAuthenticated();
 
   return (
     <div className="min-h-screen transition-colors duration-300 flex flex-col">
-      <Header />
-      {showBanner && <UnverifiedBanner />}
+      {!isPublicHome && <Header />}
+      {!isPublicHome && showBanner && <UnverifiedBanner />}
       <main className="flex-grow relative">
         <Outlet />
-        <FloatingActionButton />
+        {!isPublicHome && <FloatingActionButton />}
       </main>
-      <Footer />
+      {!isPublicHome && <Footer />}
     </div>
   );
 };

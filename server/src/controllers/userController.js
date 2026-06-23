@@ -1,6 +1,28 @@
 const prisma = require('../prismaClient');
 const bcrypt = require('bcryptjs');
 
+// Suggested users — ordered by follower count, excludes current user
+exports.getSuggestedUsers = async (req, res) => {
+  try {
+    const currentUserId = req.user?.id || null;
+    const users = await prisma.user.findMany({
+      where: {
+        id: currentUserId ? { not: currentUserId } : undefined,
+        username: { not: null },
+      },
+      select: {
+        id: true, name: true, username: true, avatar: true, institution: true,
+        _count: { select: { followers: true, articles: true, research: true } },
+      },
+      orderBy: { followers: { _count: 'desc' } },
+      take: 5,
+    });
+    res.json({ ok: true, users });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: 'Failed to fetch suggested users' });
+  }
+};
+
 // Search users by username or name
 exports.searchUsers = async (req, res) => {
   try {
