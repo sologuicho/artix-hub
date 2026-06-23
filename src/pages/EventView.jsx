@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Bell, Check, Share2, ArrowLeft, Building2, Repeat2, Radio, MessageSquare, ExternalLink, Clock } from 'lucide-react';
+import {
+  Calendar, MapPin, Users, Bell, Check, Share2, ArrowLeft,
+  Building2, Repeat2, Radio, MessageSquare, ExternalLink, Clock,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
 import CollaborationInvitation from '../components/CollaborationInvitation';
@@ -8,10 +11,12 @@ import ContentActions from '../components/ContentActions';
 import CommentSection from '../components/CommentSection';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 const getCsrfToken = () => {
-  const cookies = document.cookie.split(';');
-  for (let cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
+  for (const c of document.cookie.split(';')) {
+    const [name, value] = c.trim().split('=');
     if (name === 'csrf') return value;
   }
   return null;
@@ -37,35 +42,24 @@ const EventView = () => {
 
   useEffect(() => {
     if (!event?.date) return;
-
     const tick = () => {
-      const now = new Date();
-      const target = new Date(event.date);
-      const diff = target - now;
-
-      if (diff <= 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setCountdown({ days, hours, minutes, seconds, isPast: false });
+      const diff = new Date(event.date) - new Date();
+      if (diff <= 0) { setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true }); return; }
+      setCountdown({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
+        isPast: false,
+      });
     };
-
     tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
   }, [event]);
 
-  // Derive registration/waitlist status reactively
   useEffect(() => {
-    if (event && user) {
-      setRegistered(event.registrations?.some(r => r.userId === user.id) || false);
-    }
+    if (event && user) setRegistered(event.registrations?.some(r => r.userId === user.id) || false);
   }, [event, user]);
 
   useEffect(() => {
@@ -78,84 +72,55 @@ const EventView = () => {
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/events/${id}`, { credentials: 'include' });
-      const data = await response.json();
-      if (data.ok) {
-        setEvent(data.event);
-        fetchRepostCount();
-        checkRepostStatus();
-      }
-    } catch (error) {
-      console.error('Error fetching event:', error);
-    } finally {
-      setLoading(false);
-    }
+      const res = await fetch(`${BACKEND_URL}/api/events/${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) { setEvent(data.event); fetchRepostCount(); checkRepostStatus(); }
+    } catch (_) {}
+    finally { setLoading(false); }
   };
 
   const handleRegister = async () => {
     if (!isAuthenticated()) { navigate('/auth'); return; }
     setRegisterLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/events/${id}/register`, {
+      const res = await fetch(`${BACKEND_URL}/api/events/${id}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.ok) {
-        if (data.checkoutUrl) {
-          // Paid event — redirect to Stripe
-          window.location.href = data.checkoutUrl;
-          return;
-        }
-        if (data.waitlisted) {
-          setWaitlisted(true);
-          setWaitlistPosition(data.position);
-        } else {
-          setRegistered(true);
-          setReminderEnabled(true);
-          // Refresh event to update attendee count
-          fetchEvent();
-        }
+        if (data.checkoutUrl) { window.location.href = data.checkoutUrl; return; }
+        if (data.waitlisted) { setWaitlisted(true); setWaitlistPosition(data.position); }
+        else { setRegistered(true); setReminderEnabled(true); fetchEvent(); }
       }
-    } catch (error) {
-      console.error('Error registering for event:', error);
-    } finally {
-      setRegisterLoading(false);
-    }
+    } catch (_) {}
+    finally { setRegisterLoading(false); }
   };
 
   const handleUnregister = async () => {
     if (!isAuthenticated()) return;
     try {
-      const response = await fetch(`${BACKEND_URL}/api/events/${id}/register`, {
-        method: 'DELETE',
-        headers: { 'x-csrf-token': getCsrfToken() || '' },
-        credentials: 'include',
+      const res = await fetch(`${BACKEND_URL}/api/events/${id}/register`, {
+        method: 'DELETE', headers: { 'x-csrf-token': getCsrfToken() || '' }, credentials: 'include',
       });
-      const data = await response.json();
-      if (data.ok) {
-        setRegistered(false);
-        setReminderEnabled(false);
-        fetchEvent();
-      }
+      const data = await res.json();
+      if (data.ok) { setRegistered(false); setReminderEnabled(false); fetchEvent(); }
     } catch (_) {}
   };
 
   const handleToggleReminder = async (reminderType) => {
     if (!isAuthenticated()) { navigate('/auth'); return; }
     try {
-      const response = await fetch(`${BACKEND_URL}/api/reminders/events/${id}`, {
+      const res = await fetch(`${BACKEND_URL}/api/reminders/events/${id}`, {
         method: reminderEnabled ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
         body: JSON.stringify({ reminderType: reminderType || 'day_before' }),
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.ok) setReminderEnabled(!reminderEnabled);
-    } catch (error) {
-      console.error('Error toggling reminder:', error);
-    }
+    } catch (_) {}
   };
 
   const fetchRepostCount = async () => {
@@ -178,8 +143,7 @@ const EventView = () => {
   const handleRepost = async () => {
     if (!isAuthenticated()) { navigate('/auth'); return; }
     const prev = reposted;
-    setReposted(!prev);
-    setRepostCount(c => prev ? c - 1 : c + 1);
+    setReposted(!prev); setRepostCount(c => prev ? c - 1 : c + 1);
     try {
       const res = await fetch(`${BACKEND_URL}/api/repost`, {
         method: 'POST',
@@ -193,21 +157,21 @@ const EventView = () => {
     } catch (_) { setReposted(prev); }
   };
 
-  const formatDate = (dateString) =>
-    new Date(dateString).toLocaleDateString('es-MX', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    });
+  const formatDate = (d) => new Date(d).toLocaleDateString('es-MX', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+
+  const pad = (n) => String(n).padStart(2, '0');
+
+  const attendeeCount = event?.registrations?.length || 0;
+  const capacityPct = event?.maxAttendees
+    ? Math.min(100, (attendeeCount / event.maxAttendees) * 100)
+    : null;
 
   if (loading) {
     return (
       <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{
-          width: 28, height: 28,
-          border: '2px solid var(--border)',
-          borderTopColor: 'var(--accent)',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-        }} />
+        <div style={{ width: 26, height: 26, border: '2px solid var(--border)', borderTopColor: '#C4451A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -215,13 +179,18 @@ const EventView = () => {
 
   if (!event) {
     return (
-      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
-        <div className="site-container py-16 text-center">
-          <p className="font-display" style={{ fontSize: '1.5rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
-            Evento no encontrado
+      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontFamily: MONO, fontSize: '0.625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '1rem' }}>
+            404 — Evento no encontrado
           </p>
-          <button onClick={() => navigate('/events')} className="btn btn-outline">
-            Volver a Eventos
+          <button
+            onClick={() => navigate('/events')}
+            style={{ fontFamily: MONO, fontSize: '0.625rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', border: '1px solid var(--border)', color: 'var(--muted)', padding: '0.625rem 1.5rem', cursor: 'pointer', transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#C4451A'; e.currentTarget.style.color = '#C4451A'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
+          >
+            ← Volver a eventos
           </button>
         </div>
       </div>
@@ -230,261 +199,198 @@ const EventView = () => {
 
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <style>{`
+        @keyframes artixpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
 
       {/* ── Hero ── */}
-      <div style={{ width: '100%', position: 'relative', overflow: 'hidden', minHeight: '420px', maxHeight: '520px' }}>
+      <div style={{ position: 'relative', width: '100%', height: 'clamp(320px, 45vw, 480px)', overflow: 'hidden' }}>
         {event.bannerUrl ? (
           <img
             src={event.bannerUrl}
             alt={event.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(135deg, var(--surface) 0%, #111 100%)',
-          }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0a07 0%, #0c0c0b 60%, #111 100%)' }} />
         )}
 
-        {/* Gradient overlay */}
+        {/* Overlay */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 100%)',
+          background: 'linear-gradient(to top, rgba(8,8,8,0.97) 0%, rgba(8,8,8,0.6) 55%, rgba(8,8,8,0.25) 100%)',
         }} />
 
-        {/* Back button */}
+        {/* Back */}
         <button
           onClick={() => navigate('/events')}
-          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider"
           style={{
-            position: 'absolute', top: '1.5rem', left: '1.5rem',
+            position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 2,
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#fff', padding: 0, zIndex: 2,
+            display: 'flex', alignItems: 'center', gap: '0.375rem',
+            fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.45)', padding: 0, transition: 'color 0.15s',
           }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.85)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}
         >
-          <ArrowLeft size={13} style={{ color: '#fff' }} /> Volver a Eventos
+          <ArrowLeft size={12} /> Eventos
         </button>
 
+        {/* Live indicator */}
+        {event.isLive && (
+          <div style={{
+            position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 2,
+            display: 'flex', alignItems: 'center', gap: '0.375rem',
+            backgroundColor: 'rgba(196,69,26,0.15)', border: '1px solid rgba(196,69,26,0.5)',
+            padding: '0.25rem 0.625rem',
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#C4451A', animation: 'artixpulse 1.5s infinite', display: 'inline-block' }} />
+            <span style={{ fontFamily: MONO, fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#C4451A' }}>
+              En vivo
+            </span>
+          </div>
+        )}
+
         {/* Bottom content */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          padding: '2rem 2rem 2.5rem',
-          zIndex: 2,
-        }}>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem 2.5rem 2.5rem', zIndex: 2 }}>
           {event.type && (
-            <span
-              className="category-tag"
-              style={{
-                color: '#fff',
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                border: '1px solid rgba(255,255,255,0.3)',
-                marginBottom: '0.75rem',
-                display: 'inline-block',
-              }}
-            >
+            <span style={{
+              fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.45)', display: 'block', marginBottom: '0.625rem',
+            }}>
               {event.type}
             </span>
           )}
-          <h1
-            className="font-display"
-            style={{
-              fontSize: 'clamp(2rem, 5vw, 3.5rem)',
-              lineHeight: 1.1,
-              color: '#fff',
-              margin: 0,
-            }}
-          >
+          <h1 style={{
+            fontFamily: SANS, fontWeight: 700, margin: 0, color: '#fff',
+            fontSize: 'clamp(1.75rem, 4.5vw, 3.25rem)', lineHeight: 1.1,
+            maxWidth: '75%',
+          }}>
             {event.title}
           </h1>
         </div>
       </div>
 
       {/* ── Main layout ── */}
-      <div className="site-container" style={{ paddingTop: '2.5rem', paddingBottom: '4rem' }}>
+      <div className="site-container" style={{ paddingTop: '2.5rem', paddingBottom: '5rem' }}>
 
         <CollaborationInvitation type="event" itemId={id} onUpdate={fetchEvent} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 items-start">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '3rem', alignItems: 'start' }}>
 
           {/* ── Left column ── */}
           <div>
 
-            {/* Info cards row */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '1px',
-                flexWrap: 'wrap',
-                marginBottom: '2.5rem',
-                backgroundColor: 'var(--border)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              {/* Date card */}
+            {/* Meta strip */}
+            <div style={{ display: 'flex', gap: '1px', backgroundColor: 'var(--border)', border: '1px solid var(--border)', marginBottom: '2.5rem' }}>
               {event.date && (
-                <div style={{
-                  flex: 1, minWidth: '160px', padding: '1rem 1.25rem',
-                  backgroundColor: 'var(--surface)',
-                }}>
-                  <div className="flex items-center gap-2" style={{ marginBottom: '0.4rem' }}>
-                    <Calendar size={12} style={{ color: 'var(--muted)' }} />
-                    <span
-                      className="font-sans text-xs uppercase tracking-widest"
-                      style={{ color: 'var(--muted)' }}
-                    >
-                      Fecha
-                    </span>
+                <div style={{ flex: 1, minWidth: 0, padding: '1rem 1.25rem', backgroundColor: 'var(--bg)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.5rem' }}>
+                    <Calendar size={11} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                    <span style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>Fecha</span>
                   </div>
-                  <p className="font-sans text-sm" style={{ color: 'var(--text)', margin: 0 }}>
+                  <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--text)', margin: 0, lineHeight: 1.4 }}>
                     {formatDate(event.date)}
-                    {event.time && (
-                      <span style={{ color: 'var(--muted)' }}> · {event.time}</span>
-                    )}
+                    {event.time && <span style={{ color: 'var(--muted)' }}> · {event.time}</span>}
                   </p>
                 </div>
               )}
-
-              {/* Location card */}
-              <div style={{
-                flex: 1, minWidth: '160px', padding: '1rem 1.25rem',
-                backgroundColor: 'var(--surface)',
-              }}>
-                <div className="flex items-center gap-2" style={{ marginBottom: '0.4rem' }}>
-                  <MapPin size={12} style={{ color: 'var(--muted)' }} />
-                  <span
-                    className="font-sans text-xs uppercase tracking-widest"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    Lugar
-                  </span>
+              <div style={{ flex: 1, minWidth: 0, padding: '1rem 1.25rem', backgroundColor: 'var(--bg)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.5rem' }}>
+                  <MapPin size={11} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                  <span style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>Lugar</span>
                 </div>
-                <p className="font-sans text-sm" style={{ color: 'var(--text)', margin: 0 }}>
+                <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--text)', margin: 0 }}>
                   {event.location || 'Por definir'}
                 </p>
               </div>
-
-              {/* Attendees card */}
-              <div style={{
-                flex: 1, minWidth: '160px', padding: '1rem 1.25rem',
-                backgroundColor: 'var(--surface)',
-              }}>
-                <div className="flex items-center gap-2" style={{ marginBottom: '0.4rem' }}>
-                  <Users size={12} style={{ color: 'var(--muted)' }} />
-                  <span
-                    className="font-sans text-xs uppercase tracking-widest"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    Asistentes
-                  </span>
+              <div style={{ flex: 1, minWidth: 0, padding: '1rem 1.25rem', backgroundColor: 'var(--bg)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.5rem' }}>
+                  <Users size={11} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                  <span style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>Asistentes</span>
                 </div>
-                <p className="font-sans text-sm" style={{ color: 'var(--text)', margin: 0 }}>
-                  {event.registrations?.length || 0}{' '}
-                  <span style={{ color: 'var(--muted)' }}>asistentes</span>
+                <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--text)', margin: 0 }}>
+                  {attendeeCount}
+                  {event.maxAttendees && (
+                    <span style={{ color: 'var(--muted)', fontFamily: MONO, fontSize: '0.75rem' }}> / {event.maxAttendees}</span>
+                  )}
                 </p>
               </div>
             </div>
 
             {/* Countdown */}
             {event.date && (
-              countdown.isPast ? (
-                <div style={{
-                  marginBottom: '2rem',
-                  borderTop: '1px solid var(--border)',
-                  borderBottom: '1px solid var(--border)',
-                  padding: '1rem 0',
-                  textAlign: 'center',
-                }}>
-                  <span
-                    className="font-sans text-xs uppercase tracking-widest"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    Evento finalizado
-                  </span>
-                </div>
-              ) : (
-                <div style={{
-                  display: 'flex',
-                  gap: '0',
-                  marginBottom: '2rem',
-                  borderTop: '1px solid var(--border)',
-                  borderBottom: '1px solid var(--border)',
-                  padding: '1rem 0',
-                }}>
-                  {[
-                    { value: countdown.days, label: 'Días' },
-                    { value: countdown.hours, label: 'Horas' },
-                    { value: countdown.minutes, label: 'Min' },
-                    { value: countdown.seconds, label: 'Seg' },
-                  ].map((unit, i, arr) => (
-                    <div
-                      key={unit.label}
-                      style={{
-                        flex: 1,
-                        textAlign: 'center',
-                        borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                      }}
-                    >
-                      <div
-                        className="font-mono"
-                        style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}
-                      >
-                        {String(unit.value).padStart(2, '0')}
-                      </div>
-                      <div
-                        className="font-sans text-xs uppercase tracking-widest"
-                        style={{ color: 'var(--muted)', marginTop: '0.3rem' }}
-                      >
-                        {unit.label}
-                      </div>
+              <div style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '1.25rem 0', marginBottom: '2.5rem' }}>
+                {countdown.isPast ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Clock size={13} style={{ color: 'var(--muted)' }} />
+                    <span style={{ fontFamily: MONO, fontSize: '0.625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+                      Evento finalizado
+                    </span>
+                  </div>
+                ) : (
+                  <div>
+                    <p style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.875rem' }}>
+                      Comienza en
+                    </p>
+                    <div style={{ display: 'flex', gap: 0 }}>
+                      {[
+                        { value: countdown.days, label: 'Días' },
+                        { value: countdown.hours, label: 'Horas' },
+                        { value: countdown.minutes, label: 'Min' },
+                        { value: countdown.seconds, label: 'Seg' },
+                      ].map((unit, i, arr) => (
+                        <div
+                          key={unit.label}
+                          style={{
+                            flex: 1, textAlign: 'center',
+                            borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                          }}
+                        >
+                          <div style={{ fontFamily: MONO, fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>
+                            {pad(unit.value)}
+                          </div>
+                          <div style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginTop: '0.4rem' }}>
+                            {unit.label}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Description */}
             <div style={{ marginBottom: '2.5rem' }}>
-              <p
-                className="font-sans text-xs uppercase tracking-widest"
-                style={{ color: 'var(--muted)', marginBottom: '1rem' }}
-              >
+              <p style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '1rem' }}>
                 Acerca del evento
               </p>
-              <p
-                className="font-sans"
-                style={{ color: 'var(--text)', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontSize: '1.0625rem', margin: 0 }}
-              >
+              <p style={{ fontFamily: SANS, fontSize: '1.0625rem', color: 'var(--text)', lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0 }}>
                 {event.description}
               </p>
             </div>
 
             {/* Organizer */}
             {(event.creator?.name || event.creator?.username) && (
-              <div
-                className="flex items-center gap-3"
-                style={{ marginBottom: '2.5rem' }}
-              >
-                <Building2 size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-                <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                <Building2 size={13} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                <span style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>
                   Organizado por
                 </span>
-                <span className="font-sans text-sm font-medium" style={{ color: 'var(--text)' }}>
+                <span style={{ fontFamily: SANS, fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text)' }}>
                   {event.creator.name || event.creator.username}
                 </span>
               </div>
             )}
 
             {/* Comments */}
-            <div
-              style={{
-                borderTop: '1px solid var(--border)',
-                paddingTop: '2.5rem',
-                marginTop: '2.5rem',
-              }}
-            >
-              <h3 className="font-display mb-8" style={{ fontSize: '1.5rem', color: 'var(--text)' }}>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem', marginTop: '1rem' }}>
+              <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '2rem' }}>
                 Discusión
-              </h3>
+              </p>
               <CommentSection eventId={event.id} />
             </div>
           </div>
@@ -493,22 +399,26 @@ const EventView = () => {
           <aside>
             <div style={{ position: 'sticky', top: '6rem' }}>
 
-              {/* LIVE badge */}
+              {/* Live now */}
               {event.isLive && (
                 <div style={{
-                  backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
-                  padding: '0.75rem 1rem', marginBottom: '1rem',
+                  backgroundColor: 'rgba(196,69,26,0.08)', border: '1px solid rgba(196,69,26,0.3)',
+                  padding: '0.875rem 1rem', marginBottom: '1rem',
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                 }}>
-                  <Radio size={14} style={{ color: '#ef4444', flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ef4444', margin: 0 }}>EN VIVO AHORA</p>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#C4451A', animation: 'artixpulse 1.5s infinite', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: MONO, fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C4451A', margin: 0 }}>
+                      En vivo ahora
+                    </p>
                     {event.streamUrl && (
                       <a
                         href={event.streamUrl} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.2rem' }}
+                        style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.2rem', textDecoration: 'none', transition: 'color 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; }}
                       >
-                        Ver stream <ExternalLink size={10} />
+                        Ver transmisión <ExternalLink size={10} />
                       </a>
                     )}
                   </div>
@@ -517,17 +427,15 @@ const EventView = () => {
 
               {/* Registration card */}
               <div style={{
-                backgroundColor: 'var(--surface)',
-                border: '2px solid var(--border)',
-                padding: '1.5rem',
-                marginBottom: '1rem',
+                backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
+                padding: '1.5rem', marginBottom: '0.75rem',
               }}>
-                <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
-                  <p className="font-display" style={{ fontSize: '1rem', color: 'var(--text)', margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                  <span style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>
                     Inscripción
-                  </p>
+                  </span>
                   {event.ticketPrice > 0 && (
-                    <span className="font-mono" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent)' }}>
+                    <span style={{ fontFamily: MONO, fontSize: '1rem', fontWeight: 700, color: '#C4451A' }}>
                       {event.ticketCurrency || 'MXN'} {event.ticketPrice.toFixed(2)}
                     </span>
                   )}
@@ -535,66 +443,80 @@ const EventView = () => {
 
                 {/* Capacity bar */}
                 {event.maxAttendees && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <div className="flex justify-between" style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.375rem' }}>
-                      <span>{event.registrations?.length || 0} inscritos</span>
-                      <span>Límite: {event.maxAttendees}</span>
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: '0.5625rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+                      <span>{attendeeCount} inscritos</span>
+                      <span>Límite {event.maxAttendees}</span>
                     </div>
-                    <div style={{ height: 4, backgroundColor: 'var(--border)', overflow: 'hidden' }}>
+                    <div style={{ height: 3, backgroundColor: 'var(--border)' }}>
                       <div style={{
-                        height: '100%',
-                        width: `${Math.min(100, ((event.registrations?.length || 0) / event.maxAttendees) * 100)}%`,
-                        backgroundColor: (event.registrations?.length || 0) >= event.maxAttendees ? '#ef4444' : 'var(--accent)',
-                        transition: 'width 0.3s',
+                        height: '100%', width: `${capacityPct}%`,
+                        backgroundColor: capacityPct >= 100 ? '#ef4444' : '#C4451A',
+                        transition: 'width 0.4s',
                       }} />
                     </div>
                   </div>
                 )}
 
+                {/* Action area */}
                 {waitlisted ? (
-                  <div style={{ textAlign: 'center' }}>
-                    <Clock size={20} style={{ color: 'var(--muted)', margin: '0 auto 0.5rem' }} />
-                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', margin: '0 0 0.25rem' }}>
-                      En lista de espera
-                    </p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--muted)', margin: 0 }}>
-                      Posición #{waitlistPosition}
-                    </p>
+                  <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+                    <Clock size={18} style={{ color: 'var(--muted)', margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontFamily: SANS, fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', margin: '0 0 0.25rem' }}>En lista de espera</p>
+                    <p style={{ fontFamily: MONO, fontSize: '0.625rem', color: 'var(--muted)', margin: 0 }}>Posición #{waitlistPosition}</p>
                   </div>
                 ) : !registered ? (
                   <button
                     onClick={handleRegister}
                     disabled={registerLoading}
-                    className="btn btn-primary w-full"
-                    style={{ padding: '0.875rem' }}
+                    style={{
+                      width: '100%', padding: '0.875rem',
+                      backgroundColor: registerLoading ? 'var(--border)' : '#C4451A',
+                      color: '#fff', border: 'none', cursor: registerLoading ? 'not-allowed' : 'pointer',
+                      fontFamily: SANS, fontSize: '0.9375rem', fontWeight: 700, transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { if (!registerLoading) e.currentTarget.style.backgroundColor = '#a33615'; }}
+                    onMouseLeave={e => { if (!registerLoading) e.currentTarget.style.backgroundColor = '#C4451A'; }}
                   >
-                    {registerLoading ? 'Procesando…' : event.ticketPrice > 0 ? `Comprar entrada — ${event.ticketCurrency || 'MXN'} ${event.ticketPrice?.toFixed(2)}` : 'Inscribirme'}
+                    {registerLoading
+                      ? 'Procesando…'
+                      : event.ticketPrice > 0
+                        ? `Comprar — ${event.ticketCurrency || 'MXN'} ${event.ticketPrice.toFixed(2)}`
+                        : 'Inscribirme'}
                   </button>
                 ) : (
                   <div>
-                    <div className="flex items-center gap-2" style={{ marginBottom: '0.875rem' }}>
-                      <Check size={15} style={{ color: 'var(--accent)' }} />
-                      <span className="font-sans text-sm font-medium" style={{ color: 'var(--accent)' }}>
-                        Estás inscrito/a
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <Check size={14} style={{ color: '#C4451A' }} />
+                      <span style={{ fontFamily: SANS, fontSize: '0.875rem', fontWeight: 600, color: '#C4451A' }}>
+                        Inscrito/a
                       </span>
                     </div>
                     <button
                       onClick={() => handleToggleReminder('day_before')}
-                      className="btn btn-ghost w-full"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}
+                      style={{
+                        width: '100%', background: 'none',
+                        border: `1px solid ${reminderEnabled ? '#C4451A' : 'var(--border)'}`,
+                        color: reminderEnabled ? '#C4451A' : 'var(--muted)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                        padding: '0.625rem', cursor: 'pointer', marginBottom: '0.625rem',
+                        fontFamily: SANS, fontSize: '0.8125rem', transition: 'all 0.15s',
+                      }}
                     >
-                      <Bell size={13} style={{ color: reminderEnabled ? 'var(--accent)' : 'var(--muted)' }} />
-                      <span style={{ color: reminderEnabled ? 'var(--accent)' : 'var(--muted)', fontSize: '0.8125rem' }}>
-                        {reminderEnabled ? 'Quitar recordatorio' : 'Recordatorio (1 día antes)'}
-                      </span>
+                      <Bell size={13} />
+                      {reminderEnabled ? 'Quitar recordatorio' : 'Recordatorio (1 día antes)'}
                     </button>
                     <button
                       onClick={handleUnregister}
                       style={{
                         width: '100%', background: 'none', border: 'none',
-                        color: 'var(--muted)', fontSize: '0.75rem', cursor: 'pointer',
-                        padding: '0.25rem 0', textDecoration: 'underline',
+                        color: 'var(--muted)', fontFamily: MONO, fontSize: '0.5625rem',
+                        letterSpacing: '0.08em', textTransform: 'uppercase',
+                        cursor: 'pointer', padding: '0.375rem 0', textDecoration: 'underline',
+                        opacity: 0.7, transition: 'opacity 0.15s',
                       }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity = '1'; }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = '0.7'; }}
                     >
                       Cancelar inscripción
                     </button>
@@ -608,12 +530,15 @@ const EventView = () => {
                   onClick={() => navigate(`/events/${id}/lobby`)}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                    backgroundColor: event.isLive ? '#ef4444' : 'var(--surface)',
+                    backgroundColor: event.isLive ? '#C4451A' : 'var(--surface)',
                     color: event.isLive ? '#fff' : 'var(--text)',
                     border: event.isLive ? 'none' : '1px solid var(--border)',
-                    padding: '0.75rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
-                    marginBottom: '0.75rem', transition: 'all 0.15s',
+                    padding: '0.75rem',
+                    fontFamily: SANS, fontSize: '0.875rem', fontWeight: 600,
+                    cursor: 'pointer', marginBottom: '0.625rem', transition: 'all 0.15s',
                   }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
                 >
                   {event.isLive ? <Radio size={14} /> : <MessageSquare size={14} />}
                   {event.isLive ? 'Unirse al evento en vivo' : 'Ir al lobby'}
@@ -623,31 +548,40 @@ const EventView = () => {
               {/* Repost */}
               <button
                 onClick={handleRepost}
-                className="btn btn-ghost w-full"
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                  marginBottom: '0.5rem',
-                  color: reposted ? 'var(--accent)' : 'var(--muted)',
-                  border: '1px solid var(--border)',
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  background: 'none', border: '1px solid var(--border)',
+                  color: reposted ? '#C4451A' : 'var(--muted)',
+                  borderColor: reposted ? 'rgba(196,69,26,0.4)' : 'var(--border)',
+                  padding: '0.625rem', cursor: 'pointer', marginBottom: '0.5rem',
+                  fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  transition: 'all 0.15s',
                 }}
               >
                 <Repeat2 size={13} />
                 {reposted ? 'Reposteado' : 'Repostear'}
-                {repostCount > 0 && <span className="font-mono" style={{ fontSize: '0.7rem' }}>· {repostCount}</span>}
+                {repostCount > 0 && <span style={{ fontFamily: MONO, fontSize: '0.5625rem', marginLeft: 2 }}>· {repostCount}</span>}
               </button>
 
               {/* Share */}
               <button
                 onClick={() => setShowShareModal(true)}
-                className="btn btn-outline w-full"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  background: 'none', border: '1px solid var(--border)', color: 'var(--muted)',
+                  padding: '0.625rem', cursor: 'pointer', marginBottom: '0.75rem',
+                  fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text)'; e.currentTarget.style.color = 'var(--text)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
               >
-                <Share2 size={13} /> Compartir evento
+                <Share2 size={13} /> Compartir
               </button>
 
               {/* Content actions */}
               {isAuthenticated() && (
-                <div className="flex justify-end">
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <ContentActions
                     type="event"
                     itemId={event.id}
