@@ -78,6 +78,10 @@ const CreateEvent = () => {
     tags: [],
     bannerUrl: '',
     isCollaborative: false,
+    maxAttendees: '',
+    ticketPrice: '',
+    ticketCurrency: 'MXN',
+    streamUrl: '',
   });
   const [collaborators, setCollaborators] = useState([]);
 
@@ -99,6 +103,10 @@ const CreateEvent = () => {
               tags: ev.tags || [],
               bannerUrl: ev.bannerUrl || '',
               isCollaborative: ev.isCollaborative || false,
+              maxAttendees: ev.maxAttendees || '',
+              ticketPrice: ev.ticketPrice || '',
+              ticketCurrency: ev.ticketCurrency || 'MXN',
+              streamUrl: ev.streamUrl || '',
             });
             if (ev.collaborators) setCollaborators(ev.collaborators);
           }
@@ -173,6 +181,10 @@ const CreateEvent = () => {
           tags: formData.tags || [],
           bannerUrl: formData.bannerUrl || null,
           isCollaborative: formData.isCollaborative || collaborators.length > 0,
+          maxAttendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : null,
+          ticketPrice: formData.ticketPrice ? parseFloat(formData.ticketPrice) : null,
+          ticketCurrency: formData.ticketCurrency || 'MXN',
+          streamUrl: formData.streamUrl || null,
           publishAsArtixResearch: publishAsArtixResearch && !isEditMode,
           mentions: extractMentions(formData.description),
         }),
@@ -399,6 +411,71 @@ const CreateEvent = () => {
                   </div>
                 )}
                 <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleBannerChange} />
+              </div>
+            </div>
+
+            {/* Capacity & Tickets */}
+            <div style={{ marginBottom: '1.5rem', padding: '1.25rem', border: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
+              <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+                Capacidad y entradas
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label className="input-label">Capacidad máxima</label>
+                  <input
+                    type="number"
+                    name="maxAttendees"
+                    value={formData.maxAttendees}
+                    onChange={handleInputChange}
+                    placeholder="Sin límite"
+                    min="1"
+                    className="input-field"
+                    style={{ fontSize: '0.9375rem', padding: '0.625rem 0.75rem' }}
+                  />
+                  <p className="font-sans text-xs mt-1" style={{ color: 'var(--muted)' }}>Vacío = sin límite</p>
+                </div>
+                <div>
+                  <label className="input-label">Precio de entrada</label>
+                  <div style={{ display: 'flex', gap: '0.375rem' }}>
+                    <select
+                      value={formData.ticketCurrency}
+                      onChange={(e) => setFormData(prev => ({ ...prev, ticketCurrency: e.target.value }))}
+                      style={{
+                        border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text)',
+                        padding: '0.625rem 0.5rem', fontSize: '0.875rem', flexShrink: 0,
+                      }}
+                    >
+                      <option>MXN</option>
+                      <option>USD</option>
+                      <option>EUR</option>
+                    </select>
+                    <input
+                      type="number"
+                      name="ticketPrice"
+                      value={formData.ticketPrice}
+                      onChange={handleInputChange}
+                      placeholder="0 = gratis"
+                      min="0"
+                      step="0.01"
+                      className="input-field"
+                      style={{ flex: 1, fontSize: '0.9375rem', padding: '0.625rem 0.75rem' }}
+                    />
+                  </div>
+                  <p className="font-sans text-xs mt-1" style={{ color: 'var(--muted)' }}>Se cobra vía Stripe</p>
+                </div>
+              </div>
+              <div>
+                <label className="input-label">URL del stream (opcional)</label>
+                <input
+                  type="url"
+                  name="streamUrl"
+                  value={formData.streamUrl}
+                  onChange={handleInputChange}
+                  placeholder="https://youtube.com/live/... o zoom link"
+                  className="input-field"
+                  style={{ fontSize: '0.9375rem', padding: '0.625rem 0.75rem' }}
+                />
+                <p className="font-sans text-xs mt-1" style={{ color: 'var(--muted)' }}>Se comparte con inscritos cuando marques el evento como EN VIVO</p>
               </div>
             </div>
 

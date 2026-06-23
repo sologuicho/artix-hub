@@ -31,6 +31,8 @@ model User {
   discussions            Discussion[]           @relation("DiscussionAuthor")
   comments               Comment[]              @relation("CommentAuthor")
   eventRegistrations     EventRegistration[]
+  eventWaitlist          EventWaitlist[]
+  lobbyMessages          EventLobbyMessage[]
   reactions              Reaction[]
   eventReminders         EventReminder[]
   notifications          Notification[]
@@ -276,10 +278,19 @@ model Event {
   bannerUrl       String?
   isCollaborative Boolean             @default(false)
   archived        Boolean             @default(false)
+  // Capacity & tickets
+  maxAttendees    Int?                // null = unlimited
+  ticketPrice     Float?              // null / 0 = free
+  ticketCurrency  String?             @default("MXN")
+  // Live features
+  streamUrl       String?             // external stream URL or empty for internal lobby
+  isLive          Boolean             @default(false)
   creatorId       String
   creator         User                @relation("EventCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   collaborators   EventCollaborator[]
   registrations   EventRegistration[]
+  waitlist        EventWaitlist[]
+  lobbyMessages   EventLobbyMessage[]
   reminders       EventReminder[]
   savedItems      SavedItem[]
   reposts         Repost[]
@@ -290,6 +301,33 @@ model Event {
   @@index([date])
   @@index([type])
   @@index([archived])
+  @@index([isLive])
+}
+
+model EventWaitlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model EventLobbyMessage {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+  @@index([createdAt])
 }
 
 model EventCollaborator {

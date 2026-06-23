@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, BookOpen, ArrowLeft, Copy, Check, Download, Clock, Repeat2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, BookOpen, ArrowLeft, Copy, Check, Download, Clock, Repeat2, Tablet } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
@@ -674,6 +674,11 @@ const ArticleView = () => {
                   label={downloadingPDF ? 'Generando…' : 'Descargar PDF'}
                   disabled={downloadingPDF}
                 />
+                <SideAction
+                  onClick={() => window.open(`${BACKEND_URL}/api/articles/${article.id}/epub`, '_blank')}
+                  icon={Tablet}
+                  label="E-reader (EPUB)"
+                />
               </div>
             </div>
           </aside>
@@ -686,11 +691,14 @@ const ArticleView = () => {
       {showShareModal && (
         <ShareModal url={window.location.href} title={article.title} onClose={() => setShowShareModal(false)} />
       )}
-      <ReadingMode isOpen={readingMode} onClose={() => setReadingMode(false)} title={article.title} author={article.author?.name} date={article.createdAt}>
-        <div className="prose prose-xl max-w-3xl mx-auto" style={{ color: 'var(--text)' }}>
-          <div dangerouslySetInnerHTML={{ __html: article.content }} />
-        </div>
-      </ReadingMode>
+      <ReadingMode
+        isOpen={readingMode}
+        onClose={() => setReadingMode(false)}
+        title={article.title}
+        author={article.author?.name}
+        date={article.createdAt}
+        content={article.content}
+      />
     </div>
   );
 };

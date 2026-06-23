@@ -325,6 +325,52 @@ exports.sendPasswordReset = async (user, rawToken) => {
   if (user.email) await sendEmail(user.email, 'Restablecer contraseña — Artix Hub', html);
 };
 
+exports.sendEventRegistration = async (user, event) => {
+  const name = user.name || user.username || 'Usuario';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const eventDate = event.date
+    ? new Date(event.date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : null;
+  const eventUrl = `${frontendUrl}/events/${event.id}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+    <body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:#1A1917;padding:30px;text-align:center;">
+        <h1 style="color:#FAFAF8;margin:0;font-size:1.5rem;letter-spacing:0.05em;">ARTIX HUB</h1>
+      </div>
+      <div style="background:#F2F0EC;padding:30px;">
+        <h2 style="color:#1A1917;margin-top:0;">¡Registro confirmado!</h2>
+        <p>Hola <strong>${name}</strong>,</p>
+        <p>Tu registro para el siguiente evento fue confirmado exitosamente:</p>
+        <div style="background:white;padding:24px;border-left:4px solid #C4451A;margin:20px 0;">
+          <h3 style="margin-top:0;color:#1A1917;">${event.title}</h3>
+          ${eventDate ? `<p style="margin:8px 0;"><strong>📅 Fecha:</strong> ${eventDate}</p>` : ''}
+          ${event.time ? `<p style="margin:8px 0;"><strong>🕐 Hora:</strong> ${event.time}</p>` : ''}
+          ${event.location ? `<p style="margin:8px 0;"><strong>📍 Lugar:</strong> ${event.location}</p>` : ''}
+          ${event.type ? `<p style="margin:8px 0;"><strong>🏷️ Tipo:</strong> ${event.type}</p>` : ''}
+        </div>
+        <p>Te enviaremos un recordatorio antes del evento. ¡Te esperamos!</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${eventUrl}" style="background:#C4451A;color:white;padding:12px 30px;text-decoration:none;display:inline-block;font-family:Arial,sans-serif;font-size:0.875rem;letter-spacing:0.05em;text-transform:uppercase;">
+            Ver evento
+          </a>
+        </div>
+        <p>Saludos,<br><strong>El equipo de Artix Hub</strong></p>
+        <hr style="border:none;border-top:1px solid #ddd;margin:24px 0;">
+        <p style="font-size:12px;color:#999;text-align:center;">Este es un email automático. Por favor no respondas a este mensaje.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  if (user.email) {
+    await sendEmail(user.email, `Registro confirmado: ${event.title} — Artix Hub`, html);
+  }
+};
+
 // Cron job function to check and send reminders
 exports.checkAndSendReminders = async () => {
   const { PrismaClient } = require('@prisma/client');

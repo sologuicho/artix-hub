@@ -10,6 +10,7 @@ const { validateEvent } = require('../middleware/validationMiddleware');
 router.get('/', eventController.getAllEvents);
 router.get('/categories', eventController.getCategories);
 router.get('/:id', eventController.getEvent);
+router.get('/:id/lobby/messages', eventController.getLobbyMessages);
 
 // Protected routes
 router.post('/', protect, checkPermission('canPublishEvents'), verifyCsrf, validateEvent, eventController.createEvent);
@@ -18,6 +19,8 @@ router.post('/:id/archive', protect, checkPermission('canPublishEvents'), verify
 router.post('/:id/unarchive', protect, checkPermission('canPublishEvents'), verifyCsrf, eventController.archiveEvent);
 router.delete('/:id', protect, checkPermission('canPublishEvents'), verifyCsrf, eventController.deleteEvent);
 router.post('/:id/register', protect, verifyCsrf, eventController.registerForEvent);
+router.delete('/:id/register', protect, verifyCsrf, eventController.unregisterFromEvent);
+router.get('/:id/waitlist', protect, eventController.getWaitlistStatus);
+router.post('/:id/live', protect, verifyCsrf, eventController.setLive);
 
 module.exports = router;
-

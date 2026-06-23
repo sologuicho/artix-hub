@@ -1,52 +1,84 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import CircularProgress from './CircularProgress';
 import { useAuth } from '../../context/AuthContext';
 import { BACKEND_URL } from '../../config/client';
 
+const WORDS_PER_PAGE = 270;
+
+function wordCount(text) {
+  return (text || '').trim().split(/\s+/).filter(Boolean).length;
+}
+
+function buildPages(html) {
+  if (!html) return [['<p></p>']];
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const children = Array.from(doc.body.children);
+
+  if (children.length === 0) {
+    return [[html]];
+  }
+
+  const blocks = children.map(el => ({
+    html: el.outerHTML,
+    words: wordCount(el.textContent || ''),
+    isHeading: /^H[1-6]$/.test(el.tagName),
+  }));
+
+  const pages = [];
+  let page = [];
+  let pageWords = 0;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+
+    if (page.length > 0 && pageWords + block.words > WORDS_PER_PAGE) {
+      pages.push(page);
+      page = [];
+      pageWords = 0;
+    }
+
+    page.push(block.html);
+    pageWords += block.words;
+  }
+
+  if (page.length > 0) pages.push(page);
+
+  // Anti-orphan: if last block of a page is a heading, move it to next page
+  for (let i = 0; i < pages.length - 1; i++) {
+    const last = pages[i][pages[i].length - 1];
+    if (/^<h[1-6][\s>]/i.test(last) && pages[i].length > 1) {
+      pages[i].pop();
+      pages[i + 1].unshift(last);
+    }
+  }
+
+  return pages.length > 0 ? pages : [[html]];
+}
+
 const PaginatedReader = ({ content, title, contentId, contentType, initialProgress }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [ready, setReady] = useState(false);
-  const containerRef = useRef(null);
-  const contentRef = useRef(null);
+  const [fading, setFading] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    if (initialProgress) setCurrentPage(initialProgress.lastPage || 1);
-  }, [initialProgress]);
-
-  const calculatePages = useCallback(() => {
-    if (!contentRef.current || !containerRef.current) return;
-    const containerWidth = containerRef.current.clientWidth;
-    const contentScrollWidth = contentRef.current.scrollWidth;
-    const gap = 32;
-    const pages = Math.ceil((contentScrollWidth + gap) / (containerWidth + gap));
-    setTotalPages(Math.max(1, pages));
-    setReady(true);
-  }, []);
+  const pages = useMemo(() => buildPages(content), [content]);
+  const totalPages = pages.length;
 
   useEffect(() => {
-    window.addEventListener('resize', calculatePages);
-    const timer = setTimeout(calculatePages, 150);
-    return () => {
-      window.removeEventListener('resize', calculatePages);
-      clearTimeout(timer);
-    };
-  }, [content, calculatePages]);
+    if (initialProgress?.lastPage) {
+      setCurrentPage(Math.min(initialProgress.lastPage, totalPages));
+    }
+  }, [initialProgress, totalPages]);
 
+  // Sync reading progress
   useEffect(() => {
-    if (!ready || !user) return;
-    const syncProgress = async () => {
+    if (!user || !contentId) return;
+    const timer = setTimeout(async () => {
       try {
         const percentage = Math.min(100, Math.round((currentPage / totalPages) * 100));
-        const payload = {
-          [contentType === 'article' ? 'articleId' : contentType === 'research' ? 'researchId' : 'postId']: contentId,
-          percentage,
-          lastPage: currentPage,
-          totalPages,
-        };
         const getCsrfToken = () => {
           for (const c of document.cookie.split(';')) {
             const [n, v] = c.trim().split('=');
@@ -54,33 +86,40 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
           }
           return null;
         };
+        const key = contentType === 'article' ? 'articleId'
+          : contentType === 'research' ? 'researchId'
+          : 'postId';
         await fetch(`${BACKEND_URL}/api/reading-progress`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
           credentials: 'include',
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ [key]: contentId, percentage, lastPage: currentPage, totalPages }),
         });
       } catch (_) {}
-    };
-    const timer = setTimeout(syncProgress, 1000);
+    }, 1200);
     return () => clearTimeout(timer);
-  }, [currentPage, totalPages, contentId, contentType, ready, user]);
+  }, [currentPage, totalPages, contentId, contentType, user]);
 
-  const handleNext = () => { if (currentPage < totalPages) setCurrentPage(p => p + 1); };
-  const handlePrev = () => { if (currentPage > 1) setCurrentPage(p => p - 1); };
+  const changePage = (next) => {
+    if (next < 1 || next > totalPages || fading) return;
+    setFading(true);
+    setTimeout(() => {
+      setCurrentPage(next);
+      setFading(false);
+    }, 180);
+  };
 
-  const percentage = Math.round((currentPage / totalPages) * 100);
-  const offset = containerRef.current ? (currentPage - 1) * (containerRef.current.clientWidth + 32) : 0;
+  const percentage = Math.min(100, Math.round((currentPage / totalPages) * 100));
+  const pageHtml = (pages[currentPage - 1] || []).join('');
 
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: 'clamp(480px, 65vh, 700px)',
+        minHeight: 'clamp(520px, 68vh, 720px)',
         backgroundColor: 'var(--surface)',
         border: '1px solid var(--border)',
-        overflow: 'hidden',
       }}
     >
       {/* Header */}
@@ -89,28 +128,33 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0.75rem 1rem',
+          padding: '0.75rem 1.25rem',
           borderBottom: '1px solid var(--border)',
           flexShrink: 0,
           gap: '0.75rem',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <CircularProgress percentage={percentage} size={40} />
-          <div style={{ minWidth: 0 }}>
+          <div>
             <p
-              className="font-sans"
-              style={{ fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: '0.1rem' }}
+              style={{
+                fontSize: '0.625rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: 'var(--muted)',
+                margin: 0,
+                marginBottom: '0.1rem',
+              }}
             >
               Progreso de lectura
             </p>
-            <p className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text)' }}>
+            <p className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text)', margin: 0 }}>
               Página {currentPage} de {totalPages}
             </p>
           </div>
         </div>
 
-        {/* Progress bar */}
         <div
           style={{
             flex: 1,
@@ -125,58 +169,50 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
               height: '100%',
               width: `${percentage}%`,
               backgroundColor: 'var(--accent)',
-              transition: 'width 0.3s',
+              transition: 'width 0.4s',
             }}
           />
         </div>
       </div>
 
-      {/* Content area */}
+      {/* Content */}
       <div
-        ref={containerRef}
         style={{
           flex: 1,
-          position: 'relative',
-          overflow: 'hidden',
-          padding: 'clamp(0.75rem, 3vw, 2rem)',
+          padding: 'clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 5vw, 3rem)',
+          opacity: fading ? 0 : 1,
+          transition: 'opacity 0.18s ease',
         }}
       >
         {currentPage === 1 && title && (
-          <div style={{ marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
             <h1
               className="font-display"
-              style={{ fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', lineHeight: 1.2, color: 'var(--text)' }}
+              style={{
+                fontSize: 'clamp(1.375rem, 3.5vw, 2rem)',
+                lineHeight: 1.2,
+                color: 'var(--text)',
+                margin: 0,
+              }}
             >
               {title}
             </h1>
-            <div style={{ marginTop: '0.5rem', height: '2px', width: '2rem', backgroundColor: 'var(--accent)' }} />
+            <div
+              style={{
+                marginTop: '0.625rem',
+                height: '2px',
+                width: '2.5rem',
+                backgroundColor: 'var(--accent)',
+              }}
+            />
           </div>
         )}
 
         <div
-          style={{
-            transform: `translateX(-${offset}px)`,
-            transition: 'transform 400ms cubic-bezier(0.25, 1, 0.5, 1)',
-            height: currentPage === 1 && title ? 'calc(100% - 3.5rem)' : '100%',
-          }}
-        >
-          <div
-            ref={contentRef}
-            className="prose prose-sm md:prose-base dark:prose-invert"
-            style={{
-              columnWidth: containerRef.current ? `${containerRef.current.clientWidth}px` : 'auto',
-              columnGap: '32px',
-              columnFill: 'auto',
-              height: '100%',
-              widows: 3,
-              orphans: 3,
-              color: 'var(--text)',
-              fontSize: 'clamp(0.9375rem, 2vw, 1.0625rem)',
-              lineHeight: 1.8,
-            }}
-            dangerouslySetInnerHTML={{ __html: content }}
-          />
-        </div>
+          className="prose prose-base dark:prose-invert max-w-none"
+          style={{ color: 'var(--text)', fontSize: 'clamp(0.9375rem, 2vw, 1.0625rem)', lineHeight: 1.85 }}
+          dangerouslySetInnerHTML={{ __html: pageHtml }}
+        />
       </div>
 
       {/* Controls */}
@@ -185,16 +221,16 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0.625rem 1rem',
+          padding: '0.75rem 1.25rem',
           borderTop: '1px solid var(--border)',
           flexShrink: 0,
           gap: '0.5rem',
         }}
       >
         <button
-          onClick={handlePrev}
+          onClick={() => changePage(currentPage - 1)}
           disabled={currentPage === 1}
-          className="flex items-center gap-1 font-sans"
+          className="flex items-center gap-1"
           style={{
             background: 'none',
             border: '1px solid var(--border)',
@@ -203,7 +239,7 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
             color: currentPage === 1 ? 'var(--muted)' : 'var(--text)',
             cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
             opacity: currentPage === 1 ? 0.4 : 1,
-            transition: 'all 0.15s',
+            transition: 'opacity 0.15s',
           }}
         >
           <ChevronLeft size={14} />
@@ -215,9 +251,9 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
         </span>
 
         <button
-          onClick={handleNext}
+          onClick={() => changePage(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="flex items-center gap-1 font-sans"
+          className="flex items-center gap-1"
           style={{
             border: 'none',
             padding: '0.4rem 0.875rem',
@@ -233,12 +269,6 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
           <ChevronRight size={14} />
         </button>
       </div>
-
-      <style>{`
-        .prose p { margin-bottom: 1.4em; line-height: 1.8; }
-        .prose h1, .prose h2, .prose h3 { margin-top: 0; break-after: avoid; }
-        .prose img { max-width: 100%; break-inside: avoid; }
-      `}</style>
     </div>
   );
 };

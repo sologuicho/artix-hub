@@ -23,6 +23,7 @@ import CreateEvent from './pages/CreateEvent';
 import ArticleView from './pages/ArticleView';
 import ResearchView from './pages/ResearchView';
 import EventView from './pages/EventView';
+import EventLobby from './pages/EventLobby';
 import BlogPostView from './pages/BlogPostView';
 import Profile from './pages/Profile';
 import UserProfile from './pages/UserProfile';
@@ -68,6 +69,7 @@ function AppRoutes() {
           <Route path="articles/:id/edit" element={<ProtectedRoute><CreateArticle /></ProtectedRoute>} />
           <Route path="events" element={<Events />} />
           <Route path="events/:id" element={<EventView />} />
+          <Route path="events/:id/lobby" element={<ProtectedRoute><EventLobby /></ProtectedRoute>} />
           <Route path="events/:id/edit" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
           <Route path="blog" element={<Blog />} />
           <Route path="blog/:id" element={<BlogPostView />} />

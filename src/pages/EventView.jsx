@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Bell, Check, Share2, ArrowLeft, Building2, Repeat2 } from 'lucide-react';
+import { Calendar, MapPin, Users, Bell, Check, Share2, ArrowLeft, Building2, Repeat2, Radio, MessageSquare, ExternalLink, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
 import CollaborationInvitation from '../components/CollaborationInvitation';
@@ -20,7 +20,7 @@ const getCsrfToken = () => {
 const EventView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [registered, setRegistered] = useState(false);
@@ -29,6 +29,9 @@ const EventView = () => {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false });
   const [reposted, setReposted] = useState(false);
   const [repostCount, setRepostCount] = useState(0);
+  const [waitlisted, setWaitlisted] = useState(false);
+  const [waitlistPosition, setWaitlistPosition] = useState(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
 
   useEffect(() => { fetchEvent(); }, [id]);
 
@@ -58,13 +61,27 @@ const EventView = () => {
     return () => clearInterval(interval);
   }, [event]);
 
+  // Derive registration/waitlist status reactively
+  useEffect(() => {
+    if (event && user) {
+      setRegistered(event.registrations?.some(r => r.userId === user.id) || false);
+    }
+  }, [event, user]);
+
+  useEffect(() => {
+    if (!event || !user || !isAuthenticated()) return;
+    fetch(`${BACKEND_URL}/api/events/${id}/waitlist`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.ok && d.onWaitlist) { setWaitlisted(true); setWaitlistPosition(d.position); } })
+      .catch(() => {});
+  }, [event, user]);
+
   const fetchEvent = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/events/${id}`, { credentials: 'include' });
       const data = await response.json();
       if (data.ok) {
         setEvent(data.event);
-        setRegistered(data.event.registrations?.some(r => r.userId === data.event.userId) || false);
         fetchRepostCount();
         checkRepostStatus();
       }
@@ -77,6 +94,7 @@ const EventView = () => {
 
   const handleRegister = async () => {
     if (!isAuthenticated()) { navigate('/auth'); return; }
+    setRegisterLoading(true);
     try {
       const response = await fetch(`${BACKEND_URL}/api/events/${id}/register`, {
         method: 'POST',
@@ -84,10 +102,44 @@ const EventView = () => {
         credentials: 'include',
       });
       const data = await response.json();
-      if (data.ok) { setRegistered(true); setReminderEnabled(true); }
+      if (data.ok) {
+        if (data.checkoutUrl) {
+          // Paid event — redirect to Stripe
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+        if (data.waitlisted) {
+          setWaitlisted(true);
+          setWaitlistPosition(data.position);
+        } else {
+          setRegistered(true);
+          setReminderEnabled(true);
+          // Refresh event to update attendee count
+          fetchEvent();
+        }
+      }
     } catch (error) {
       console.error('Error registering for event:', error);
+    } finally {
+      setRegisterLoading(false);
     }
+  };
+
+  const handleUnregister = async () => {
+    if (!isAuthenticated()) return;
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/events/${id}/register`, {
+        method: 'DELETE',
+        headers: { 'x-csrf-token': getCsrfToken() || '' },
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setRegistered(false);
+        setReminderEnabled(false);
+        fetchEvent();
+      }
+    } catch (_) {}
   };
 
   const handleToggleReminder = async (reminderType) => {
@@ -441,31 +493,86 @@ const EventView = () => {
           <aside>
             <div style={{ position: 'sticky', top: '6rem' }}>
 
+              {/* LIVE badge */}
+              {event.isLive && (
+                <div style={{
+                  backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
+                  padding: '0.75rem 1rem', marginBottom: '1rem',
+                  display: 'flex', alignItems: 'center', gap: '0.625rem',
+                }}>
+                  <Radio size={14} style={{ color: '#ef4444', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ef4444', margin: 0 }}>EN VIVO AHORA</p>
+                    {event.streamUrl && (
+                      <a
+                        href={event.streamUrl} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.2rem' }}
+                      >
+                        Ver stream <ExternalLink size={10} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Registration card */}
               <div style={{
                 backgroundColor: 'var(--surface)',
                 border: '2px solid var(--border)',
-                padding: '2rem',
+                padding: '1.5rem',
                 marginBottom: '1rem',
               }}>
-                <p
-                  className="font-display"
-                  style={{ fontSize: '1rem', color: 'var(--text)', marginBottom: '1rem', marginTop: 0 }}
-                >
-                  Inscripción
-                </p>
+                <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
+                  <p className="font-display" style={{ fontSize: '1rem', color: 'var(--text)', margin: 0 }}>
+                    Inscripción
+                  </p>
+                  {event.ticketPrice > 0 && (
+                    <span className="font-mono" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent)' }}>
+                      {event.ticketCurrency || 'MXN'} {event.ticketPrice.toFixed(2)}
+                    </span>
+                  )}
+                </div>
 
-                {!registered ? (
+                {/* Capacity bar */}
+                {event.maxAttendees && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div className="flex justify-between" style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.375rem' }}>
+                      <span>{event.registrations?.length || 0} inscritos</span>
+                      <span>Límite: {event.maxAttendees}</span>
+                    </div>
+                    <div style={{ height: 4, backgroundColor: 'var(--border)', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${Math.min(100, ((event.registrations?.length || 0) / event.maxAttendees) * 100)}%`,
+                        backgroundColor: (event.registrations?.length || 0) >= event.maxAttendees ? '#ef4444' : 'var(--accent)',
+                        transition: 'width 0.3s',
+                      }} />
+                    </div>
+                  </div>
+                )}
+
+                {waitlisted ? (
+                  <div style={{ textAlign: 'center' }}>
+                    <Clock size={20} style={{ color: 'var(--muted)', margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', margin: '0 0 0.25rem' }}>
+                      En lista de espera
+                    </p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--muted)', margin: 0 }}>
+                      Posición #{waitlistPosition}
+                    </p>
+                  </div>
+                ) : !registered ? (
                   <button
                     onClick={handleRegister}
+                    disabled={registerLoading}
                     className="btn btn-primary w-full"
                     style={{ padding: '0.875rem' }}
                   >
-                    Inscribirme
+                    {registerLoading ? 'Procesando…' : event.ticketPrice > 0 ? `Comprar entrada — ${event.ticketCurrency || 'MXN'} ${event.ticketPrice?.toFixed(2)}` : 'Inscribirme'}
                   </button>
                 ) : (
                   <div>
-                    <div className="flex items-center gap-2" style={{ marginBottom: '1rem' }}>
+                    <div className="flex items-center gap-2" style={{ marginBottom: '0.875rem' }}>
                       <Check size={15} style={{ color: 'var(--accent)' }} />
                       <span className="font-sans text-sm font-medium" style={{ color: 'var(--accent)' }}>
                         Estás inscrito/a
@@ -474,16 +581,44 @@ const EventView = () => {
                     <button
                       onClick={() => handleToggleReminder('day_before')}
                       className="btn btn-ghost w-full"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}
                     >
                       <Bell size={13} style={{ color: reminderEnabled ? 'var(--accent)' : 'var(--muted)' }} />
-                      <span style={{ color: reminderEnabled ? 'var(--accent)' : 'var(--muted)' }}>
+                      <span style={{ color: reminderEnabled ? 'var(--accent)' : 'var(--muted)', fontSize: '0.8125rem' }}>
                         {reminderEnabled ? 'Quitar recordatorio' : 'Recordatorio (1 día antes)'}
                       </span>
+                    </button>
+                    <button
+                      onClick={handleUnregister}
+                      style={{
+                        width: '100%', background: 'none', border: 'none',
+                        color: 'var(--muted)', fontSize: '0.75rem', cursor: 'pointer',
+                        padding: '0.25rem 0', textDecoration: 'underline',
+                      }}
+                    >
+                      Cancelar inscripción
                     </button>
                   </div>
                 )}
               </div>
+
+              {/* Lobby button */}
+              {(registered || event.isLive) && (
+                <button
+                  onClick={() => navigate(`/events/${id}/lobby`)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    backgroundColor: event.isLive ? '#ef4444' : 'var(--surface)',
+                    color: event.isLive ? '#fff' : 'var(--text)',
+                    border: event.isLive ? 'none' : '1px solid var(--border)',
+                    padding: '0.75rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                    marginBottom: '0.75rem', transition: 'all 0.15s',
+                  }}
+                >
+                  {event.isLive ? <Radio size={14} /> : <MessageSquare size={14} />}
+                  {event.isLive ? 'Unirse al evento en vivo' : 'Ir al lobby'}
+                </button>
+              )}
 
               {/* Repost */}
               <button

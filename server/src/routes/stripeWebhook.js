@@ -45,7 +45,31 @@ module.exports = async function stripeWebhookHandler(req, res) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
-        const { userId, tier } = session.metadata || {};
+        const { userId, tier, eventId, type: metaType } = session.metadata || {};
+
+        // ── Event ticket payment ──────────────────────────────────────────────
+        if (metaType === 'event_ticket' && userId && eventId) {
+          try {
+            // Check not already registered
+            const already = await prisma.eventRegistration.findUnique({
+              where: { userId_eventId: { userId, eventId } },
+            });
+            if (!already) {
+              const registration = await prisma.eventRegistration.create({
+                data: { userId, eventId },
+                include: {
+                  user: { select: { id: true, name: true, email: true, avatar: true } },
+                  event: { select: { id: true, title: true, date: true, time: true, location: true, type: true } },
+                },
+              });
+              emailService.sendEventRegistration(registration.user, registration.event).catch(() => {});
+            }
+            logger.info({ userId, eventId }, '[Stripe Webhook] Event ticket registered');
+          } catch (err) {
+            logger.error({ err }, '[Stripe Webhook] Error registering event ticket');
+          }
+          break;
+        }
 
         if (userId && VALID_TIERS.includes(tier)) {
           const updatedUser = await prisma.user.update({

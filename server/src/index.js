@@ -158,6 +158,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/repost', require('./routes/repostRoutes'));
+app.use('/api', require('./routes/epubRoutes'));
 
 // User routes
 app.get('/me', protect, async (req, res) => {

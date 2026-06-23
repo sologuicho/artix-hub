@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Share2, Copy, Check, BookOpen, Download, User, Clock, Repeat2 } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Copy, Check, BookOpen, Download, User, Clock, Repeat2, Tablet } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import ShareModal from '../components/ShareModal';
@@ -535,6 +535,12 @@ const ResearchView = () => {
                 active={false}
                 disabled={downloadingPDF}
               />
+              <SideAction
+                onClick={() => window.open(`${BACKEND_URL}/api/research/${research.id}/epub`, '_blank')}
+                icon={Tablet}
+                label="E-reader (EPUB)"
+                active={false}
+              />
             </div>
           </aside>
         </div>
@@ -550,11 +556,8 @@ const ResearchView = () => {
         title={research.title}
         author={research.author?.name}
         date={research.createdAt}
-      >
-        <div className="prose prose-xl max-w-3xl mx-auto">
-          <div dangerouslySetInnerHTML={{ __html: research.content }} />
-        </div>
-      </ReadingMode>
+        content={research.content}
+      />
 
       <div className="lg:hidden">
         <ScrollToTop showAfter={300} />
