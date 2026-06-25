@@ -52,6 +52,9 @@ const PAGE_STYLES = `
   .artix-create-input::placeholder { color: var(--muted); opacity: 1; }
 `;
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 const CreateResearch = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -214,14 +217,14 @@ const CreateResearch = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-              <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Configuración</span>
+              <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>Configuración</span>
               <button onClick={() => setSettingsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'flex' }}>
                 <X size={16} />
               </button>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="input-label">Campo de investigación</label>
+              <label style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '0.5rem' }}>Campo de investigación</label>
               <CategorySelector
                 category={formData.category}
                 onChange={(cat) => setFormData(prev => ({ ...prev, category: cat }))}
@@ -231,7 +234,7 @@ const CreateResearch = () => {
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="input-label">Etiquetas</label>
+              <label style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '0.5rem' }}>Etiquetas</label>
               <TagSelector
                 tags={formData.tags}
                 onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
@@ -244,8 +247,7 @@ const CreateResearch = () => {
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, isCollaborative: !prev.isCollaborative }))}
-                className="flex items-center justify-between w-full font-sans text-sm"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, fontFamily: SANS, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
               >
                 Investigación colaborativa
                 {formData.isCollaborative
@@ -255,7 +257,7 @@ const CreateResearch = () => {
 
               {formData.isCollaborative && (
                 <div style={{ marginTop: '1rem' }}>
-                  <label className="input-label">Colaboradores</label>
+                  <label style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '0.5rem' }}>Colaboradores</label>
                   <CollaboratorSelector
                     selectedCollaborators={collaborators}
                     onSelect={(u) => setCollaborators(prev => [...prev, u])}
@@ -271,8 +273,7 @@ const CreateResearch = () => {
                 <button
                   type="button"
                   onClick={() => setPublishAsArtixResearch(v => !v)}
-                  className="flex items-center justify-between w-full font-sans text-sm"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, fontFamily: SANS, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
                 >
                   {publishAsArtixResearch ? 'Publicando como Artix' : 'Publicando como tú'}
                   {publishAsArtixResearch
@@ -283,7 +284,7 @@ const CreateResearch = () => {
             )}
 
             <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-              <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.75rem' }}>
                 Verificación de calidad
               </p>
               <AIValidationPanel
@@ -294,7 +295,7 @@ const CreateResearch = () => {
             </div>
 
             {validationMessage && (
-              <p className="font-sans text-sm mt-4" style={{ color: 'var(--accent)' }}>{validationMessage}</p>
+              <p style={{ fontFamily: SANS, fontSize: '0.875rem', marginTop: '1rem', color: '#C4451A' }}>{validationMessage}</p>
             )}
           </div>
         </>
@@ -314,12 +315,12 @@ const CreateResearch = () => {
           <ArrowLeft size={16} />
         </button>
 
-        <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
           {isEditMode ? 'Editar investigación' : 'Nueva investigación'}
         </span>
 
         {wordCount > 0 && (
-          <span className="font-sans text-xs" style={{ color: 'var(--border)' }}>· {wordCount} palabras</span>
+          <span style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--border)' }}>· {wordCount} palabras</span>
         )}
 
         <div style={{ flex: 1 }} />
@@ -364,8 +365,14 @@ const CreateResearch = () => {
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="btn btn-primary"
-          style={{ fontSize: '0.6875rem', padding: '0.5rem 1.25rem', opacity: saving ? 0.5 : 1 }}
+          style={{
+            fontFamily: SANS, fontSize: '0.6875rem', fontWeight: 600,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            backgroundColor: '#C4451A', color: '#fff',
+            border: 'none', padding: '0.5rem 1.25rem',
+            cursor: saving ? 'wait' : 'pointer',
+            opacity: saving ? 0.5 : 1, transition: 'opacity 0.15s',
+          }}
         >
           {saving ? 'Publicando…' : 'Publicar'}
         </button>
@@ -394,7 +401,7 @@ const CreateResearch = () => {
           }}
         >
           <Upload size={12} style={{ color: 'var(--muted)' }} />
-          <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
             Agregar portada
           </span>
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
@@ -409,17 +416,18 @@ const CreateResearch = () => {
           value={formData.title}
           onChange={handleInputChange}
           placeholder="Título de la investigación…"
-          className="font-display artix-create-input"
+          className="artix-create-input"
           style={{
             display: 'block', width: '100%',
             background: 'transparent', border: 'none', outline: 'none',
+            fontFamily: SANS, fontWeight: 700,
             fontSize: 'clamp(1.875rem, 4vw, 2.625rem)', lineHeight: 1.2,
             color: 'var(--text)', marginBottom: '1rem',
           }}
         />
 
         <div style={{ marginBottom: '2rem' }}>
-          <p className="font-sans text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--muted)' }}>
+          <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.375rem' }}>
             Resumen
           </p>
           <textarea

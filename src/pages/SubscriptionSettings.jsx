@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, RefreshCw, Clock } from 'lucide-react';
+import { RefreshCw, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config/client';
 import PricingModal from '../components/PricingModal';
+
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
 
 const TIER_LABELS = {
   OBSERVER:   'Lector',
@@ -48,30 +51,26 @@ const TIER_FEATURES = {
   ],
 };
 
-const TIER_BADGE_CLASS = {
-  OBSERVER:   'badge badge-observer',
-  STUDENT:    'badge badge-observer',
-  RESEARCHER: 'badge badge-researcher',
-  VISIONARY:  'badge badge-visionary',
-  TEAM:       'badge badge-team',
-};
-
 const getCsrfToken = () =>
   document.cookie.split('; ').find(r => r.startsWith('csrf='))?.split('=')[1] || '';
 
 const formatDate = (isoString) =>
-  new Date(isoString).toLocaleDateString('es-MX', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  });
+  new Date(isoString).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+
+const SectionLabel = ({ children }) => (
+  <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '1.25rem' }}>
+    {children}
+  </p>
+);
 
 const SubscriptionSettings = () => {
-  const { user, refreshUser } = useAuth();
-  const [status, setStatus]           = useState(null);
-  const [loadingStatus, setLoading]   = useState(true);
-  const [pricingOpen, setPricingOpen] = useState(false);
-  const [actionLoading, setActLoading] = useState(false);
-  const [actionError, setActError]    = useState(null);
-  const [invoices, setInvoices]       = useState([]);
+  const { user, refreshUser }              = useAuth();
+  const [status, setStatus]               = useState(null);
+  const [loadingStatus, setLoading]       = useState(true);
+  const [pricingOpen, setPricingOpen]     = useState(false);
+  const [actionLoading, setActLoading]    = useState(false);
+  const [actionError, setActError]        = useState(null);
+  const [invoices, setInvoices]           = useState([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
 
   const fetchStatus = useCallback(async () => {
@@ -80,11 +79,8 @@ const SubscriptionSettings = () => {
       const res  = await fetch(`${BACKEND_URL}/api/subscription/status`, { credentials: 'include' });
       const data = await res.json();
       if (res.ok) setStatus(data);
-    } catch {
-      setActError('Error de conexión');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setActError('Error de conexión'); }
+    finally { setLoading(false); }
   }, []);
 
   const fetchInvoices = useCallback(async () => {
@@ -97,7 +93,7 @@ const SubscriptionSettings = () => {
     finally { setLoadingInvoices(false); }
   }, []);
 
-  useEffect(() => { fetchStatus(); }, [fetchStatus]);
+  useEffect(() => { fetchStatus();   }, [fetchStatus]);
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
 
   const handleCancel = async () => {
@@ -133,75 +129,82 @@ const SubscriptionSettings = () => {
     finally { setActLoading(false); }
   };
 
-  const tier        = user?.subscriptionTier || 'OBSERVER';
-  const tierLabel   = TIER_LABELS[tier] || tier;
-  const features    = TIER_FEATURES[tier] || TIER_FEATURES.OBSERVER;
-  const badgeClass  = TIER_BADGE_CLASS[tier] || 'badge badge-observer';
-  const subStatus   = status?.status;
-  const willCancel  = status?.cancelAtPeriodEnd;
-  const periodEnd   = status?.currentPeriodEnd;
+  const tier       = user?.subscriptionTier || 'OBSERVER';
+  const tierLabel  = TIER_LABELS[tier] || tier;
+  const features   = TIER_FEATURES[tier] || TIER_FEATURES.OBSERVER;
+  const subStatus  = status?.status;
+  const willCancel = status?.cancelAtPeriodEnd;
+  const periodEnd  = status?.currentPeriodEnd;
 
   if (loadingStatus) {
     return (
-      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
-        <div className="site-container py-16 flex items-center justify-center">
-          <div style={{
-            width: 28, height: 28,
-            border: '2px solid var(--border)',
-            borderTopColor: 'var(--accent)',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-          }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>
+      <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ width: 28, height: 28, border: '2px solid var(--border)', borderTopColor: '#C4451A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     );
   }
 
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div className="site-container py-16">
 
-        {/* Page header */}
+        {/* ── Page header ── */}
         <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--border)', marginBottom: '2.5rem' }}>
-          <span className="category-tag">Cuenta</span>
-          <h1 className="font-display mt-2" style={{ fontSize: '2rem', color: 'var(--text)', lineHeight: 1.1 }}>
+          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#C4451A' }}>Cuenta</span>
+          <h1 style={{ fontFamily: SANS, fontWeight: 700, fontSize: '2rem', color: 'var(--text)', lineHeight: 1.1, marginTop: '0.5rem' }}>
             Mi Suscripción
           </h1>
         </div>
 
-        <div style={{ maxWidth: '600px' }}>
+        <div style={{ maxWidth: 600 }}>
 
           {/* ── 1. Plan actual ── */}
           <section style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid var(--border)' }}>
-            <p className="font-sans text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--muted)' }}>
-              Plan actual
-            </p>
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-baseline gap-4">
-                <h2 className="font-display" style={{ fontSize: '2.5rem', color: 'var(--text)', lineHeight: 1 }}>
+            <SectionLabel>Plan actual</SectionLabel>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
+                <h2 style={{ fontFamily: SANS, fontWeight: 700, fontSize: '2.5rem', color: 'var(--text)', lineHeight: 1 }}>
                   {tierLabel}
                 </h2>
-                <span className={badgeClass}>{tierLabel}</span>
+                <span style={{
+                  fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase',
+                  border: '1px solid var(--border)', padding: '0.2rem 0.5rem', color: 'var(--muted)',
+                }}>
+                  {tierLabel}
+                </span>
               </div>
-              <button onClick={() => setPricingOpen(true)} className="btn btn-outline">
+              <button
+                onClick={() => setPricingOpen(true)}
+                style={{
+                  fontFamily: MONO, fontSize: '0.6875rem', fontWeight: 600,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  background: 'none', border: '1px solid var(--border)',
+                  color: 'var(--muted)', padding: '0.5rem 1rem',
+                  cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text)'; e.currentTarget.style.color = 'var(--text)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
+              >
                 Cambiar plan
               </button>
             </div>
 
             {willCancel && periodEnd && (
-              <div className="flex items-center gap-2 mt-4">
-                <Clock size={13} style={{ color: 'var(--muted)' }} />
-                <p className="font-sans text-sm" style={{ color: 'var(--muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                <Clock size={13} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)' }}>
                   Suscripción se cancela el{' '}
                   <span style={{ color: 'var(--text)' }}>{formatDate(periodEnd)}</span>
                 </p>
               </div>
             )}
             {!willCancel && subStatus === 'active' && periodEnd && (
-              <div className="flex items-center gap-2 mt-4">
-                <RefreshCw size={13} style={{ color: 'var(--muted)' }} />
-                <p className="font-sans text-sm" style={{ color: 'var(--muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                <RefreshCw size={13} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)' }}>
                   Próximo cobro:{' '}
                   <span style={{ color: 'var(--text)' }}>{formatDate(periodEnd)}</span>
                 </p>
@@ -211,18 +214,12 @@ const SubscriptionSettings = () => {
 
           {/* ── 2. Beneficios activos ── */}
           <section style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid var(--border)' }}>
-            <p className="font-sans text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--muted)' }}>
-              Beneficios activos
-            </p>
-            <ul className="flex flex-col gap-3">
+            <SectionLabel>Beneficios activos</SectionLabel>
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', listStyle: 'none', padding: 0, margin: 0 }}>
               {features.map(feature => (
-                <li
-                  key={feature}
-                  className="flex items-start gap-3 font-sans"
-                  style={{ fontSize: '0.875rem', color: 'var(--text)', lineHeight: 1.55 }}
-                >
-                  <span style={{ color: 'var(--accent)', flexShrink: 0, fontWeight: 600 }}>·</span>
-                  {feature}
+                <li key={feature} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <span style={{ color: '#C4451A', flexShrink: 0, fontWeight: 700 }}>·</span>
+                  <span style={{ fontFamily: SANS, fontSize: '0.9375rem', color: 'var(--text)', lineHeight: 1.55 }}>{feature}</span>
                 </li>
               ))}
             </ul>
@@ -230,76 +227,77 @@ const SubscriptionSettings = () => {
 
           {/* ── 3. Historial de pagos ── */}
           <section style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid var(--border)' }}>
-            <p className="font-sans text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--muted)' }}>
-              Historial de pagos
-            </p>
+            <SectionLabel>Historial de pagos</SectionLabel>
             {loadingInvoices ? (
-              <p className="font-sans text-sm" style={{ color: 'var(--muted)' }}>Cargando…</p>
+              <p style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>Cargando…</p>
             ) : invoices.length === 0 ? (
-              <p className="font-sans text-sm" style={{ color: 'var(--muted)' }}>Sin transacciones registradas.</p>
+              <p style={{ fontFamily: SANS, fontSize: '0.9375rem', color: 'var(--muted)' }}>Sin transacciones registradas.</p>
             ) : (
-              <table className="table-editorial">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Concepto</th>
-                    <th>Monto</th>
-                    <th>Estado</th>
-                    <th>PDF</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map(inv => (
-                    <tr key={inv.id}>
-                      <td><span className="font-sans text-sm" style={{ color: 'var(--muted)' }}>{formatDate(inv.date)}</span></td>
-                      <td><span className="font-sans text-sm" style={{ color: 'var(--text)' }}>{inv.description}</span></td>
-                      <td>
-                        <span className="font-mono text-sm" style={{ color: 'var(--text)' }}>
-                          {inv.amount.toFixed(2)} {inv.currency}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="font-sans text-xs uppercase tracking-wider" style={{ color: inv.status === 'paid' ? 'var(--accent)' : 'var(--muted)' }}>
-                          {inv.status === 'paid' ? 'Pagado' : inv.status === 'open' ? 'Pendiente' : inv.status}
-                        </span>
-                      </td>
-                      <td>
-                        {inv.pdfUrl ? (
-                          <a
-                            href={inv.pdfUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-sans text-xs transition-colors duration-150"
-                            style={{ color: 'var(--accent)' }}
-                          >
-                            Descargar →
-                          </a>
-                        ) : (
-                          <span style={{ color: 'var(--muted)' }}>—</span>
-                        )}
-                      </td>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      {['Fecha', 'Concepto', 'Monto', 'Estado', 'PDF'].map(h => (
+                        <th key={h} style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', textAlign: 'left', paddingBottom: '0.625rem', borderBottom: '1px solid var(--border)', paddingRight: '1.5rem' }}>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {invoices.map(inv => (
+                      <tr key={inv.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '0.75rem 1.5rem 0.75rem 0' }}>
+                          <span style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>{formatDate(inv.date)}</span>
+                        </td>
+                        <td style={{ padding: '0.75rem 1.5rem 0.75rem 0' }}>
+                          <span style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--text)' }}>{inv.description}</span>
+                        </td>
+                        <td style={{ padding: '0.75rem 1.5rem 0.75rem 0' }}>
+                          <span style={{ fontFamily: MONO, fontSize: '0.875rem', color: 'var(--text)' }}>
+                            {inv.amount.toFixed(2)} {inv.currency}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem 1.5rem 0.75rem 0' }}>
+                          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: inv.status === 'paid' ? '#C4451A' : 'var(--muted)' }}>
+                            {inv.status === 'paid' ? 'Pagado' : inv.status === 'open' ? 'Pendiente' : inv.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem 0' }}>
+                          {inv.pdfUrl ? (
+                            <a
+                              href={inv.pdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ fontFamily: MONO, fontSize: '0.6875rem', color: '#C4451A', textDecoration: 'none' }}
+                            >
+                              Descargar →
+                            </a>
+                          ) : (
+                            <span style={{ color: 'var(--muted)', fontFamily: MONO, fontSize: '0.6875rem' }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
 
           {/* ── 4. Zona de peligro ── */}
           <section>
-            <p className="font-sans text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--muted)' }}>
-              Zona de peligro
-            </p>
+            <SectionLabel>Zona de peligro</SectionLabel>
             {actionError && (
-              <p className="font-sans text-sm mb-3" style={{ color: 'var(--accent)' }}>{actionError}</p>
+              <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: '#C4451A', marginBottom: '0.75rem' }}>{actionError}</p>
             )}
             {willCancel ? (
               <button
                 onClick={handleReactivate}
                 disabled={actionLoading}
-                className="font-sans text-sm"
                 style={{
                   background: 'none', border: 'none', padding: 0,
+                  fontFamily: SANS, fontSize: '0.875rem',
                   cursor: actionLoading ? 'wait' : 'pointer',
                   color: 'var(--muted)', textDecoration: 'underline', textUnderlineOffset: 3,
                 }}
@@ -310,9 +308,9 @@ const SubscriptionSettings = () => {
               <button
                 onClick={handleCancel}
                 disabled={actionLoading}
-                className="font-sans text-sm"
                 style={{
                   background: 'none', border: 'none', padding: 0,
+                  fontFamily: SANS, fontSize: '0.875rem',
                   cursor: actionLoading ? 'wait' : 'pointer',
                   color: 'var(--muted)', textDecoration: 'underline', textUnderlineOffset: 3,
                 }}
@@ -320,7 +318,7 @@ const SubscriptionSettings = () => {
                 {actionLoading ? 'Cancelando…' : 'Cancelar suscripción'}
               </button>
             ) : (
-              <p className="font-sans text-sm" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)' }}>
                 No hay acciones disponibles para el plan gratuito.
               </p>
             )}
