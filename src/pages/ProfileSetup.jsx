@@ -7,6 +7,10 @@ import useAIValidation from '../hooks/useAIValidation';
 import AIValidationPanel from '../components/AIValidationPanel';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+const ACCENT = '#C4451A';
+
 const interestsOptions = [
   'Tecnología',
   'Investigación',
@@ -92,7 +96,7 @@ const ProfileSetup = () => {
     e.preventDefault();
     setValidationMessage('');
     setIsSubmitting(true);
-    
+
     try {
       if (formData.bio.length > 0) {
         try {
@@ -156,17 +160,52 @@ const ProfileSetup = () => {
     }
   };
 
+  const labelStyle = {
+    display: 'block',
+    fontFamily: MONO,
+    fontSize: '0.5625rem',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'var(--muted)',
+    marginBottom: '0.5rem',
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '0.75rem',
+    backgroundColor: 'var(--surface)',
+    border: '1px solid var(--border)',
+    color: 'var(--text)',
+    fontFamily: SANS,
+    fontSize: '0.875rem',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', padding: '3rem 1rem' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-        <h1 className="font-display mb-1" style={{ fontSize: '2rem', color: 'var(--text)', lineHeight: 1.15 }}>
-          Completa tu Perfil
-        </h1>
-        <p className="font-sans text-sm mb-8" style={{ color: 'var(--muted)' }}>
-          Cuéntanos un poco sobre ti para personalizar tu experiencia
-        </p>
 
-        <div className="mb-6">
+        {/* Header */}
+        <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--border)', marginBottom: '2.5rem' }}>
+          <span style={{
+            fontFamily: MONO,
+            fontSize: '0.5625rem',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--muted)',
+          }}>
+            Cuenta
+          </span>
+          <h1 style={{ fontFamily: SANS, fontWeight: 700, fontSize: '2rem', color: 'var(--text)', lineHeight: 1.15, marginTop: '0.375rem', marginBottom: 0 }}>
+            Completa tu Perfil
+          </h1>
+          <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
+            Cuéntanos un poco sobre ti para personalizar tu experiencia
+          </p>
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
           <AIValidationPanel
             status={profileValidation.status}
             result={profileValidation.result}
@@ -184,22 +223,36 @@ const ProfileSetup = () => {
             isImproving={profileValidation.isImproving}
           />
         </div>
+
         {validationMessage && (
-          <p className="font-sans text-sm mb-6" style={{ color: '#ef4444' }}>{validationMessage}</p>
+          <div style={{
+            backgroundColor: 'var(--surface)',
+            borderLeft: `3px solid ${ACCENT}`,
+            padding: '0.875rem 1rem',
+            fontFamily: SANS,
+            fontSize: '0.875rem',
+            color: ACCENT,
+            marginBottom: '1.5rem',
+          }}>
+            {validationMessage}
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+
           {/* Profile Picture */}
           <div>
-            <label className="input-label">Foto de Perfil</label>
-            <div className="flex items-center gap-4">
+            <label style={labelStyle}>Foto de Perfil</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{
-                width: 72, height: 72,
-                borderRadius: 4,
+                width: 72,
+                height: 72,
                 border: '1px solid var(--border)',
                 overflow: 'hidden',
                 flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 backgroundColor: 'var(--surface)',
               }}>
                 {preview ? (
@@ -208,14 +261,27 @@ const ProfileSetup = () => {
                   <User size={24} style={{ color: 'var(--muted)' }} />
                 )}
               </div>
-              <label className="btn btn-outline flex items-center gap-2 cursor-pointer">
-                <Upload size={13} /> Subir foto
+              <label style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.625rem 1rem',
+                border: '1px solid var(--border)',
+                backgroundColor: 'transparent',
+                color: 'var(--text)',
+                fontFamily: SANS,
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}>
+                <Upload size={13} />
+                Subir foto
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="hidden"
+                  style={{ display: 'none' }}
                 />
               </label>
             </div>
@@ -223,27 +289,27 @@ const ProfileSetup = () => {
 
           {/* Full Name */}
           <div>
-            <label className="input-label">Nombre Completo</label>
+            <label style={labelStyle}>Nombre Completo</label>
             <input
               type="text"
               name="fullName"
               required
               value={formData.fullName}
               onChange={handleInputChange}
-              className="input-field"
+              style={inputStyle}
               placeholder="Juan Pérez"
             />
           </div>
 
           {/* Country */}
           <div>
-            <label className="input-label">País</label>
+            <label style={labelStyle}>País</label>
             <select
               name="country"
               required
               value={formData.country}
               onChange={handleInputChange}
-              className="input-field"
+              style={inputStyle}
             >
               <option value="">Selecciona un país</option>
               <option value="MX">México</option>
@@ -259,13 +325,13 @@ const ProfileSetup = () => {
 
           {/* Occupation */}
           <div>
-            <label className="input-label">Ocupación</label>
+            <label style={labelStyle}>Ocupación</label>
             <select
               name="occupation"
               required
               value={formData.occupation}
               onChange={handleInputChange}
-              className="input-field"
+              style={inputStyle}
             >
               <option value="">Selecciona una ocupación</option>
               <option value="student">Estudiante</option>
@@ -280,7 +346,7 @@ const ProfileSetup = () => {
 
           {/* Bio */}
           <div>
-            <label className="input-label">Biografía (máx. 160 caracteres)</label>
+            <label style={labelStyle}>Biografía (máx. 160 caracteres)</label>
             <textarea
               name="bio"
               required
@@ -288,37 +354,42 @@ const ProfileSetup = () => {
               value={formData.bio}
               onChange={handleInputChange}
               rows={4}
-              className="input-field"
-              style={{ resize: 'none' }}
+              style={{ ...inputStyle, resize: 'none' }}
               placeholder="Cuéntanos sobre ti…"
             />
-            <p className="font-sans text-xs text-right mt-1" style={{ color: 'var(--muted)' }}>
+            <p style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)', textAlign: 'right', marginTop: '0.375rem' }}>
               {formData.bio.length}/160
             </p>
           </div>
 
           {/* Interests */}
           <div>
-            <label className="input-label">Intereses (selecciona varios)</label>
-            <div className="flex flex-wrap gap-2">
-              {interestsOptions.map((interest) => (
-                <button
-                  key={interest}
-                  type="button"
-                  onClick={() => handleInterestToggle(interest)}
-                  className="font-sans text-xs uppercase tracking-wider"
-                  style={{
-                    background: 'none',
-                    border: formData.interests.includes(interest) ? '1px solid var(--text)' : '1px solid var(--border)',
-                    cursor: 'pointer',
-                    padding: '0.375rem 0.75rem',
-                    color: formData.interests.includes(interest) ? 'var(--text)' : 'var(--muted)',
-                    transition: 'color 0.15s, border-color 0.15s',
-                  }}
-                >
-                  {interest}
-                </button>
-              ))}
+            <label style={labelStyle}>Intereses (selecciona varios)</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {interestsOptions.map((interest) => {
+                const active = formData.interests.includes(interest);
+                return (
+                  <button
+                    key={interest}
+                    type="button"
+                    onClick={() => handleInterestToggle(interest)}
+                    style={{
+                      background: active ? ACCENT : 'transparent',
+                      border: `1px solid ${active ? ACCENT : 'var(--border)'}`,
+                      cursor: 'pointer',
+                      padding: '0.375rem 0.75rem',
+                      color: active ? '#fff' : 'var(--muted)',
+                      fontFamily: MONO,
+                      fontSize: '0.625rem',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                    }}
+                  >
+                    {interest}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -326,8 +397,18 @@ const ProfileSetup = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn btn-primary"
-            style={{ opacity: isSubmitting ? 0.5 : 1 }}
+            style={{
+              backgroundColor: ACCENT,
+              color: '#fff',
+              border: 'none',
+              fontFamily: SANS,
+              fontWeight: 700,
+              fontSize: '0.9375rem',
+              padding: '0.875rem',
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              opacity: isSubmitting ? 0.6 : 1,
+              transition: 'opacity 0.15s',
+            }}
           >
             {isSubmitting ? 'Guardando…' : 'Guardar Perfil'}
           </button>
@@ -338,4 +419,3 @@ const ProfileSetup = () => {
 };
 
 export default ProfileSetup;
-

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { User, MapPin, Briefcase, FileText, Users, ArrowLeft } from 'lucide-react';
+import { User, MapPin, Briefcase, Users, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import { BACKEND_URL } from '../config/client';
+
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
 
 const FollowersFollowing = () => {
   const { userId, type } = useParams();
@@ -87,7 +90,7 @@ const FollowersFollowing = () => {
   if (loading) {
     return (
       <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 28, height: 28, border: '2px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ width: 28, height: 28, border: '2px solid var(--border)', borderTopColor: '#C4451A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -96,50 +99,55 @@ const FollowersFollowing = () => {
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
       <div className="site-container py-12">
+
         {/* Back */}
         <button
           onClick={() => navigate(`/profile/${userId}`)}
-          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, marginBottom: '2.5rem', fontFamily: MONO, fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}
         >
           <ArrowLeft size={13} /> Volver al perfil
         </button>
 
         {/* Header */}
         <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
-          <h1 className="font-display" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: 'var(--text)', lineHeight: 1.1 }}>
+          <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+            {type === 'followers' ? 'Seguidores' : 'Siguiendo'}
+          </p>
+          <h1 style={{ fontFamily: SANS, fontWeight: 700, fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: 'var(--text)', lineHeight: 1.1 }}>
             {type === 'followers' ? 'Seguidores' : 'Siguiendo'}
             {profileUser && (
-              <span className="font-sans font-normal" style={{ fontSize: '1rem', color: 'var(--muted)' }}>
+              <span style={{ fontFamily: SANS, fontWeight: 400, fontSize: '1rem', color: 'var(--muted)' }}>
                 {' '}de {profileUser.name || profileUser.username}
               </span>
             )}
           </h1>
-          <p className="font-sans text-sm mt-2" style={{ color: 'var(--muted)' }}>
+          <p style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
             {users.length} {type === 'followers' ? 'seguidor' : 'persona'}{users.length !== 1 ? (type === 'followers' ? 'es' : 's') : ''}
           </p>
         </div>
 
         {/* Users list */}
         {users.length === 0 ? (
-          <div className="py-20 text-center">
+          <div style={{ padding: '5rem 0', textAlign: 'center' }}>
             <Users size={32} style={{ color: 'var(--muted)', margin: '0 auto 1rem' }} />
-            <p className="font-display" style={{ fontSize: '1.25rem', color: 'var(--muted)' }}>
+            <p style={{ fontFamily: MONO, fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+              Sin usuarios
+            </p>
+            <p style={{ fontFamily: SANS, fontSize: '0.9375rem', color: 'var(--muted)' }}>
               {type === 'followers' ? 'Sin seguidores aún' : 'No sigue a nadie aún'}
             </p>
           </div>
         ) : (
-          <div>
+          <div style={{ borderTop: '1px solid var(--border)' }}>
             {users.map(user => (
               <div
                 key={user.id}
-                className="flex items-start justify-between gap-4 py-6"
-                style={{ borderBottom: '1px solid var(--border)' }}
+                style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--border)' }}
               >
-                <Link to={`/profile/${user.id}`} className="flex items-start gap-4 flex-1">
+                <Link to={`/profile/${user.id}`} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flex: 1, textDecoration: 'none' }}>
                   {/* Avatar */}
                   <div style={{
-                    width: 48, height: 48, borderRadius: '50%',
+                    width: 48, height: 48,
                     backgroundColor: 'var(--surface)', border: '1px solid var(--border)',
                     overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
@@ -152,37 +160,37 @@ const FollowersFollowing = () => {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-sans font-medium" style={{ color: 'var(--text)', fontSize: '0.9375rem' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: SANS, fontWeight: 600, color: 'var(--text)', fontSize: '0.9375rem', marginBottom: '0.125rem' }}>
                       {user.name || user.username || 'Usuario'}
                     </p>
-                    <p className="font-sans text-xs mb-2" style={{ color: 'var(--muted)' }}>
+                    <p style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>
                       @{user.username || 'usuario'}
                     </p>
                     {user.bio && (
-                      <p className="font-sans text-sm mb-2" style={{ color: 'var(--muted)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)', marginBottom: '0.5rem', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                         {user.bio}
                       </p>
                     )}
-                    <div className="flex flex-wrap items-center gap-3 font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem', fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>
                       {user.occupation && (
-                        <span className="flex items-center gap-1">
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           <Briefcase size={11} /> {user.occupation}
                         </span>
                       )}
                       {user.country && (
-                        <span className="flex items-center gap-1">
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           <MapPin size={11} /> {user.country}
                         </span>
                       )}
                     </div>
                     {user.interests?.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.5rem' }}>
                         {user.interests.slice(0, 4).map((interest, idx) => (
-                          <span key={idx} className="font-sans text-xs" style={{ color: 'var(--muted)' }}>#{interest}</span>
+                          <span key={idx} style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>#{interest}</span>
                         ))}
                         {user.interests.length > 4 && (
-                          <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>+{user.interests.length - 4}</span>
+                          <span style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>+{user.interests.length - 4}</span>
                         )}
                       </div>
                     )}
@@ -193,11 +201,19 @@ const FollowersFollowing = () => {
                 {isAuthenticated() && currentUser && user.id !== currentUser.id && (
                   <button
                     onClick={() => handleFollow(user.id)}
-                    className="btn btn-ghost"
                     style={{
-                      fontSize: '0.6875rem', padding: '0.375rem 0', flexShrink: 0,
+                      fontFamily: MONO,
+                      fontSize: '0.6875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      background: 'none',
+                      border: 'none',
                       borderBottom: `1px solid ${following[user.id] ? 'var(--border)' : 'var(--text)'}`,
+                      paddingBottom: '0.125rem',
+                      cursor: 'pointer',
                       color: following[user.id] ? 'var(--muted)' : 'var(--text)',
+                      flexShrink: 0,
+                      transition: 'color 0.15s',
                     }}
                   >
                     {following[user.id] ? 'Siguiendo' : 'Seguir'}
@@ -207,6 +223,7 @@ const FollowersFollowing = () => {
             ))}
           </div>
         )}
+
       </div>
     </div>
   );

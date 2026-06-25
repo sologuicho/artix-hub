@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Clock, User, Repeat2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Share2, Bookmark, Clock, Repeat2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CommentSection from '../components/CommentSection';
 import ContentActions from '../components/ContentActions';
@@ -8,6 +8,10 @@ import ReactionButtons from '../components/ReactionButtons';
 import ShareModal from '../components/ShareModal';
 import ScrollToTop from '../components/ScrollToTop';
 import { BACKEND_URL } from '../config/client';
+
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+const ACCENT = '#C4451A';
 
 const getCsrfToken = () => {
   const cookies = document.cookie.split(';');
@@ -17,25 +21,6 @@ const getCsrfToken = () => {
   }
   return null;
 };
-
-const SideAction = ({ onClick, icon: Icon, label, active }) => (
-  <button
-    onClick={onClick}
-    className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider w-full text-left"
-    style={{
-      background: 'none',
-      border: 'none',
-      borderBottom: '1px solid var(--border)',
-      padding: '0.875rem 0',
-      cursor: 'pointer',
-      color: active ? 'var(--text)' : 'var(--muted)',
-      transition: 'color 0.15s',
-    }}
-  >
-    <Icon size={13} style={{ flexShrink: 0 }} />
-    {label}
-  </button>
-);
 
 const BlogPostView = () => {
   const { id } = useParams();
@@ -214,7 +199,7 @@ const BlogPostView = () => {
         <div style={{
           width: 28, height: 28,
           border: '2px solid var(--border)',
-          borderTopColor: 'var(--accent)',
+          borderTopColor: ACCENT,
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
         }} />
@@ -227,7 +212,7 @@ const BlogPostView = () => {
     return (
       <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
         <div className="site-container py-16 text-center">
-          <p className="font-display" style={{ fontSize: '1.5rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
+          <p style={{ fontSize: '1.5rem', color: 'var(--muted)', marginBottom: '1.5rem', fontFamily: SANS }}>
             {error || 'Post no encontrado'}
           </p>
           <button onClick={() => navigate('/blog')} className="btn btn-outline">
@@ -241,11 +226,16 @@ const BlogPostView = () => {
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
       <div className="site-container py-12">
+
         {/* Back */}
         <button
           onClick={() => navigate('/blog')}
-          className="flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--muted)', padding: 0, marginBottom: '2.5rem',
+            fontFamily: MONO, fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.1em',
+          }}
         >
           <ArrowLeft size={13} /> Volver al Blog
         </button>
@@ -259,12 +249,12 @@ const BlogPostView = () => {
               borderRadius: 0,
               aspectRatio: '16/9',
               overflow: 'hidden',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+              marginBottom: '2rem',
             }}>
               <img
                 src={post.coverUrl}
                 alt={post.title || 'Blog cover'}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </div>
           )}
@@ -273,15 +263,14 @@ const BlogPostView = () => {
           {post.category && (
             <span style={{
               display: 'inline-block',
-              backgroundColor: 'var(--accent)',
+              backgroundColor: ACCENT,
               color: '#fff',
               fontSize: '0.6875rem',
-              fontFamily: 'var(--font-sans)',
+              fontFamily: MONO,
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
               padding: '0.25rem 0.875rem',
-              marginTop: '1.5rem',
-              marginBottom: '0.75rem',
+              marginBottom: '0.875rem',
             }}>
               {post.category}
             </span>
@@ -290,12 +279,14 @@ const BlogPostView = () => {
           {/* Title */}
           {post.title && (
             <h1
-              className="font-display"
               style={{
+                fontFamily: SANS,
+                fontWeight: 700,
                 fontSize: 'clamp(2rem, 5vw, 3.25rem)',
                 lineHeight: 1.1,
                 color: 'var(--text)',
                 marginBottom: '2rem',
+                letterSpacing: '-0.02em',
               }}
             >
               {post.title}
@@ -314,12 +305,13 @@ const BlogPostView = () => {
             marginBottom: '2.5rem',
           }}>
             {/* Left: avatar + meta */}
-            <Link to={`/profile/${post.author?.id}`} className="flex items-center gap-3" style={{ textDecoration: 'none' }}>
+            <Link to={`/profile/${post.author?.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', textDecoration: 'none' }}>
+              {/* Square avatar — no border-radius */}
               <div style={{
                 width: 48,
                 height: 48,
-                borderRadius: '50%',
-                backgroundColor: 'var(--bg)',
+                borderRadius: 0,
+                backgroundColor: 'var(--surface)',
                 border: '1px solid var(--border)',
                 overflow: 'hidden',
                 display: 'flex',
@@ -330,33 +322,40 @@ const BlogPostView = () => {
                 {post.author?.avatar ? (
                   <img src={post.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <User size={20} style={{ color: 'var(--muted)' }} />
+                  <span style={{ fontFamily: MONO, fontSize: '0.875rem', color: 'var(--muted)', fontWeight: 600 }}>
+                    {(post.author?.name || 'A').charAt(0).toUpperCase()}
+                  </span>
                 )}
               </div>
               <div>
-                <p className="font-sans font-medium text-sm" style={{ color: 'var(--text)', marginBottom: '0.125rem' }}>
+                <p style={{ fontFamily: SANS, fontWeight: 600, fontSize: '0.875rem', color: 'var(--text)', marginBottom: '0.125rem' }}>
                   {post.author?.name || 'Anónimo'}
                 </p>
-                <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                <p style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   {formatDate(post.createdAt)}
-                  {' · '}
-                  <Clock size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.2rem' }} />
-                  {readTime(post.content)} min de lectura
+                  <span style={{ color: 'var(--border)' }}>·</span>
+                  <Clock size={10} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                  {readTime(post.content)} min
                 </p>
               </div>
             </Link>
 
             {/* Right: Follow + ContentActions */}
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
               {user && post.author?.id && user.id !== post.author.id && (
                 <button
                   onClick={handleFollow}
-                  className="btn btn-ghost"
                   style={{
-                    fontSize: '0.6875rem',
+                    background: 'none',
+                    border: 'none',
                     padding: '0.375rem 0',
                     borderBottom: `1px solid ${following ? 'var(--border)' : 'var(--text)'}`,
                     color: following ? 'var(--muted)' : 'var(--text)',
+                    cursor: 'pointer',
+                    fontFamily: MONO,
+                    fontSize: '0.6875rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
                   }}
                 >
                   {following ? 'Siguiendo' : 'Seguir'}
@@ -376,12 +375,12 @@ const BlogPostView = () => {
 
           {/* Body content */}
           <div
-            className="font-sans prose-editorial"
+            className="prose-editorial"
             style={{
+              fontFamily: SANS,
               fontSize: '1.0625rem',
               lineHeight: 1.85,
               color: 'var(--text)',
-              fontFamily: 'var(--font-sans)',
             }}
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
@@ -393,16 +392,20 @@ const BlogPostView = () => {
             </div>
           )}
 
-          {/* Tags — colorful pills with "Temas" label */}
+          {/* Tags */}
           {post.tags?.length > 0 && (
             <div style={{ marginTop: '2.5rem' }}>
-              <p
-                className="font-sans text-xs uppercase tracking-widest"
-                style={{ color: 'var(--muted)', marginBottom: '0.75rem' }}
-              >
+              <p style={{
+                fontFamily: MONO,
+                fontSize: '0.6875rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: 'var(--muted)',
+                marginBottom: '0.75rem',
+              }}>
                 Temas
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {post.tags.map((tag, i) => (
                   <span
                     key={i}
@@ -411,9 +414,9 @@ const BlogPostView = () => {
                       backgroundColor: 'var(--surface)',
                       border: '1px solid var(--border)',
                       color: 'var(--muted)',
-                      fontSize: '0.75rem',
+                      fontSize: '0.6875rem',
                       padding: '0.3rem 0.875rem',
-                      fontFamily: 'var(--font-mono)',
+                      fontFamily: MONO,
                     }}
                   >
                     #{tag}
@@ -423,7 +426,7 @@ const BlogPostView = () => {
             </div>
           )}
 
-          {/* Reactions bar with inline save / share / comment actions */}
+          {/* Reactions bar */}
           <div style={{
             marginTop: '2.5rem',
             borderTop: '1px solid var(--border)',
@@ -435,7 +438,7 @@ const BlogPostView = () => {
           }}>
             <ReactionButtons reactions={reactions} onReaction={handleReaction} disabled={!user} />
 
-            <div className="flex items-center gap-1">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
               {/* Comment */}
               <button
                 onClick={() => {
@@ -447,9 +450,10 @@ const BlogPostView = () => {
                   border: 'none',
                   cursor: 'pointer',
                   padding: '0.5rem',
-                  color: showComments ? 'var(--accent)' : 'var(--muted)',
+                  color: showComments ? ACCENT : 'var(--muted)',
                   display: 'flex',
                   alignItems: 'center',
+                  transition: 'color 0.15s',
                 }}
                 aria-label="Comentarios"
               >
@@ -464,9 +468,10 @@ const BlogPostView = () => {
                   border: 'none',
                   cursor: 'pointer',
                   padding: '0.5rem',
-                  color: saved ? 'var(--accent)' : 'var(--muted)',
+                  color: saved ? ACCENT : 'var(--muted)',
                   display: 'flex',
                   alignItems: 'center',
+                  transition: 'color 0.15s',
                 }}
                 aria-label={saved ? 'Guardado' : 'Guardar'}
               >
@@ -481,16 +486,17 @@ const BlogPostView = () => {
                   border: 'none',
                   cursor: 'pointer',
                   padding: '0.5rem',
-                  color: reposted ? 'var(--accent)' : 'var(--muted)',
+                  color: reposted ? ACCENT : 'var(--muted)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.25rem',
+                  transition: 'color 0.15s',
                 }}
                 aria-label="Repostear"
               >
                 <Repeat2 size={18} />
                 {repostCount > 0 && (
-                  <span className="font-mono" style={{ fontSize: '0.75rem' }}>{repostCount}</span>
+                  <span style={{ fontFamily: MONO, fontSize: '0.6875rem' }}>{repostCount}</span>
                 )}
               </button>
 
@@ -505,6 +511,7 @@ const BlogPostView = () => {
                   color: 'var(--muted)',
                   display: 'flex',
                   alignItems: 'center',
+                  transition: 'color 0.15s',
                 }}
                 aria-label="Compartir"
               >
@@ -515,12 +522,11 @@ const BlogPostView = () => {
 
           {/* Comments section */}
           <div id="blog-comments" style={{ marginTop: '3rem' }}>
-            <h3
-              className="font-display"
-              style={{ fontSize: '1.25rem', color: 'var(--text)', marginBottom: '1.5rem' }}
-            >
-              Comentarios
-            </h3>
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
+              <p style={{ fontFamily: MONO, fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--muted)' }}>
+                Comentarios
+              </p>
+            </div>
             <CommentSection postId={post.id} />
           </div>
         </article>

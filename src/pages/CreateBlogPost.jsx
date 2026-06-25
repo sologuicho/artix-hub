@@ -10,7 +10,11 @@ import AIAssistantOverlay from '../components/AIAssistantOverlay';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 const PAGE_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;700&display=swap');
   .artix-editor-blog .ql-toolbar {
     background-color: var(--surface);
     border: none;
@@ -27,7 +31,7 @@ const PAGE_STYLES = `
     min-height: 280px;
     line-height: 1.85;
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
   }
   .artix-editor-blog .ql-stroke { stroke: var(--muted) !important; }
   .artix-editor-blog .ql-fill { fill: var(--muted) !important; }
@@ -217,12 +221,12 @@ const CreateBlogPost = () => {
           <ArrowLeft size={16} />
         </button>
 
-        <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
           {isEditMode ? 'Editar post' : 'Nuevo post'}
         </span>
 
         {wordCount > 0 && (
-          <span className="font-sans text-xs" style={{ color: 'var(--border)' }}>· {wordCount} palabras</span>
+          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', color: 'var(--border)' }}>· {wordCount} palabras</span>
         )}
 
         <div style={{ flex: 1 }} />
@@ -230,7 +234,7 @@ const CreateBlogPost = () => {
         <button
           onClick={() => setIsAIPanelOpen(v => !v)}
           title="Asistente IA"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? 'var(--accent)' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? '#C4451A' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
         >
           <Sparkles size={15} />
         </button>
@@ -238,8 +242,11 @@ const CreateBlogPost = () => {
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="btn btn-primary"
-          style={{ fontSize: '0.6875rem', padding: '0.5rem 1.25rem', opacity: isSubmitting ? 0.5 : 1 }}
+          style={{
+            backgroundColor: '#C4451A', color: '#fff', border: 'none',
+            fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase',
+            padding: '0.5rem 1.25rem', cursor: 'pointer', opacity: isSubmitting ? 0.5 : 1,
+          }}
         >
           {isSubmitting ? 'Publicando…' : 'Publicar'}
         </button>
@@ -263,13 +270,13 @@ const CreateBlogPost = () => {
           style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
             width: '100%', padding: '0.625rem 1.5rem',
-            borderBottom: `1px solid ${hoverCover ? 'var(--accent)' : 'var(--border)'}`,
+            borderBottom: `1px solid ${hoverCover ? '#C4451A' : 'var(--border)'}`,
             cursor: 'pointer', transition: 'border-color 0.15s',
           }}
         >
           <Upload size={12} style={{ color: 'var(--muted)' }} />
-          <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            Agregar portada
+          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            Subir portada
           </span>
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
         </label>
@@ -292,7 +299,7 @@ const CreateBlogPost = () => {
                 ? <Building2 size={14} style={{ color: 'var(--muted)' }} />
                 : <User size={14} style={{ color: 'var(--muted)' }} />
               }
-              <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>
+              <span style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--text)' }}>
                 Publicando como {publishAsArtixResearch ? 'Artix Research' : (user?.name || user?.username)}
               </span>
             </div>
@@ -302,7 +309,7 @@ const CreateBlogPost = () => {
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, display: 'flex' }}
             >
               {publishAsArtixResearch
-                ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                ? <ToggleRight size={18} style={{ color: '#C4451A' }} />
                 : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />
               }
             </button>
@@ -316,11 +323,12 @@ const CreateBlogPost = () => {
           value={formData.title}
           onChange={handleInputChange}
           placeholder="Título (opcional)…"
-          className="font-display artix-create-input"
+          className="artix-create-input"
           style={{
             display: 'block', width: '100%',
             background: 'transparent', border: 'none', outline: 'none',
             fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', lineHeight: 1.2,
+            fontFamily: SANS, fontWeight: 700,
             color: 'var(--text)', marginBottom: '1.75rem',
           }}
         />
@@ -350,7 +358,7 @@ const CreateBlogPost = () => {
             <div
               style={{
                 aspectRatio: '4/3',
-                border: `1.5px dashed ${hoverImage ? 'var(--accent)' : 'var(--border)'}`,
+                border: `1.5px dashed ${hoverImage ? '#C4451A' : 'var(--border)'}`,
                 backgroundColor: 'var(--surface)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden', transition: 'border-color 0.15s', position: 'relative',
@@ -369,7 +377,7 @@ const CreateBlogPost = () => {
               ) : (
                 <div style={{ textAlign: 'center' }}>
                   <Image size={20} style={{ color: 'var(--muted)', margin: '0 auto 0.375rem' }} />
-                  <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Imagen</span>
+                  <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>Imagen</span>
                 </div>
               )}
             </div>
@@ -386,7 +394,7 @@ const CreateBlogPost = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Video size={14} style={{ color: 'var(--muted)' }} />
-              <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>URL de video</span>
+              <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>URL de video</span>
             </div>
             <input
               type="url"
@@ -394,7 +402,7 @@ const CreateBlogPost = () => {
               onChange={(e) => setVideoUrl(e.target.value)}
               placeholder="https://…"
               className="input-field"
-              style={{ fontSize: '0.8125rem' }}
+              style={{ fontSize: '0.8125rem', fontFamily: SANS }}
             />
           </div>
         </div>
@@ -408,7 +416,9 @@ const CreateBlogPost = () => {
           }}
         >
           <div>
-            <label className="input-label">Categoría</label>
+            <label style={{ display: 'block', fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+              Categoría
+            </label>
             <CategorySelector
               category={formData.category}
               onChange={(category) => setFormData(prev => ({ ...prev, category }))}
@@ -417,7 +427,9 @@ const CreateBlogPost = () => {
             />
           </div>
           <div>
-            <label className="input-label">Etiquetas</label>
+            <label style={{ display: 'block', fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+              Etiquetas
+            </label>
             <TagSelector
               tags={formData.tags}
               onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
@@ -429,7 +441,7 @@ const CreateBlogPost = () => {
 
         {/* AI Validation */}
         <div style={{ marginBottom: '2rem' }}>
-          <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+          <p style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.75rem' }}>
             Verificación de calidad
           </p>
           <AIValidationPanel
@@ -440,18 +452,17 @@ const CreateBlogPost = () => {
         </div>
 
         {validationMessage && (
-          <p className="font-sans text-sm mb-4" style={{ color: 'var(--accent)' }}>{validationMessage}</p>
+          <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: '#C4451A', marginBottom: '1rem' }}>{validationMessage}</p>
         )}
 
-        {/* Publish button — full width, prominent */}
+        {/* Publish button */}
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="btn btn-primary"
           style={{
-            width: '100%', padding: '0.875rem',
-            fontSize: '0.875rem', letterSpacing: '0.05em',
-            opacity: isSubmitting ? 0.5 : 1,
+            width: '100%', backgroundColor: '#C4451A', color: '#fff', border: 'none',
+            fontFamily: SANS, fontWeight: 700, fontSize: '0.9375rem', letterSpacing: '0.02em',
+            padding: '0.875rem 2rem', cursor: 'pointer', opacity: isSubmitting ? 0.5 : 1,
           }}
         >
           {isSubmitting ? 'Publicando…' : 'Publicar post'}

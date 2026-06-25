@@ -10,7 +10,11 @@ import CategorySelector from '../components/CategorySelector';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 const PAGE_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;700&display=swap');
   .artix-editor .ql-toolbar {
     background-color: var(--surface);
     border: none;
@@ -30,7 +34,7 @@ const PAGE_STYLES = `
     min-height: 420px;
     line-height: 1.85;
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
   }
   .artix-editor .ql-stroke { stroke: var(--muted) !important; }
   .artix-editor .ql-fill { fill: var(--muted) !important; }
@@ -190,7 +194,7 @@ const CreateArticle = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-              <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
                 Configuración
               </span>
               <button onClick={() => setSettingsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'flex' }}>
@@ -199,7 +203,9 @@ const CreateArticle = () => {
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="input-label">Categoría</label>
+              <label style={{ display: 'block', fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+                Categoría
+              </label>
               <CategorySelector
                 category={formData.category}
                 onChange={(cat) => setFormData(prev => ({ ...prev, category: cat }))}
@@ -209,7 +215,9 @@ const CreateArticle = () => {
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="input-label">Etiquetas</label>
+              <label style={{ display: 'block', fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+                Etiquetas
+              </label>
               <TagSelector
                 tags={formData.tags}
                 onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
@@ -223,19 +231,22 @@ const CreateArticle = () => {
                 <button
                   type="button"
                   onClick={() => setPublishAsArtixResearch(v => !v)}
-                  className="flex items-center justify-between w-full font-sans text-sm"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0,
+                    fontFamily: SANS, fontSize: '0.875rem',
+                  }}
                 >
                   {publishAsArtixResearch ? 'Publicando como Artix' : 'Publicando como tú'}
                   {publishAsArtixResearch
-                    ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                    ? <ToggleRight size={18} style={{ color: '#C4451A' }} />
                     : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />}
                 </button>
               </div>
             )}
 
             <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-              <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.75rem' }}>
                 Verificación de calidad
               </p>
               <AIValidationPanel
@@ -246,7 +257,7 @@ const CreateArticle = () => {
             </div>
 
             {validationMessage && (
-              <p className="font-sans text-sm mt-4" style={{ color: 'var(--accent)' }}>{validationMessage}</p>
+              <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: '#C4451A', marginTop: '1rem' }}>{validationMessage}</p>
             )}
           </div>
         </>
@@ -266,18 +277,18 @@ const CreateArticle = () => {
           <ArrowLeft size={16} />
         </button>
 
-        <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
           {isEditMode ? 'Editar artículo' : 'Nuevo artículo'}
         </span>
 
         {wordCount > 0 && (
-          <span className="font-sans text-xs" style={{ color: 'var(--border)' }}>· {wordCount} palabras</span>
+          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', color: 'var(--border)' }}>· {wordCount} palabras</span>
         )}
 
         <div style={{ flex: 1 }} />
 
         {/* Completion dots: title, cover, category, content */}
-        <div className="flex items-center gap-1.5">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
           {[
             { done: progress.title, label: 'Título' },
             { done: progress.cover, label: 'Portada' },
@@ -289,7 +300,7 @@ const CreateArticle = () => {
               title={label}
               style={{
                 width: 6, height: 6, borderRadius: '50%',
-                backgroundColor: done ? 'var(--accent)' : 'var(--border)',
+                backgroundColor: done ? '#C4451A' : 'var(--border)',
                 transition: 'background-color 0.2s',
               }}
             />
@@ -301,7 +312,7 @@ const CreateArticle = () => {
         <button
           onClick={() => setSettingsOpen(v => !v)}
           title="Configuración"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: settingsOpen ? 'var(--accent)' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: settingsOpen ? '#C4451A' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
         >
           <SlidersHorizontal size={15} />
         </button>
@@ -309,7 +320,7 @@ const CreateArticle = () => {
         <button
           onClick={() => setIsAIPanelOpen(v => !v)}
           title="Asistente IA"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? 'var(--accent)' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? '#C4451A' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
         >
           <Sparkles size={15} />
         </button>
@@ -317,8 +328,11 @@ const CreateArticle = () => {
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="btn btn-primary"
-          style={{ fontSize: '0.6875rem', padding: '0.5rem 1.25rem', opacity: isSubmitting ? 0.5 : 1 }}
+          style={{
+            backgroundColor: '#C4451A', color: '#fff', border: 'none',
+            fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase',
+            padding: '0.5rem 1.25rem', cursor: 'pointer', opacity: isSubmitting ? 0.5 : 1,
+          }}
         >
           {isSubmitting ? 'Publicando…' : 'Publicar'}
         </button>
@@ -342,13 +356,13 @@ const CreateArticle = () => {
           style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
             width: '100%', padding: '0.625rem 1.5rem',
-            borderBottom: `1px solid ${hoverCover ? 'var(--accent)' : 'var(--border)'}`,
+            borderBottom: `1px solid ${hoverCover ? '#C4451A' : 'var(--border)'}`,
             cursor: 'pointer', transition: 'border-color 0.15s',
           }}
         >
           <Upload size={12} style={{ color: 'var(--muted)' }} />
-          <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            Agregar portada
+          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            Subir portada
           </span>
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
         </label>
@@ -362,11 +376,12 @@ const CreateArticle = () => {
           value={formData.title}
           onChange={handleInputChange}
           placeholder="Título del artículo…"
-          className="font-display artix-create-input"
+          className="artix-create-input"
           style={{
             display: 'block', width: '100%',
             background: 'transparent', border: 'none', outline: 'none',
             fontSize: 'clamp(1.875rem, 4vw, 2.625rem)', lineHeight: 1.2,
+            fontFamily: SANS, fontWeight: 700,
             color: 'var(--text)', marginBottom: '1rem',
           }}
         />
@@ -381,7 +396,7 @@ const CreateArticle = () => {
             display: 'block', width: '100%',
             background: 'transparent', border: 'none', outline: 'none', resize: 'none',
             borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem', marginBottom: '2rem',
-            fontSize: '1.125rem', fontFamily: '"DM Sans", sans-serif',
+            fontSize: '1.125rem', fontFamily: SANS,
             color: 'var(--muted)', lineHeight: 1.6,
           }}
         />

@@ -6,6 +6,9 @@ import ProtectedRoute from '../components/ProtectedRoute';
 
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 const TABS = [
   { id: 'all', label: 'Todos' },
   { id: 'articles', label: 'Artículos' },
@@ -89,24 +92,27 @@ const SavedItems = () => {
     <ProtectedRoute>
       <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
         <div className="site-container py-16">
+
           {/* Header */}
           <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
-            <span className="category-tag">Mi contenido</span>
-            <h1 className="font-display mt-2" style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', color: 'var(--text)', lineHeight: 1.1 }}>
+            <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+              Mi contenido
+            </p>
+            <h1 style={{ fontFamily: SANS, fontWeight: 700, fontSize: 'clamp(2rem, 5vw, 3rem)', color: 'var(--text)', lineHeight: 1.1 }}>
               Guardados
             </h1>
-            <p className="font-sans mt-3" style={{ color: 'var(--muted)', fontSize: '1rem' }}>
+            <p style={{ fontFamily: SANS, color: 'var(--muted)', fontSize: '1rem', marginTop: '0.75rem' }}>
               Tus artículos, investigaciones, posts y eventos guardados
             </p>
           </div>
 
           {/* Search */}
-          <div className="relative mb-8" style={{ maxWidth: '480px' }}>
+          <div style={{ position: 'relative', maxWidth: '480px', marginBottom: '2rem' }}>
             <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
             <input
               type="text"
               className="input-field"
-              style={{ paddingLeft: '2.25rem' }}
+              style={{ paddingLeft: '2.25rem', fontFamily: SANS }}
               placeholder="Buscar en guardados…"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -114,35 +120,47 @@ const SavedItems = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-6 mb-8" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
             {TABS.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="font-sans text-xs uppercase tracking-wider pb-3"
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  borderBottom: activeTab === tab.id ? '1px solid var(--text)' : '1px solid transparent',
+                  fontFamily: MONO,
+                  fontSize: '0.6875rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: activeTab === tab.id ? `2px solid #C4451A` : '2px solid transparent',
                   marginBottom: '-1px',
+                  paddingBottom: '0.75rem',
+                  cursor: 'pointer',
                   color: activeTab === tab.id ? 'var(--text)' : 'var(--muted)',
                   transition: 'color 0.15s',
                 }}
               >
-                {tab.label} ({tabCount(tab.id)})
+                {tab.label}{' '}
+                <span style={{ fontFamily: MONO, color: 'var(--muted)' }}>
+                  ({tabCount(tab.id)})
+                </span>
               </button>
             ))}
           </div>
 
           {/* Content */}
           {loading ? (
-            <div className="py-20 flex items-center justify-center">
-              <div style={{ width: 28, height: 28, border: '2px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ padding: '5rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 28, height: 28, border: '2px solid var(--border)', borderTopColor: '#C4451A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="py-20 text-center">
+            <div style={{ padding: '5rem 0', textAlign: 'center' }}>
               <Bookmark size={32} style={{ color: 'var(--muted)', margin: '0 auto 1rem' }} />
-              <p className="font-display" style={{ fontSize: '1.25rem', color: 'var(--muted)' }}>
+              <p style={{ fontFamily: MONO, fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+                Sin resultados
+              </p>
+              <p style={{ fontFamily: SANS, fontSize: '0.9375rem', color: 'var(--muted)' }}>
                 No hay contenido guardado{activeTab !== 'all' ? ` en ${TABS.find(t => t.id === activeTab)?.label.toLowerCase()}` : ''}
               </p>
             </div>
@@ -162,31 +180,33 @@ const SavedItems = () => {
                   <Link
                     key={item.id}
                     to={linkPath}
-                    className="group flex items-start gap-4 py-5"
-                    style={{ borderBottom: '1px solid var(--border)', textDecoration: 'none' }}
+                    className="group"
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--border)', textDecoration: 'none' }}
                   >
                     <div style={{ flexShrink: 0, marginTop: '0.125rem' }}>
                       <Icon size={16} style={{ color: 'var(--muted)' }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="category-tag">{TYPE_LABEL[type]}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                        <span style={{ fontFamily: MONO, fontSize: '0.5625rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted)' }}>
+                          {TYPE_LABEL[type]}
+                        </span>
                         {content?.category && (
-                          <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>{content.category}</span>
+                          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', color: 'var(--muted)' }}>{content.category}</span>
                         )}
                       </div>
                       <h3
-                        className="font-display group-hover:[color:var(--accent)] transition-colors mb-1"
-                        style={{ fontSize: '1.0625rem', color: 'var(--text)', lineHeight: 1.3 }}
+                        className="group-hover:[color:var(--accent)] transition-colors"
+                        style={{ fontFamily: SANS, fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text)', lineHeight: 1.3, marginBottom: '0.25rem' }}
                       >
                         {content?.title || 'Sin título'}
                       </h3>
                       {content?.description && (
-                        <p className="font-sans text-sm mb-2" style={{ color: 'var(--muted)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                        <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)', marginBottom: '0.5rem', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                           {content.description}
                         </p>
                       )}
-                      <div className="flex items-center gap-3 font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>
                         {author && <span>{author.name || author.username}</span>}
                         {author && <span style={{ color: 'var(--border)' }}>·</span>}
                         <span>{formatDate(item.createdAt)}</span>
@@ -197,6 +217,7 @@ const SavedItems = () => {
               })}
             </div>
           )}
+
         </div>
       </div>
     </ProtectedRoute>

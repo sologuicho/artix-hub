@@ -6,20 +6,28 @@ import { useAuth } from '../context/AuthContext';
 import { handleGoogleAuth, handleMicrosoftAuth, handleGitHubAuth } from '../lib/auth/oauth';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 // ── OAuth icon buttons ──────────────────────────────────────────────────────
 const OAuthButton = ({ onClick, children }) => (
   <button
     type="button"
     onClick={onClick}
-    className="w-full flex items-center justify-center gap-3 font-sans text-xs uppercase tracking-wider transition-colors duration-150"
+    className="w-full flex items-center justify-center gap-3"
     style={{
       padding: '0.75rem 1rem',
       border: '1px solid var(--border)',
       backgroundColor: 'transparent',
       color: 'var(--muted)',
       cursor: 'pointer',
+      fontFamily: MONO,
+      fontSize: '0.625rem',
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      transition: 'color 0.15s, border-color 0.15s',
     }}
-    onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.borderColor = 'var(--text)'; }}
+    onMouseEnter={e => { e.currentTarget.style.color = '#C4451A'; e.currentTarget.style.borderColor = '#C4451A'; }}
     onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
   >
     {children}
@@ -27,7 +35,7 @@ const OAuthButton = ({ onClick, children }) => (
 );
 
 const GoogleIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24">
+  <svg width="16" height="16" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -36,7 +44,7 @@ const GoogleIcon = () => (
 );
 
 const MicrosoftIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24">
+  <svg width="16" height="16" viewBox="0 0 24 24">
     <path fill="#F25022" d="M1 1h10v10H1z"/>
     <path fill="#00A4EF" d="M13 1h10v10H13z"/>
     <path fill="#7FBA00" d="M1 13h10v10H1z"/>
@@ -47,7 +55,13 @@ const MicrosoftIcon = () => (
 // ── Reusable field ──────────────────────────────────────────────────────────
 const Field = ({ label, id, children }) => (
   <div>
-    <label htmlFor={id} className="input-label">{label}</label>
+    <label
+      htmlFor={id}
+      className="input-label"
+      style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}
+    >
+      {label}
+    </label>
     {children}
   </div>
 );
@@ -187,10 +201,8 @@ const Auth = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex"
-      style={{ backgroundColor: 'var(--bg)' }}
-    >
+    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--bg)' }}>
+
       {/* Left panel — editorial message */}
       <div
         className="hidden lg:flex flex-col justify-between p-16 flex-1"
@@ -198,38 +210,53 @@ const Auth = () => {
       >
         <Link
           to="/"
-          className="font-display tracking-widest uppercase"
-          style={{ fontSize: '0.9rem', color: '#F0EDE8', letterSpacing: '0.2em' }}
+          style={{
+            fontFamily: MONO,
+            fontSize: '0.75rem',
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+            color: '#F0EDE8',
+            textDecoration: 'none',
+          }}
         >
           ARTIX
         </Link>
 
         <div>
-          <p
-            className="font-sans text-xs uppercase tracking-widest mb-6"
-            style={{ color: '#E8572A' }}
-          >
+          <p style={{
+            fontFamily: MONO,
+            fontSize: '0.5625rem',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: '#C4451A',
+            marginBottom: '1.5rem',
+          }}>
             Plataforma Académica
           </p>
-          <h2
-            className="font-display"
-            style={{ fontSize: 'clamp(1.75rem, 3vw, 2.75rem)', color: '#F0EDE8', lineHeight: 1.15, maxWidth: '440px' }}
-          >
+          <h2 style={{
+            fontFamily: MONO,
+            fontSize: 'clamp(1.75rem, 3vw, 2.75rem)',
+            color: '#F0EDE8',
+            lineHeight: 1.15,
+            maxWidth: '440px',
+            fontWeight: 600,
+          }}>
             El conocimiento que construye el futuro
           </h2>
-          <p
-            className="font-sans mt-6"
-            style={{ color: '#8C8A86', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '380px' }}
-          >
+          <p style={{
+            fontFamily: SANS,
+            color: '#8C8A86',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+            maxWidth: '380px',
+            marginTop: '1.5rem',
+          }}>
             Únete a investigadores, estudiantes y profesionales de América Latina que comparten
             y construyen conocimiento en Artix Hub.
           </p>
         </div>
 
-        <p
-          className="font-sans text-xs"
-          style={{ color: '#2E2C2A' }}
-        >
+        <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: '#2E2C2A' }}>
           © {new Date().getFullYear()} Artix Hub
         </p>
       </div>
@@ -240,22 +267,20 @@ const Auth = () => {
         style={{ backgroundColor: 'var(--bg)', maxWidth: '520px', margin: '0 auto' }}
       >
         <div className="w-full" style={{ maxWidth: '400px' }}>
+
           {/* Back link */}
           <Link
             to="/"
-            className="inline-flex items-center gap-2 font-sans text-xs uppercase tracking-wider mb-10 transition-colors duration-150"
-            style={{ color: 'var(--muted)' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            className="inline-flex items-center gap-2 mb-10 transition-colors duration-150"
+            style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', textDecoration: 'none' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#C4451A'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
           >
             ← Volver al inicio
           </Link>
 
           {/* Tab selector */}
-          <div
-            className="flex gap-0 mb-10"
-            style={{ borderBottom: '1px solid var(--border)' }}
-          >
+          <div className="flex gap-0 mb-10" style={{ borderBottom: '1px solid var(--border)' }}>
             {[
               { id: 'login',  label: t('auth.login.title')  || 'Iniciar sesión' },
               { id: 'signup', label: t('auth.signup.title') || 'Crear cuenta'   },
@@ -263,14 +288,20 @@ const Auth = () => {
               <button
                 key={id}
                 onClick={() => { setActiveTab(id); setError(null); }}
-                className="font-sans text-xs uppercase tracking-wider pb-3 mr-6 transition-colors duration-150"
                 style={{
                   background: 'none',
                   border: 'none',
-                  borderBottom: activeTab === id ? '2px solid var(--accent)' : '2px solid transparent',
+                  borderBottom: activeTab === id ? '2px solid #C4451A' : '2px solid transparent',
                   color: activeTab === id ? 'var(--text)' : 'var(--muted)',
                   cursor: 'pointer',
                   marginBottom: '-1px',
+                  paddingBottom: '0.75rem',
+                  marginRight: '1.5rem',
+                  fontFamily: MONO,
+                  fontSize: '0.5625rem',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  transition: 'color 0.15s',
                 }}
               >
                 {label}
@@ -281,8 +312,15 @@ const Auth = () => {
           {/* Email verified success */}
           {verifiedParam === 'true' && (
             <div
-              className="mb-6 font-sans text-sm"
-              style={{ padding: '0.75rem 1rem', border: '1px solid #22c55e', color: '#22c55e', backgroundColor: 'transparent' }}
+              className="mb-6"
+              style={{
+                padding: '0.75rem 1rem',
+                border: '1px solid #22c55e',
+                color: '#22c55e',
+                backgroundColor: 'transparent',
+                fontFamily: SANS,
+                fontSize: '0.875rem',
+              }}
             >
               Correo verificado correctamente. Ya puedes iniciar sesión.
             </div>
@@ -291,13 +329,15 @@ const Auth = () => {
           {/* Student intent banner */}
           {isStudentIntent && (
             <div
-              className="mb-6 font-sans text-sm"
+              className="mb-6"
               style={{
                 padding: '0.75rem 1rem',
                 backgroundColor: 'var(--surface)',
-                borderLeft: '3px solid var(--accent)',
+                borderLeft: '3px solid #C4451A',
                 color: 'var(--muted)',
                 lineHeight: 1.6,
+                fontFamily: SANS,
+                fontSize: '0.875rem',
               }}
             >
               Estás creando una cuenta para acceder al{' '}
@@ -308,8 +348,15 @@ const Auth = () => {
           {/* Error */}
           {error && (
             <div
-              className="mb-6 font-sans text-sm"
-              style={{ padding: '0.75rem 1rem', border: '1px solid var(--accent)', color: 'var(--accent)', backgroundColor: 'transparent' }}
+              className="mb-6"
+              style={{
+                padding: '0.75rem 1rem',
+                border: '1px solid #C4451A',
+                color: '#C4451A',
+                backgroundColor: 'transparent',
+                fontFamily: SANS,
+                fontSize: '0.875rem',
+              }}
             >
               {error}
             </div>
@@ -324,14 +371,14 @@ const Auth = () => {
               <MicrosoftIcon /> Continuar con Microsoft
             </OAuthButton>
             <OAuthButton onClick={handleGitHubAuth}>
-              <Github className="w-4 h-4" /> Continuar con GitHub
+              <Github size={16} /> Continuar con GitHub
             </OAuthButton>
           </div>
 
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6">
             <div style={{ height: '1px', flex: 1, backgroundColor: 'var(--border)' }} />
-            <span className="font-sans text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+            <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>
               {t('auth.oauth.or') || 'o'}
             </span>
             <div style={{ height: '1px', flex: 1, backgroundColor: 'var(--border)' }} />
@@ -349,6 +396,7 @@ const Auth = () => {
                   onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
                   className="input-field"
                   placeholder="tu@correo.com"
+                  style={{ fontFamily: SANS }}
                 />
               </Field>
 
@@ -361,24 +409,37 @@ const Auth = () => {
                   onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
                   className="input-field"
                   placeholder="••••••••"
+                  style={{ fontFamily: SANS }}
                 />
               </Field>
 
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 font-sans text-xs" style={{ color: 'var(--muted)', cursor: 'pointer' }}>
+                <label className="flex items-center gap-2" style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={loginForm.remember}
                     onChange={e => setLoginForm(f => ({ ...f, remember: e.target.checked }))}
-                    style={{ accentColor: 'var(--accent)' }}
+                    style={{ accentColor: '#C4451A' }}
                   />
                   {t('auth.login.remember') || 'Recordarme'}
                 </label>
                 <button
                   type="button"
                   onClick={() => { setShowForgot(true); setForgotSent(false); setForgotEmail(''); }}
-                  className="font-sans text-xs uppercase tracking-wider transition-colors duration-150"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--muted)',
+                    padding: 0,
+                    fontFamily: MONO,
+                    fontSize: '0.5625rem',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    transition: 'color 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#C4451A'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
                 >
                   {t('auth.login.forgot') || '¿Olvidaste tu contraseña?'}
                 </button>
@@ -388,17 +449,24 @@ const Auth = () => {
                 type="submit"
                 disabled={loading}
                 className="btn btn-primary w-full"
-                style={loading ? { opacity: 0.6, cursor: 'wait' } : undefined}
+                style={{
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  backgroundColor: '#C4451A',
+                  color: '#fff',
+                  border: 'none',
+                  ...(loading ? { opacity: 0.6, cursor: 'wait' } : {}),
+                }}
               >
                 {loading ? 'Iniciando sesión…' : (t('auth.login.submit') || 'Iniciar sesión')}
               </button>
 
-              <p className="font-sans text-xs text-center" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: SANS, fontSize: '0.75rem', textAlign: 'center', color: 'var(--muted)' }}>
                 ¿No tienes cuenta?{' '}
                 <button
                   type="button"
                   onClick={() => setActiveTab('signup')}
-                  style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ color: '#C4451A', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SANS, fontSize: '0.75rem' }}
                 >
                   Regístrate
                 </button>
@@ -420,19 +488,23 @@ const Auth = () => {
                   placeholder="tu_usuario"
                   minLength={3}
                   maxLength={20}
-                  style={
-                    usernameStatus.available === true
+                  style={{
+                    fontFamily: MONO,
+                    ...(usernameStatus.available === true
                       ? { borderBottomColor: '#6dbf6d' }
                       : usernameStatus.available === false
-                      ? { borderBottomColor: 'var(--accent)' }
-                      : undefined
-                  }
+                      ? { borderBottomColor: '#C4451A' }
+                      : {}),
+                  }}
                 />
                 {usernameStatus.message && (
-                  <p
-                    className="mt-1 font-sans text-xs"
-                    style={{ color: usernameStatus.available ? '#6dbf6d' : 'var(--accent)' }}
-                  >
+                  <p style={{
+                    marginTop: '0.25rem',
+                    fontFamily: MONO,
+                    fontSize: '0.5625rem',
+                    letterSpacing: '0.08em',
+                    color: usernameStatus.available ? '#6dbf6d' : '#C4451A',
+                  }}>
                     {usernameStatus.message}
                   </p>
                 )}
@@ -447,6 +519,7 @@ const Auth = () => {
                   onChange={e => setSignupForm(f => ({ ...f, email: e.target.value }))}
                   className="input-field"
                   placeholder="tu@correo.com"
+                  style={{ fontFamily: SANS }}
                 />
               </Field>
 
@@ -460,6 +533,7 @@ const Auth = () => {
                   className="input-field"
                   placeholder="Mínimo 8 caracteres"
                   minLength={8}
+                  style={{ fontFamily: SANS }}
                 />
               </Field>
 
@@ -467,17 +541,24 @@ const Auth = () => {
                 type="submit"
                 disabled={usernameStatus.available === false || usernameStatus.checking || loading}
                 className="btn btn-primary w-full"
-                style={(usernameStatus.available === false || loading) ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+                style={{
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  backgroundColor: '#C4451A',
+                  color: '#fff',
+                  border: 'none',
+                  ...((usernameStatus.available === false || loading) ? { opacity: 0.6, cursor: 'not-allowed' } : {}),
+                }}
               >
                 {loading ? 'Registrando…' : (t('auth.signup.submit') || 'Crear cuenta')}
               </button>
 
-              <p className="font-sans text-xs text-center" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: SANS, fontSize: '0.75rem', textAlign: 'center', color: 'var(--muted)' }}>
                 {t('auth.signup.hasAccount') || '¿Ya tienes cuenta?'}{' '}
                 <button
                   type="button"
                   onClick={() => setActiveTab('login')}
-                  style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ color: '#C4451A', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SANS, fontSize: '0.75rem' }}
                 >
                   {t('auth.signup.signIn') || 'Inicia sesión'}
                 </button>
@@ -499,22 +580,49 @@ const Auth = () => {
             style={{ maxWidth: 400, backgroundColor: 'var(--bg)', border: '1px solid var(--border)', padding: '2rem' }}
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="font-display mb-2" style={{ fontSize: '1.25rem', color: 'var(--text)' }}>
+            <p style={{
+              fontFamily: MONO,
+              fontSize: '0.5625rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+              marginBottom: '0.5rem',
+            }}>
+              Recuperar acceso
+            </p>
+            <h3 style={{ fontFamily: MONO, fontSize: '1.25rem', color: 'var(--text)', fontWeight: 600, marginBottom: '0.5rem' }}>
               Restablecer contraseña
             </h3>
 
             {forgotSent ? (
               <>
-                <p className="font-sans text-sm mb-6" style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
+                <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
                   Si ese correo está registrado, recibirás un link en los próximos minutos.
                 </p>
-                <button onClick={() => setShowForgot(false)} className="btn btn-outline w-full">
+                <button
+                  onClick={() => setShowForgot(false)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    background: 'none',
+                    border: '1px solid var(--border)',
+                    color: 'var(--muted)',
+                    cursor: 'pointer',
+                    fontFamily: MONO,
+                    fontSize: '0.5625rem',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    transition: 'color 0.15s, border-color 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#C4451A'; e.currentTarget.style.borderColor = '#C4451A'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                >
                   Cerrar
                 </button>
               </>
             ) : (
               <form onSubmit={handleForgotPassword} className="flex flex-col gap-4 mt-4">
-                <p className="font-sans text-sm" style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
+                <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)', lineHeight: 1.6 }}>
                   Ingresa tu correo y te enviaremos un link para crear una nueva contraseña.
                 </p>
                 <input
@@ -524,20 +632,45 @@ const Auth = () => {
                   onChange={e => setForgotEmail(e.target.value)}
                   className="input-field"
                   placeholder="tu@correo.com"
+                  style={{ fontFamily: SANS }}
                 />
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setShowForgot(false)}
-                    className="btn btn-ghost flex-1"
+                    style={{
+                      flex: 1,
+                      padding: '0.75rem 1rem',
+                      background: 'none',
+                      border: '1px solid var(--border)',
+                      color: 'var(--muted)',
+                      cursor: 'pointer',
+                      fontFamily: MONO,
+                      fontSize: '0.5625rem',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      transition: 'color 0.15s, border-color 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.borderColor = 'var(--text)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={forgotLoading}
-                    className="btn btn-primary flex-1"
-                    style={forgotLoading ? { opacity: 0.6, cursor: 'wait' } : undefined}
+                    style={{
+                      flex: 1,
+                      padding: '0.75rem 1rem',
+                      backgroundColor: '#C4451A',
+                      color: '#fff',
+                      border: 'none',
+                      cursor: forgotLoading ? 'wait' : 'pointer',
+                      fontFamily: SANS,
+                      fontWeight: 700,
+                      fontSize: '0.875rem',
+                      ...(forgotLoading ? { opacity: 0.6 } : {}),
+                    }}
                   >
                     {forgotLoading ? 'Enviando…' : 'Enviar link'}
                   </button>

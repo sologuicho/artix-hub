@@ -9,6 +9,10 @@ import OccupationSelector from '../components/OccupationSelector';
 import TagSelector from '../components/TagSelector';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+const ACCENT = '#C4451A';
+
 const ProfileSettings = () => {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -127,37 +131,89 @@ const ProfileSettings = () => {
     }
   };
 
+  const labelStyle = {
+    display: 'block',
+    fontFamily: MONO,
+    fontSize: '0.5625rem',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'var(--muted)',
+    marginBottom: '0.5rem',
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '0.75rem',
+    backgroundColor: 'var(--surface)',
+    border: '1px solid var(--border)',
+    color: 'var(--text)',
+    fontFamily: SANS,
+    fontSize: '0.875rem',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
   return (
     <ProtectedRoute>
       <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
-        <div className="site-container py-16" style={{ maxWidth: '680px' }}>
+        <div style={{ maxWidth: '680px', margin: '0 auto', padding: '4rem 1.5rem' }}>
+
+          {/* Page header */}
           <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--border)', marginBottom: '2.5rem' }}>
-            <span className="category-tag">Cuenta</span>
-            <h1 className="font-display mt-2" style={{ fontSize: '2rem', color: 'var(--text)', lineHeight: 1.1 }}>
+            <span style={{
+              fontFamily: MONO,
+              fontSize: '0.5625rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+            }}>
+              Cuenta
+            </span>
+            <h1 style={{
+              fontFamily: SANS,
+              fontWeight: 700,
+              fontSize: '2rem',
+              color: 'var(--text)',
+              lineHeight: 1.1,
+              marginTop: '0.375rem',
+              marginBottom: 0,
+            }}>
               Configuración de Perfil
             </h1>
           </div>
 
           {error && (
-            <p className="font-sans text-sm mb-6" style={{ color: 'var(--accent)' }}>{error}</p>
+            <div style={{
+              backgroundColor: 'var(--surface)',
+              borderLeft: `3px solid ${ACCENT}`,
+              padding: '0.875rem 1rem',
+              fontFamily: SANS,
+              fontSize: '0.875rem',
+              color: ACCENT,
+              marginBottom: '1.5rem',
+            }}>
+              {error}
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
             {/* Avatar */}
             <div>
-              <label className="input-label">Foto de Perfil</label>
-              <p className="font-sans text-xs mb-3" style={{ color: 'var(--muted)' }}>
+              <label style={labelStyle}>Foto de Perfil</label>
+              <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.875rem' }}>
                 Recomendado: imágenes de 2-3 MB o menos. Se comprimirán automáticamente.
               </p>
-              <div className="flex items-center gap-4">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{
-                  width: 80, height: 80,
-                  borderRadius: 4,
+                  width: 80,
+                  height: 80,
                   border: '1px solid var(--border)',
                   backgroundColor: 'var(--surface)',
                   overflow: 'hidden',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   flexShrink: 0,
                 }}>
                   {avatarPreview ? (
@@ -167,28 +223,47 @@ const ProfileSettings = () => {
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <span className="font-display" style={{ fontSize: '1.5rem', color: 'var(--muted)' }}>
+                    <span style={{ fontFamily: MONO, fontSize: '1.5rem', color: 'var(--muted)' }}>
                       {(formData.firstName || user?.name || 'U').charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <label className="btn btn-outline" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <label style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.625rem 1rem',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'transparent',
+                    color: 'var(--text)',
+                    fontFamily: SANS,
+                    fontSize: '0.8125rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}>
                     <Upload size={13} />
                     Cambiar foto
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleAvatarChange}
-                      className="hidden"
+                      style={{ display: 'none' }}
                     />
                   </label>
                   {avatarPreview && (
                     <button
                       type="button"
                       onClick={() => setAvatarPreview('')}
-                      className="btn btn-ghost"
-                      style={{ color: 'var(--muted)', padding: '0.5rem' }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--muted)',
+                        padding: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
                     >
                       <X size={14} />
                     </button>
@@ -198,60 +273,59 @@ const ProfileSettings = () => {
             </div>
 
             {/* Name */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
-                <label className="input-label">Nombre(s)</label>
+                <label style={labelStyle}>Nombre(s)</label>
                 <input
                   type="text"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  className="input-field"
+                  style={inputStyle}
                   required
                 />
               </div>
               <div>
-                <label className="input-label">Apellido(s)</label>
+                <label style={labelStyle}>Apellido(s)</label>
                 <input
                   type="text"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  className="input-field"
+                  style={inputStyle}
                 />
               </div>
             </div>
 
             {/* Username */}
             <div>
-              <label className="input-label">Nombre de Usuario</label>
+              <label style={labelStyle}>Nombre de Usuario</label>
               <input
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                className="input-field"
+                style={inputStyle}
                 required
               />
             </div>
 
             {/* Bio */}
             <div>
-              <label className="input-label">Biografía</label>
+              <label style={labelStyle}>Biografía</label>
               <textarea
                 name="bio"
                 value={formData.bio}
                 onChange={handleInputChange}
                 rows={4}
-                className="input-field"
-                style={{ resize: 'none' }}
+                style={{ ...inputStyle, resize: 'none' }}
                 placeholder="Cuéntanos sobre ti..."
               />
             </div>
 
             {/* Occupation */}
             <div>
-              <label className="input-label">Ocupación</label>
+              <label style={labelStyle}>Ocupación</label>
               <OccupationSelector
                 value={formData.occupation}
                 onChange={(value) => setFormData(prev => ({ ...prev, occupation: value }))}
@@ -260,7 +334,7 @@ const ProfileSettings = () => {
 
             {/* Country */}
             <div>
-              <label className="input-label">País</label>
+              <label style={labelStyle}>País</label>
               <CountrySelector
                 value={formData.country}
                 onChange={(value) => setFormData(prev => ({ ...prev, country: value }))}
@@ -269,7 +343,7 @@ const ProfileSettings = () => {
 
             {/* Interests */}
             <div>
-              <label className="input-label">Intereses</label>
+              <label style={labelStyle}>Intereses</label>
               <TagSelector
                 tags={formData.interests}
                 onChange={(tags) => setFormData(prev => ({ ...prev, interests: tags }))}
@@ -279,15 +353,25 @@ const ProfileSettings = () => {
             </div>
 
             {/* Submit */}
-            <div
-              className="flex justify-end pt-4"
-              style={{ borderTop: '1px solid var(--border)' }}
-            >
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="submit"
                 disabled={saving}
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: ACCENT,
+                  color: '#fff',
+                  border: 'none',
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: '0.9375rem',
+                  padding: '0.875rem 1.5rem',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  opacity: saving ? 0.6 : 1,
+                  transition: 'opacity 0.15s',
+                }}
               >
                 <Save size={13} />
                 {saving ? 'Guardando…' : 'Guardar Cambios'}

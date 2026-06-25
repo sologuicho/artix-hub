@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 const SECTIONS = [
   { key: 'articles',  label: 'Artículos' },
   { key: 'research',  label: 'Investigaciones' },
@@ -30,35 +33,38 @@ const ResultRow = ({ item, sectionKey, onNavigate }) => {
   return (
     <button
       onClick={() => onNavigate(getPath(sectionKey, item))}
-      className="flex items-center gap-4 w-full font-sans text-sm transition-colors duration-150"
       style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        width: '100%',
         padding: '0.875rem 0',
-        borderBottom: '1px solid var(--border)',
         background: 'none',
         border: 'none',
         borderBottom: '1px solid var(--border)',
         cursor: 'pointer',
         textAlign: 'left',
         color: 'var(--text)',
+        transition: 'color 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; }}
+      onMouseEnter={e => { e.currentTarget.style.color = '#C4451A'; }}
       onMouseLeave={e => { e.currentTarget.style.color = 'var(--text)'; }}
     >
-      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ fontFamily: SANS, fontSize: '0.9375rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {title}
       </span>
       {subtitle && (
         <span
-          className="hidden sm:block text-xs"
-          style={{ color: 'var(--muted)', flexShrink: 0, minWidth: 100, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}
+          className="hidden sm:block"
+          style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)', flexShrink: 0, minWidth: 100, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}
         >
           {subtitle}
         </span>
       )}
       {date && (
         <span
-          className="hidden md:block font-mono text-xs"
-          style={{ color: 'var(--muted)', flexShrink: 0, width: 90, textAlign: 'right' }}
+          className="hidden md:block"
+          style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)', flexShrink: 0, width: 90, textAlign: 'right' }}
         >
           {formatDate(date)}
         </span>
@@ -97,35 +103,46 @@ const SearchResults = () => {
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
       <div className="site-container py-12">
-        <p className="font-sans text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--muted)' }}>
+
+        {/* Header */}
+        <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
           Búsqueda
         </p>
-        <h1
-          className="font-display mb-10"
-          style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: 'var(--text)', lineHeight: 1.1 }}
-        >
+        <h1 style={{ fontFamily: SANS, fontWeight: 700, fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: 'var(--text)', lineHeight: 1.1, marginBottom: '2.5rem' }}>
           {q ? `"${q}"` : 'Sin término'}
         </h1>
 
         {loading && (
-          <p className="font-sans text-sm" style={{ color: 'var(--muted)' }}>Buscando...</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: 20, height: 20, border: '2px solid var(--border)', borderTopColor: '#C4451A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <span style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Buscando…
+            </span>
+          </div>
         )}
 
         {!loading && results && total === 0 && (
-          <p className="font-sans text-sm" style={{ color: 'var(--muted)' }}>
-            Sin resultados para '{q}'
-          </p>
+          <div style={{ paddingTop: '4rem', textAlign: 'center' }}>
+            <p style={{ fontFamily: MONO, fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+              Sin resultados
+            </p>
+            <p style={{ fontFamily: SANS, fontSize: '0.9375rem', color: 'var(--muted)' }}>
+              No se encontró nada para "{q}"
+            </p>
+          </div>
         )}
 
         {!loading && results && total > 0 && (
-          <div className="flex flex-col" style={{ gap: '3rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
             {SECTIONS.map(({ key, label }) => {
               const items = results[key];
               if (!items?.length) return null;
               return (
                 <section key={key}>
-                  <p className="font-sans text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>
-                    {label} <span className="font-mono" style={{ marginLeft: '0.25rem' }}>({items.length})</span>
+                  <p style={{ fontFamily: MONO, fontSize: '0.5625rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: '0.75rem' }}>
+                    {label}{' '}
+                    <span style={{ fontFamily: MONO, color: 'var(--muted)' }}>({items.length})</span>
                   </p>
                   <div style={{ borderTop: '1px solid var(--border)' }}>
                     {items.map(item => (
@@ -137,6 +154,7 @@ const SearchResults = () => {
             })}
           </div>
         )}
+
       </div>
     </div>
   );

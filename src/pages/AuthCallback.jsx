@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 const AuthCallback = () => {
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
@@ -39,19 +42,41 @@ const AuthCallback = () => {
       className="min-h-screen flex flex-col items-center justify-center gap-4"
       style={{ backgroundColor: 'var(--bg)' }}
     >
+      {/* Spinner */}
       <div
         style={{
           width: 28,
           height: 28,
           border: '2px solid var(--border)',
-          borderTopColor: 'var(--accent)',
+          borderTopColor: '#C4451A',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
         }}
       />
-      <p className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+
+      {/* Wordmark */}
+      <p style={{
+        fontFamily: MONO,
+        fontSize: '0.625rem',
+        letterSpacing: '0.25em',
+        textTransform: 'uppercase',
+        color: 'var(--muted)',
+        marginTop: '0.25rem',
+      }}>
+        ARTIX
+      </p>
+
+      {/* Status */}
+      <p style={{
+        fontFamily: MONO,
+        fontSize: '0.5625rem',
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        color: 'var(--muted)',
+      }}>
         Verificando sesión…
       </p>
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

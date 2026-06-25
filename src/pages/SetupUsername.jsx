@@ -5,6 +5,10 @@ import { useAuth } from '../context/AuthContext';
 
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+const ACCENT = '#C4451A';
+
 const SetupUsername = () => {
   const [username, setUsername] = useState('');
   const [isChecking, setIsChecking] = useState(false);
@@ -131,31 +135,103 @@ const SetupUsername = () => {
     }
   };
 
+  const inputBorderColor = isAvailable === true
+    ? ACCENT
+    : isAvailable === false
+    ? '#ef4444'
+    : 'var(--border)';
+
+  const isDisabled = isSubmitting || isAvailable !== true || username.length < 3;
+
   return (
-    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+    <div style={{
+      backgroundColor: 'var(--bg)',
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem',
+    }}>
       <div style={{ maxWidth: '400px', width: '100%' }}>
-        <div style={{ padding: '2rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h1 className="font-display mb-1" style={{ fontSize: '1.75rem', color: 'var(--text)', lineHeight: 1.15 }}>
+
+        {/* Card */}
+        <div style={{
+          padding: '2.5rem',
+          backgroundColor: 'var(--surface)',
+          border: '1px solid var(--border)',
+        }}>
+          {/* Section tag */}
+          <span style={{
+            fontFamily: MONO,
+            fontSize: '0.5625rem',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--muted)',
+          }}>
+            Cuenta
+          </span>
+
+          <h1 style={{
+            fontFamily: SANS,
+            fontWeight: 700,
+            fontSize: '1.75rem',
+            color: 'var(--text)',
+            lineHeight: 1.15,
+            marginTop: '0.375rem',
+            marginBottom: '0.5rem',
+          }}>
             Elige tu nombre de usuario
           </h1>
-          <p className="font-sans text-sm mb-8" style={{ color: 'var(--muted)' }}>
+          <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)', marginBottom: '2rem' }}>
             Este será tu nombre único en Artix Hub
           </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div>
-              <label htmlFor="username" className="input-label">Nombre de usuario</label>
+              <label
+                htmlFor="username"
+                style={{
+                  display: 'block',
+                  fontFamily: MONO,
+                  fontSize: '0.5625rem',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Nombre de usuario
+              </label>
+
               <div style={{ position: 'relative' }}>
-                <User size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                <User
+                  size={14}
+                  style={{
+                    position: 'absolute',
+                    left: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--muted)',
+                  }}
+                />
                 <input
                   id="username"
                   type="text"
                   value={username}
                   onChange={handleUsernameChange}
-                  className="input-field"
                   style={{
-                    paddingLeft: '2.25rem', paddingRight: '2.25rem',
-                    borderColor: isAvailable === true ? 'var(--accent)' : isAvailable === false ? '#ef4444' : undefined,
+                    width: '100%',
+                    padding: '0.75rem',
+                    paddingLeft: '2.25rem',
+                    paddingRight: '2.25rem',
+                    backgroundColor: 'var(--bg)',
+                    border: `1px solid ${inputBorderColor}`,
+                    color: 'var(--text)',
+                    fontFamily: SANS,
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'border-color 0.15s',
                   }}
                   placeholder="username"
                   minLength={3}
@@ -163,32 +239,64 @@ const SetupUsername = () => {
                   pattern="[a-zA-Z0-9_-]{3,20}"
                   required
                 />
-                <div style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
-                  {isChecking && <Loader size={14} style={{ color: 'var(--muted)', animation: 'spin 0.8s linear infinite' }} />}
-                  {!isChecking && isAvailable === true && <Check size={14} style={{ color: 'var(--accent)' }} />}
-                  {!isChecking && isAvailable === false && <X size={14} style={{ color: '#ef4444' }} />}
+                <div style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                }}>
+                  {isChecking && (
+                    <Loader
+                      size={14}
+                      style={{ color: 'var(--muted)', animation: 'spin 0.8s linear infinite' }}
+                    />
+                  )}
+                  {!isChecking && isAvailable === true && (
+                    <Check size={14} style={{ color: ACCENT }} />
+                  )}
+                  {!isChecking && isAvailable === false && (
+                    <X size={14} style={{ color: '#ef4444' }} />
+                  )}
                 </div>
               </div>
 
+              {/* Feedback messages */}
               {username.length > 0 && username.length < 3 && (
-                <p className="font-sans text-xs mt-2" style={{ color: 'var(--muted)' }}>Mínimo 3 caracteres</p>
+                <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
+                  Mínimo 3 caracteres
+                </p>
               )}
               {username.length >= 3 && isAvailable === true && (
-                <p className="font-sans text-xs mt-2" style={{ color: 'var(--accent)' }}>Username disponible</p>
+                <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: ACCENT, marginTop: '0.5rem' }}>
+                  Username disponible
+                </p>
               )}
               {error && (
-                <p className="font-sans text-xs mt-2" style={{ color: '#ef4444' }}>{error}</p>
+                <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: '#ef4444', marginTop: '0.5rem' }}>
+                  {error}
+                </p>
               )}
-              <p className="font-sans text-xs mt-2" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
                 Solo letras, números, guiones y guiones bajos. 3–20 caracteres.
               </p>
             </div>
 
             <button
               type="submit"
-              disabled={isSubmitting || isAvailable !== true || username.length < 3}
-              className="btn btn-primary w-full"
-              style={{ opacity: isSubmitting || isAvailable !== true || username.length < 3 ? 0.5 : 1 }}
+              disabled={isDisabled}
+              style={{
+                width: '100%',
+                backgroundColor: ACCENT,
+                color: '#fff',
+                border: 'none',
+                fontFamily: SANS,
+                fontWeight: 700,
+                fontSize: '0.9375rem',
+                padding: '0.875rem',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                opacity: isDisabled ? 0.5 : 1,
+                transition: 'opacity 0.15s',
+              }}
             >
               {isSubmitting ? 'Configurando…' : 'Continuar'}
             </button>
@@ -201,10 +309,3 @@ const SetupUsername = () => {
 };
 
 export default SetupUsername;
-
-
-
-
-
-
-

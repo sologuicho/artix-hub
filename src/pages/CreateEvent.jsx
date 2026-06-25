@@ -11,7 +11,11 @@ import CategorySelector from '../components/CategorySelector';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config/client';
 
+const MONO = "'IBM Plex Mono', monospace";
+const SANS = "'IBM Plex Sans', sans-serif";
+
 const PAGE_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;700&display=swap');
   .artix-editor-event .ql-toolbar {
     background-color: var(--surface);
     border: 1px solid var(--border);
@@ -28,7 +32,7 @@ const PAGE_STYLES = `
     min-height: 180px;
     line-height: 1.75;
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
   }
   .artix-editor-event .ql-stroke { stroke: var(--muted) !important; }
   .artix-editor-event .ql-fill { fill: var(--muted) !important; }
@@ -216,6 +220,16 @@ const CreateEvent = () => {
 
   const currentStep = STEPS.find(s => s.n === step);
 
+  const fieldLabelStyle = {
+    display: 'block',
+    fontFamily: MONO,
+    fontSize: '0.5rem',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'var(--muted)',
+    marginBottom: '0.5rem',
+  };
+
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
       <style>{PAGE_STYLES}</style>
@@ -235,11 +249,11 @@ const CreateEvent = () => {
         </button>
 
         <div style={{ flex: 1 }}>
-          <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
             {isEditMode ? 'Editar evento' : `Paso ${step} de 3`}
           </span>
           {!isEditMode && (
-            <span className="font-sans text-xs" style={{ color: 'var(--border)', marginLeft: '0.5rem' }}>
+            <span style={{ fontFamily: MONO, fontSize: '0.5625rem', color: 'var(--border)', marginLeft: '0.5rem' }}>
               · {currentStep?.label}
             </span>
           )}
@@ -247,7 +261,7 @@ const CreateEvent = () => {
 
         <button
           onClick={() => setIsAIPanelOpen(v => !v)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? 'var(--accent)' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? '#C4451A' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
         >
           <Sparkles size={15} />
         </button>
@@ -255,6 +269,7 @@ const CreateEvent = () => {
 
       {/* Step content */}
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '3rem 1.5rem 8rem' }}>
+
         {/* Step indicator line */}
         <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '2.5rem' }}>
           {STEPS.map(s => (
@@ -262,7 +277,7 @@ const CreateEvent = () => {
               key={s.n}
               style={{
                 height: 2, flex: 1,
-                backgroundColor: s.n <= step ? 'var(--accent)' : 'var(--border)',
+                backgroundColor: s.n <= step ? '#C4451A' : 'var(--border)',
                 transition: 'background-color 0.3s',
               }}
             />
@@ -272,7 +287,7 @@ const CreateEvent = () => {
         {/* ── Step 1: Basic info ── */}
         {step === 1 && (
           <div>
-            <p className="font-sans text-xs uppercase tracking-widest mb-6" style={{ color: 'var(--muted)' }}>
+            <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '1.5rem' }}>
               Información básica
             </p>
 
@@ -282,18 +297,19 @@ const CreateEvent = () => {
               value={formData.title}
               onChange={handleInputChange}
               placeholder="Título del evento…"
-              className="font-display artix-create-input"
+              className="artix-create-input"
               style={{
                 display: 'block', width: '100%',
                 background: 'transparent', border: 'none', outline: 'none',
                 fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', lineHeight: 1.2,
+                fontFamily: SANS, fontWeight: 700,
                 color: 'var(--text)', marginBottom: '2rem',
                 borderBottom: '1px solid var(--border)', paddingBottom: '1rem',
               }}
             />
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="input-label">Tipo de evento</label>
+              <label style={fieldLabelStyle}>Tipo de evento</label>
               <CategorySelector
                 category={formData.type}
                 onChange={(type) => setFormData(prev => ({ ...prev, type }))}
@@ -303,7 +319,7 @@ const CreateEvent = () => {
             </div>
 
             <div>
-              <label className="input-label">Descripción</label>
+              <label style={fieldLabelStyle}>Descripción</label>
               <div className="artix-editor-event">
                 <RichTextEditorWithMentions
                   value={formData.description}
@@ -318,37 +334,37 @@ const CreateEvent = () => {
         {/* ── Step 2: Date & location ── */}
         {step === 2 && (
           <div>
-            <p className="font-sans text-xs uppercase tracking-widest mb-6" style={{ color: 'var(--muted)' }}>
+            <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '1.5rem' }}>
               Lugar y fecha
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
               <div>
-                <label className="input-label">Fecha</label>
+                <label style={fieldLabelStyle}>Fecha</label>
                 <input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={handleInputChange}
                   className="input-field"
-                  style={{ fontSize: '1rem', padding: '0.75rem' }}
+                  style={{ fontSize: '1rem', padding: '0.75rem', fontFamily: SANS }}
                 />
               </div>
               <div>
-                <label className="input-label">Hora</label>
+                <label style={fieldLabelStyle}>Hora</label>
                 <input
                   type="time"
                   name="time"
                   value={formData.time}
                   onChange={handleInputChange}
                   className="input-field"
-                  style={{ fontSize: '1rem', padding: '0.75rem' }}
+                  style={{ fontSize: '1rem', padding: '0.75rem', fontFamily: SANS }}
                 />
               </div>
             </div>
 
             <div>
-              <label className="input-label">Ubicación</label>
+              <label style={fieldLabelStyle}>Ubicación</label>
               <div style={{ position: 'relative' }}>
                 <MapPin
                   size={14}
@@ -361,10 +377,10 @@ const CreateEvent = () => {
                   onChange={handleInputChange}
                   placeholder="Lugar físico o URL del evento…"
                   className="input-field"
-                  style={{ paddingLeft: '2.25rem', fontSize: '1rem', padding: '0.75rem 0.75rem 0.75rem 2.25rem' }}
+                  style={{ paddingLeft: '2.25rem', fontSize: '1rem', padding: '0.75rem 0.75rem 0.75rem 2.25rem', fontFamily: SANS }}
                 />
               </div>
-              <p className="font-sans text-xs mt-1" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.25rem' }}>
                 Puede ser una dirección, ciudad o enlace a videoconferencia
               </p>
             </div>
@@ -374,19 +390,19 @@ const CreateEvent = () => {
         {/* ── Step 3: Banner & settings ── */}
         {step === 3 && (
           <div>
-            <p className="font-sans text-xs uppercase tracking-widest mb-6" style={{ color: 'var(--muted)' }}>
+            <p style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '1.5rem' }}>
               Imagen y configuración
             </p>
 
             {/* Banner upload */}
             <div style={{ marginBottom: '2rem' }}>
-              <label className="input-label">Banner del evento</label>
+              <label style={fieldLabelStyle}>Banner del evento</label>
               <div
-                className="group relative overflow-hidden flex items-center justify-center cursor-pointer"
                 style={{
-                  aspectRatio: '16/6',
-                  backgroundColor: 'var(--surface)',
-                  border: hoverBanner ? '1.5px dashed var(--accent)' : '1.5px dashed var(--border)',
+                  aspectRatio: '16/6', position: 'relative',
+                  backgroundColor: 'var(--surface)', overflow: 'hidden',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  border: hoverBanner ? '1.5px dashed #C4451A' : '1.5px dashed var(--border)',
                   transition: 'border-color 0.15s',
                 }}
                 onMouseEnter={() => setHoverBanner(true)}
@@ -394,7 +410,7 @@ const CreateEvent = () => {
               >
                 {formData.bannerUrl ? (
                   <>
-                    <img src={formData.bannerUrl} className="w-full h-full object-cover object-center" alt="Banner" />
+                    <img src={formData.bannerUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} alt="Banner" />
                     <button
                       onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, bannerUrl: '' })); }}
                       style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', padding: '0.375rem', color: 'var(--muted)', display: 'flex' }}
@@ -403,25 +419,25 @@ const CreateEvent = () => {
                     </button>
                   </>
                 ) : (
-                  <div className="text-center">
+                  <div style={{ textAlign: 'center' }}>
                     <Upload size={22} style={{ color: 'var(--muted)', margin: '0 auto 0.5rem' }} />
-                    <span className="font-sans text-xs uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-                      Agregar banner
+                    <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+                      Subir portada
                     </span>
                   </div>
                 )}
-                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleBannerChange} />
+                <input type="file" accept="image/*" style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} onChange={handleBannerChange} />
               </div>
             </div>
 
             {/* Capacity & Tickets */}
             <div style={{ marginBottom: '1.5rem', padding: '1.25rem', border: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
-              <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.75rem' }}>
                 Capacidad y entradas
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
-                  <label className="input-label">Capacidad máxima</label>
+                  <label style={fieldLabelStyle}>Capacidad máxima</label>
                   <input
                     type="number"
                     name="maxAttendees"
@@ -430,12 +446,12 @@ const CreateEvent = () => {
                     placeholder="Sin límite"
                     min="1"
                     className="input-field"
-                    style={{ fontSize: '0.9375rem', padding: '0.625rem 0.75rem' }}
+                    style={{ fontSize: '0.9375rem', padding: '0.625rem 0.75rem', fontFamily: SANS }}
                   />
-                  <p className="font-sans text-xs mt-1" style={{ color: 'var(--muted)' }}>Vacío = sin límite</p>
+                  <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.25rem' }}>Vacío = sin límite</p>
                 </div>
                 <div>
-                  <label className="input-label">Precio de entrada</label>
+                  <label style={fieldLabelStyle}>Precio de entrada</label>
                   <div style={{ display: 'flex', gap: '0.375rem' }}>
                     <select
                       value={formData.ticketCurrency}
@@ -443,6 +459,7 @@ const CreateEvent = () => {
                       style={{
                         border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text)',
                         padding: '0.625rem 0.5rem', fontSize: '0.875rem', flexShrink: 0,
+                        fontFamily: MONO,
                       }}
                     >
                       <option>MXN</option>
@@ -458,14 +475,14 @@ const CreateEvent = () => {
                       min="0"
                       step="0.01"
                       className="input-field"
-                      style={{ flex: 1, fontSize: '0.9375rem', padding: '0.625rem 0.75rem' }}
+                      style={{ flex: 1, fontSize: '0.9375rem', padding: '0.625rem 0.75rem', fontFamily: SANS }}
                     />
                   </div>
-                  <p className="font-sans text-xs mt-1" style={{ color: 'var(--muted)' }}>Se cobra vía Stripe</p>
+                  <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.25rem' }}>Se cobra vía Stripe</p>
                 </div>
               </div>
               <div>
-                <label className="input-label">URL del stream (opcional)</label>
+                <label style={fieldLabelStyle}>URL del stream (opcional)</label>
                 <input
                   type="url"
                   name="streamUrl"
@@ -473,14 +490,14 @@ const CreateEvent = () => {
                   onChange={handleInputChange}
                   placeholder="https://youtube.com/live/... o zoom link"
                   className="input-field"
-                  style={{ fontSize: '0.9375rem', padding: '0.625rem 0.75rem' }}
+                  style={{ fontSize: '0.9375rem', padding: '0.625rem 0.75rem', fontFamily: SANS }}
                 />
-                <p className="font-sans text-xs mt-1" style={{ color: 'var(--muted)' }}>Se comparte con inscritos cuando marques el evento como EN VIVO</p>
+                <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.25rem' }}>Se comparte con inscritos cuando marques el evento como EN VIVO</p>
               </div>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="input-label">Etiquetas</label>
+              <label style={fieldLabelStyle}>Etiquetas</label>
               <TagSelector
                 tags={formData.tags}
                 onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
@@ -493,17 +510,20 @@ const CreateEvent = () => {
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, isCollaborative: !prev.isCollaborative }))}
-                className="flex items-center justify-between w-full font-sans text-sm"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0,
+                  fontFamily: SANS, fontSize: '0.875rem',
+                }}
               >
                 Evento colaborativo
                 {formData.isCollaborative
-                  ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                  ? <ToggleRight size={18} style={{ color: '#C4451A' }} />
                   : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />}
               </button>
               {formData.isCollaborative && (
                 <div style={{ marginTop: '1rem' }}>
-                  <label className="input-label">Colaboradores</label>
+                  <label style={fieldLabelStyle}>Colaboradores</label>
                   <CollaboratorSelector
                     selectedCollaborators={collaborators}
                     onSelect={(u) => setCollaborators(prev => [...prev, u])}
@@ -519,19 +539,22 @@ const CreateEvent = () => {
                 <button
                   type="button"
                   onClick={() => setPublishAsArtixResearch(v => !v)}
-                  className="flex items-center justify-between w-full font-sans text-sm"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0 }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0,
+                    fontFamily: SANS, fontSize: '0.875rem',
+                  }}
                 >
                   {publishAsArtixResearch ? 'Publicando como Artix' : 'Publicando como tú'}
                   {publishAsArtixResearch
-                    ? <ToggleRight size={18} style={{ color: 'var(--accent)' }} />
+                    ? <ToggleRight size={18} style={{ color: '#C4451A' }} />
                     : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />}
                 </button>
               </div>
             )}
 
             <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-              <p className="font-sans text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+              <p style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.75rem' }}>
                 Verificación de calidad
               </p>
               <AIValidationPanel
@@ -544,7 +567,7 @@ const CreateEvent = () => {
         )}
 
         {validationMessage && (
-          <p className="font-sans text-sm mt-4" style={{ color: 'var(--accent)' }}>{validationMessage}</p>
+          <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: '#C4451A', marginTop: '1rem' }}>{validationMessage}</p>
         )}
       </div>
 
@@ -558,8 +581,11 @@ const CreateEvent = () => {
         {step > 1 ? (
           <button
             onClick={() => { setValidationMessage(''); setStep(s => s - 1); }}
-            className="btn btn-ghost"
-            style={{ fontSize: '0.75rem' }}
+            style={{
+              background: 'none', border: '1px solid var(--border)', color: 'var(--muted)',
+              fontFamily: MONO, fontSize: '0.625rem', letterSpacing: '0.1em', textTransform: 'uppercase',
+              padding: '0.625rem 1.25rem', cursor: 'pointer',
+            }}
           >
             ← Anterior
           </button>
@@ -568,15 +594,25 @@ const CreateEvent = () => {
         )}
 
         {step < 3 ? (
-          <button onClick={handleNext} className="btn btn-primary">
+          <button
+            onClick={handleNext}
+            style={{
+              backgroundColor: '#C4451A', color: '#fff', border: 'none',
+              fontFamily: SANS, fontWeight: 700, fontSize: '0.9375rem',
+              padding: '0.875rem 2rem', cursor: 'pointer',
+            }}
+          >
             Siguiente →
           </button>
         ) : (
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="btn btn-primary"
-            style={{ opacity: isSubmitting ? 0.5 : 1 }}
+            style={{
+              backgroundColor: '#C4451A', color: '#fff', border: 'none',
+              fontFamily: SANS, fontWeight: 700, fontSize: '0.9375rem',
+              padding: '0.875rem 2rem', cursor: 'pointer', opacity: isSubmitting ? 0.5 : 1,
+            }}
           >
             {isSubmitting ? 'Publicando…' : 'Publicar evento'}
           </button>
