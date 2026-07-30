@@ -11,7 +11,7 @@ exports.getSuggestedUsers = async (req, res) => {
         username: { not: null },
       },
       select: {
-        id: true, name: true, username: true, avatar: true, institution: true,
+        id: true, name: true, username: true, avatar: true, occupation: true,
         _count: { select: { followers: true, articles: true, research: true } },
       },
       orderBy: { followers: { _count: 'desc' } },

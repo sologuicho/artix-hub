@@ -10,7 +10,7 @@ const logger = require('../lib/logger');
 
 const router = express.Router();
 
-const VALID_TIERS = ['STUDENT', 'VISIONARY'];
+const VALID_TIERS = ['MEMBER', 'RESEARCHER', 'TEAM', 'VISIONARY'];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STRIPE — Create Checkout Session
@@ -81,7 +81,7 @@ router.post('/mercadopago/create-preference', protect, verifyCsrf, async (req, r
             title: `Artix Hub — Plan ${tier}`,
             quantity: 1,
             currency_id: 'MXN',
-            unit_price: tier === 'STUDENT' ? 79 : 179 // precio referencial; el real viene del plan en MP
+            unit_price: { MEMBER: 79, STUDENT: 59, RESEARCHER: 179, TEAM: 179, VISIONARY: 349 }[tier] ?? 79 // precio referencial MXN; el real viene del plan en MP
           }
         ],
         back_urls: {

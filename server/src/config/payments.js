@@ -20,12 +20,18 @@ if (process.env.MP_ACCESS_TOKEN) {
 }
 
 const PRICE_IDS = {
-  STUDENT:   process.env.STRIPE_PRICE_STUDENT,
-  VISIONARY: process.env.STRIPE_PRICE_VISIONARY,
+  MEMBER:     process.env.STRIPE_PRICE_MEMBER,
+  STUDENT:    process.env.STRIPE_PRICE_STUDENT,
+  RESEARCHER: process.env.STRIPE_PRICE_RESEARCHER,
+  TEAM:       process.env.STRIPE_PRICE_TEAM,
+  VISIONARY:  process.env.STRIPE_PRICE_VISIONARY,
 };
 
 const MP_PLAN_IDS = {
+  MEMBER:    process.env.MP_PLAN_MEMBER,
   STUDENT:   process.env.MP_PLAN_STUDENT,
+  RESEARCHER: process.env.MP_PLAN_RESEARCHER,
+  TEAM:      process.env.MP_PLAN_TEAM,
   VISIONARY: process.env.MP_PLAN_VISIONARY,
 };
 

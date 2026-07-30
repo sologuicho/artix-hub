@@ -515,7 +515,7 @@ export default function Home() {
                 </div>
               ))}
               <div style={{ padding: '13px 16px' }}>
-                <Link to="/subscription" className="ah-plans"
+                <Link to="/?pricing=true" className="ah-plans"
                   style={{ textDecoration: 'none', display: 'block', textAlign: 'center', fontFamily: MONO, fontSize: 12, letterSpacing: '0.04em', color: '#0a0a0a', background: '#C4451A', padding: 10, transition: 'background .15s' }}>
                   Compare plans →
                 </Link>

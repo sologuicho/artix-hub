@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import UserMenu from './UserMenu';
@@ -17,6 +17,13 @@ const Header = () => {
   const { isDark, toggle } = useDarkMode();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+
+  useEffect(() => {
+    if (location.search.includes('pricing=true')) {
+      setShowPricing(true);
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.search]);
 
   const navLinks = [
     ...(isAuthenticated() ? [{ to: '/feed', label: 'Feed' }] : []),
