@@ -1,0 +1,74 @@
+services:
+  - type: web
+    name: artix-hub-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npx prisma generate
+    startCommand: npx prisma migrate deploy && node src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_MEMBER
+        sync: false
+      - key: STRIPE_PRICE_STUDENT
+        sync: false
+      - key: STRIPE_PRICE_RESEARCHER
+        sync: false
+      - key: STRIPE_PRICE_TEAM
+        sync: false
+      - key: STRIPE_PRICE_VISIONARY
+        sync: false
+      - key: MP_ACCESS_TOKEN
+        sync: false
+      - key: MP_WEBHOOK_SECRET
+        sync: false
+      - key: MP_PLAN_MEMBER
+        sync: false
+      - key: MP_PLAN_STUDENT
+        sync: false
+      - key: MP_PLAN_RESEARCHER
+        sync: false
+      - key: MP_PLAN_TEAM
+        sync: false
+      - key: MP_PLAN_VISIONARY
+        sync: false
+      - key: EMAIL_PROVIDER
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
