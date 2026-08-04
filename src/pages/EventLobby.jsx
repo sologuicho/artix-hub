@@ -57,7 +57,7 @@ const EventLobby = () => {
   } = useEventLobby(id, isAuthenticated());
 
   const isOrganizer = user && event && (
-    user.id === event.creatorId || user.username === 'luisflores01'
+    user.id === event.creatorId || user.role === 'ADMIN'
   );
 
   useEffect(() => {

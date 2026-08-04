@@ -61,7 +61,7 @@ const CreateArticle = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isEditMode = !!id;
-  const isAdmin = user?.username === 'luisflores01';
+  const isAdmin = user?.role === 'ADMIN';
   const [publishAsArtixResearch, setPublishAsArtixResearch] = useState(
     searchParams.get('asArtixResearch') === 'true'
   );

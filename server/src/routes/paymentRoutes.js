@@ -5,12 +5,13 @@ const prisma = require('../prismaClient');
 const { protect } = require('../middleware/authMiddleware');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const { stripe, mpClient, PRICE_IDS, MP_PLAN_IDS } = require('../config/payments');
+const { PAID_TIERS } = require('../config/tiers');
 const { Preference, Payment } = require('mercadopago');
 const logger = require('../lib/logger');
 
 const router = express.Router();
 
-const VALID_TIERS = ['MEMBER', 'RESEARCHER', 'TEAM', 'VISIONARY'];
+const VALID_TIERS = PAID_TIERS;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STRIPE — Create Checkout Session
@@ -18,10 +19,14 @@ const VALID_TIERS = ['MEMBER', 'RESEARCHER', 'TEAM', 'VISIONARY'];
 
 router.post('/stripe/create-checkout', protect, verifyCsrf, async (req, res) => {
   try {
+    if (!stripe) {
+      return res.status(503).json({ ok: false, message: 'Stripe no está configurado en el servidor.' });
+    }
+
     const { tier } = req.body;
 
     if (!VALID_TIERS.includes(tier)) {
-      return res.status(400).json({ ok: false, message: 'Tier inválido. Usa STUDENT o VISIONARY.' });
+      return res.status(400).json({ ok: false, message: `Tier inválido. Opciones: ${VALID_TIERS.join(', ')}.` });
     }
 
     const priceId = PRICE_IDS[tier];
@@ -60,10 +65,14 @@ router.post('/stripe/create-checkout', protect, verifyCsrf, async (req, res) => 
 
 router.post('/mercadopago/create-preference', protect, verifyCsrf, async (req, res) => {
   try {
+    if (!mpClient) {
+      return res.status(503).json({ ok: false, message: 'MercadoPago no está configurado en el servidor.' });
+    }
+
     const { tier } = req.body;
 
     if (!VALID_TIERS.includes(tier)) {
-      return res.status(400).json({ ok: false, message: 'Tier inválido. Usa STUDENT o VISIONARY.' });
+      return res.status(400).json({ ok: false, message: `Tier inválido. Opciones: ${VALID_TIERS.join(', ')}.` });
     }
 
     const planId = MP_PLAN_IDS[tier];

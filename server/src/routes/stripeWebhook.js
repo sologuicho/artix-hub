@@ -2,10 +2,11 @@
 
 const prisma = require('../prismaClient');
 const { stripe } = require('../config/payments');
+const { PAID_TIERS } = require('../config/tiers');
 const emailService = require('../services/emailService');
 const logger = require('../lib/logger');
 
-const VALID_TIERS = ['STUDENT', 'VISIONARY'];
+const VALID_TIERS = PAID_TIERS;
 
 /**
  * Stripe Webhook Handler
@@ -14,6 +15,10 @@ const VALID_TIERS = ['STUDENT', 'VISIONARY'];
  * para preservar el raw body que necesita stripe.webhooks.constructEvent().
  */
 module.exports = async function stripeWebhookHandler(req, res) {
+  if (!stripe) {
+    return res.status(503).json({ error: 'Stripe no está configurado en el servidor.' });
+  }
+
   const sig = req.headers['stripe-signature'];
 
   let event;
