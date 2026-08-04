@@ -241,7 +241,7 @@ const Auth = () => {
             maxWidth: '440px',
             fontWeight: 600,
           }}>
-            El conocimiento que construye el futuro
+            piensa incluso mientras mueres
           </h2>
           <p style={{
             fontFamily: SANS,

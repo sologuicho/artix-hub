@@ -236,6 +236,14 @@ export default function Home() {
 
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
 
+        {/* ── TAGLINE ── */}
+        <div style={{ marginTop: 30, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.18em', color: '#3a3a36', textTransform: 'lowercase' }}>
+            piensa incluso mientras mueres
+          </span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.04)' }} />
+        </div>
+
         {/* ── LIVE BANNER ── */}
         {liveEvent ? (
           <section style={{ marginTop: 30, border: '1px solid rgba(255,255,255,0.1)', background: '#0d0d0c', display: 'flex' }}>

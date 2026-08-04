@@ -42,12 +42,14 @@ const Header = () => {
         <div className="site-container h-full flex items-center justify-between">
 
           {/* Logo */}
-          <Link
-            to="/"
-            className="font-display tracking-widest uppercase"
-            style={{ fontSize: '0.9rem', color: 'var(--text)', letterSpacing: '0.2em' }}
-          >
-            ARTIX
+          <Link to="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <span className="font-display tracking-widest uppercase"
+              style={{ fontSize: '0.9rem', color: 'var(--text)', letterSpacing: '0.2em' }}>
+              ARTIX
+            </span>
+            <span style={{ fontFamily: 'monospace', fontSize: '0.55rem', letterSpacing: '0.08em', color: 'var(--muted)', textTransform: 'lowercase', lineHeight: 1 }}>
+              piensa incluso mientras mueres
+            </span>
           </Link>
 
           {/* Desktop nav */}
