@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Video, Image as ImageIcon, FileText, X, Send, Upload } from 'lucide-react';
+import { Image as ImageIcon, X, Send, Upload } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 // import RichTextEditorWithMentions from './RichTextEditorWithMentions';
 // import TagSelector from './TagSelector';
 
@@ -9,7 +8,6 @@ import { BACKEND_URL } from '../config/client';
 
 const CreatePostCard = ({ onPostCreated }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
@@ -18,7 +16,7 @@ const CreatePostCard = ({ onPostCreated }) => {
   const [imageUrl, setImageUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [documents, setDocuments] = useState([]);
-  const [mentions, setMentions] = useState([]);
+  const [, setMentions] = useState([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
@@ -107,7 +105,7 @@ const CreatePostCard = ({ onPostCreated }) => {
     try {
       const getCsrfToken = () => {
         const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
+        for (const cookie of cookies) {
           const [name, value] = cookie.trim().split('=');
           if (name === 'csrf') return value;
         }

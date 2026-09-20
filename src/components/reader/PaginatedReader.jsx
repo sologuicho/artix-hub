@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import CircularProgress from './CircularProgress';
 import { useAuth } from '../../context/AuthContext';
@@ -95,7 +95,8 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
           credentials: 'include',
           body: JSON.stringify({ [key]: contentId, percentage, lastPage: currentPage, totalPages }),
         });
-      } catch (_) {}
+      } catch (_) { // intentional
+      }
     }, 1200);
     return () => clearTimeout(timer);
   }, [currentPage, totalPages, contentId, contentType, user]);

@@ -77,7 +77,7 @@ const FloatingActionButton = () => {
         {isOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
       </button>
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeInUp {
           from {
             opacity: 0;

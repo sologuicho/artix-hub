@@ -86,7 +86,8 @@ const EventLobby = () => {
         credentials: 'include',
         body: JSON.stringify({ isLive: true }),
       });
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const handleStreamEnd = async () => {
@@ -99,7 +100,8 @@ const EventLobby = () => {
         credentials: 'include',
         body: JSON.stringify({ isLive: false }),
       });
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const handleSend = () => {

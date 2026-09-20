@@ -1,5 +1,24 @@
 const prisma = require('../prismaClient');
 
+// Helper: check if user can manage event content (creator, admin, or Artix Research proxy)
+const canManageContent = async (creatorId, userId, userUsername, userRole) => {
+  if (creatorId === userId) return true;
+  if (userRole === 'ADMIN') return true;
+  if (userUsername === 'luisflores01') {
+    const artixUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: 'artixresearch' },
+          { username: 'artix-research' },
+          { name: 'Artix Research' },
+        ],
+      },
+    });
+    if (artixUser && creatorId === artixUser.id) return true;
+  }
+  return false;
+};
+
 // Get unique event types
 exports.getCategories = async (req, res) => {
   try {
@@ -457,7 +476,7 @@ exports.getWaitlistStatus = async (req, res) => {
       where: { eventId: id, createdAt: { lte: entry.createdAt } },
     });
     res.json({ ok: true, onWaitlist: true, position });
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ ok: false, message: 'Error' });
   }
 };
@@ -487,7 +506,8 @@ exports.setLive = async (req, res) => {
     const { getIO } = require('../socket/socketServer');
     try {
       getIO().to(`event-lobby:${id}`).emit('lobby:live', { isLive: updated.isLive, streamUrl: updated.streamUrl });
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
 
     res.json({ ok: true, event: updated });
   } catch (err) {
@@ -507,7 +527,7 @@ exports.getLobbyMessages = async (req, res) => {
       take: 100,
     });
     res.json({ ok: true, messages });
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ ok: false, message: 'Error' });
   }
 };

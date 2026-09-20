@@ -53,7 +53,8 @@ const StreamViewer = ({ socket, eventId, broadcasterId, onEnded }) => {
       if (from !== broadcasterId || !candidate) return;
       try {
         await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (_) {}
+      } catch (_) { // intentional
+      }
     };
 
     const handleEnded = () => {

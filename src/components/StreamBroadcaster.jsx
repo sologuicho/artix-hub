@@ -10,7 +10,7 @@ const StreamBroadcaster = ({ socket, eventId, viewerCount, onStreamStart, onStre
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const peersRef = useRef({}); // viewerId -> RTCPeerConnection
-  const [mode, setMode] = useState(null); // null | 'camera' | 'screen' | 'both'
+  const [, setMode] = useState(null); // null | 'camera' | 'screen' | 'both'
   const [muted, setMuted] = useState(false);
   const [videoOff, setVideoOff] = useState(false);
   const [error, setError] = useState(null);
@@ -74,7 +74,8 @@ const StreamBroadcaster = ({ socket, eventId, viewerCount, onStreamStart, onStre
       if (!pc || !candidate) return;
       try {
         await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (_) {}
+      } catch (_) { // intentional
+      }
     };
 
     socket.on('stream:viewer-joined', handleViewerJoined);
@@ -101,7 +102,8 @@ const StreamBroadcaster = ({ socket, eventId, viewerCount, onStreamStart, onStre
         try {
           const mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
           mic.getAudioTracks().forEach(t => screen.addTrack(t));
-        } catch (_) {}
+        } catch (_) { // intentional
+        }
         mediaStream = screen;
       } else {
         // Both: screen + camera overlay (use screen as primary, camera audio)

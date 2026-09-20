@@ -72,7 +72,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useLanguage();
-  const { login, checkAuth } = useAuth();
+  const { checkAuth } = useAuth();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 

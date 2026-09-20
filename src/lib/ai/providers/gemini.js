@@ -12,7 +12,7 @@ export const callGemini = async ({ prompt }) => {
    *
    * GOOGLE_API_KEY="YOUR_KEY_HERE" // INSERT YOUR API KEY HERE
    */
-  const apiKey = process.env.GOOGLE_API_KEY;
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
   if (!apiKey) {
     throw new Error(

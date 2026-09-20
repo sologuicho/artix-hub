@@ -157,7 +157,8 @@ const ResearchView = () => {
       );
       const data = await res.json();
       if (data.ok) setSaved(data.saved);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   }, [id, isAuthenticated]);
 
   // ── Check follow ────────────────────────────────────────────────────────────
@@ -169,7 +170,8 @@ const ResearchView = () => {
       });
       const data = await res.json();
       if (data.ok) setFollowing(data.following);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   }, [isAuthenticated, user?.id]);
 
   // ── Mount effects ────────────────────────────────────────────────────────────
@@ -250,7 +252,8 @@ const ResearchView = () => {
         setFollowing(data.following);
         showToast(data.following ? 'Siguiendo al autor' : 'Dejaste de seguir', 'ok');
       }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   // ── EPUB download ─────────────────────────────────────────────────────────────

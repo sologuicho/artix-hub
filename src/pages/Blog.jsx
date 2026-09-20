@@ -171,10 +171,10 @@ const PostCard = ({ post }) => {
               color: '#6f6f6a',
             }}
           >
-            {post.viewCount != null && (
+            {post.viewCount !== null && (
               <span>{post.viewCount} lecturas</span>
             )}
-            {post._count?.comments != null && (
+            {post._count?.comments !== null && (
               <span>{post._count.comments} comentarios</span>
             )}
             <Link
@@ -214,7 +214,7 @@ const SkeletonCard = () => (
 const FILTERS = ['Recientes', 'Populares', 'Siguiendo'];
 
 const Blog = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState([]);

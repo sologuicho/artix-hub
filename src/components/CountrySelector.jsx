@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, MapPin, X } from 'lucide-react';
+import { ChevronDown, MapPin } from 'lucide-react';
 
 const COUNTRIES = [
   'México', 'Estados Unidos', 'España', 'Argentina', 'Colombia', 'Chile', 'Perú', 'Venezuela',

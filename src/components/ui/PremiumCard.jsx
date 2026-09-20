@@ -13,7 +13,7 @@ const PremiumCard = ({
     className,
     delay = 0,
     onClick,
-    children
+    children: _children
 }) => {
     return (
         <motion.div

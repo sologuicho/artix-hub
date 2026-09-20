@@ -129,18 +129,13 @@ const CreateArticle = () => {
     setSelectedText('');
   };
 
-  const handleTextReplace = (newText) => {
-    setFormData(prev => ({ ...prev, content: newText }));
-    setSelectedText('');
-  };
-
   const handleSubmit = async (e) => {
     e?.preventDefault();
     setIsSubmitting(true);
     setValidationMessage('');
     try {
       const getCsrfToken = () => {
-        for (let cookie of document.cookie.split(';')) {
+        for (const cookie of document.cookie.split(';')) {
           const [name, value] = cookie.trim().split('=');
           if (name === 'csrf') return value;
         }

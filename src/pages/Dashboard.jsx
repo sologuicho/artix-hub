@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2, X } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import usePermissions from '../hooks/usePermissions';
 import { BACKEND_URL } from '../config/client';
@@ -56,7 +55,6 @@ const ContentRow = ({ title, meta, to, thumbnail }) => (
 const STUDENT_BANNER_KEY = 'student_banner_dismissed';
 
 const Dashboard = () => {
-  const { t } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const { canPublish, canPublishArticles } = usePermissions();
   const navigate = useNavigate();
@@ -104,7 +102,8 @@ const Dashboard = () => {
       });
       const data = await res.json();
       if (data) setReadingData(data);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const fetchDashboardData = async () => {
@@ -122,7 +121,8 @@ const Dashboard = () => {
       if (statsData.ok) setStats(statsData.stats);
       if (articlesData.ok) setRecentArticles(articlesData.articles);
       if (postsData.ok) setRecentPosts(postsData.posts);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setLoading(false); }
   };
 

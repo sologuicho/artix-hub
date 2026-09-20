@@ -89,7 +89,8 @@ const SubscriptionSettings = () => {
       const res  = await fetch(`${BACKEND_URL}/api/subscription/invoices`, { credentials: 'include' });
       const data = await res.json();
       if (res.ok) setInvoices(data.invoices || []);
-    } catch {}
+    } catch { // intentional
+    }
     finally { setLoadingInvoices(false); }
   }, []);
 

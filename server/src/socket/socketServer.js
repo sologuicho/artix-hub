@@ -20,7 +20,7 @@ const initializeSocket = (server) => {
     try {
       const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
       if (!token) return next(new Error('Authentication error'));
-      const { user, decoded } = await verifyAuthToken(token);
+      const { user } = await verifyAuthToken(token);
       socket.userId = user.id;
       socket.user = { id: user.id, name: user.name, username: user.username, avatar: user.avatar };
       next();
@@ -44,7 +44,7 @@ const initializeSocket = (server) => {
     });
 
     // Viewer wants to receive the stream
-    socket.on('stream:viewer-ready', ({ eventId, broadcasterId }) => {
+    socket.on('stream:viewer-ready', ({ eventId: _eventId, broadcasterId }) => {
       // Tell broadcaster that this viewer wants in
       io.to(`user:${broadcasterId}`).emit('stream:viewer-joined', {
         viewerId: socket.userId,
@@ -117,7 +117,7 @@ const initializeSocket = (server) => {
           include: { user: { select: { id: true, name: true, username: true, avatar: true } } },
         });
         io.to(room).emit('lobby:message', msg);
-      } catch (err) {
+      } catch (_err) {
         socket.emit('lobby:error', { message: 'Error sending message' });
       }
     });

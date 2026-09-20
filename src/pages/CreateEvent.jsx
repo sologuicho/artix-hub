@@ -164,7 +164,7 @@ const CreateEvent = () => {
     setIsSubmitting(true);
     try {
       const getCsrfToken = () => {
-        for (let cookie of document.cookie.split(';')) {
+        for (const cookie of document.cookie.split(';')) {
           const [name, value] = cookie.trim().split('=');
           if (name === 'csrf') return value;
         }

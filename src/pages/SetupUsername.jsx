@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Check, X, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,13 +16,12 @@ const SetupUsername = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { checkAuth } = useAuth();
 
   // Get CSRF token from cookie
   const getCsrfToken = () => {
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'csrf') {
         return value;

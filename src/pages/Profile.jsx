@@ -78,7 +78,7 @@ function ContentRow({ item }) {
   );
 }
 
-function PersonCard({ person, isOwnProfile, currentUserId }) {
+function PersonCard({ person, _isOwnProfile, currentUserId }) {
   const [following, setFollowing] = useState(false);
   const [busy, setBusy] = useState(false);
   const isMe = person.id === currentUserId;
@@ -92,7 +92,8 @@ function PersonCard({ person, isOwnProfile, currentUserId }) {
         headers: { 'x-csrf-token': getCsrf() },
       });
       setFollowing(f => !f);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     setBusy(false);
   }
 
@@ -200,7 +201,8 @@ export default function Profile() {
       const res = await fetch(`${BACKEND_URL}/api/follow/${resolvedId}/check`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setIsFollowing(data.isFollowing);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   }, [resolvedId, isAuthenticated, isOwnProfile]);
 
   /* Load all content */
@@ -221,7 +223,8 @@ export default function Profile() {
       if (resData.ok) setResearch(resData.research || resData.papers || []);
       if (fwrData.ok) setFollowers(fwrData.followers || []);
       if (fwgData.ok) setFollowing(fwgData.following || []);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   }, [profile, contentLoaded]);
 
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
@@ -244,7 +247,8 @@ export default function Profile() {
         ...s,
         followers: isFollowing ? s.followers - 1 : s.followers + 1,
       } : s);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     setFollowBusy(false);
   }
 

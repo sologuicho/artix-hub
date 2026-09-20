@@ -68,7 +68,8 @@ const CategorySelector = ({
           const data = await response.json();
           if (data.ok && data.categories) setExistingCategories(data.categories);
         }
-      } catch (_) {}
+      } catch (_) { // intentional
+      }
     };
     fetchCategories();
   }, [contentType]);
@@ -208,7 +209,7 @@ const CategorySelector = ({
                 }}
               >
                 <Plus size={11} style={{ flexShrink: 0 }} />
-                Crear "{searchQuery.trim()}"
+                Crear {'"'}{searchQuery.trim()}{'"'}
               </button>
             )}
           </div>

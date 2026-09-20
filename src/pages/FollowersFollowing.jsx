@@ -57,7 +57,8 @@ const FollowersFollowing = () => {
         const res = await fetch(`${BACKEND_URL}/api/follow/${id}/check`, { credentials: 'include' });
         const data = await res.json();
         if (data.ok) statuses[id] = data.following || false;
-      } catch (_) {}
+      } catch (_) { // intentional
+      }
     }));
     setFollowing(prev => ({ ...prev, ...statuses }));
   };

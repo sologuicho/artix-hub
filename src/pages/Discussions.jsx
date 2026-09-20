@@ -10,7 +10,7 @@ const SANS = "'IBM Plex Sans', sans-serif";
 
 const getCsrfToken = () => {
   const cookies = document.cookie.split(';');
-  for (let c of cookies) {
+  for (const c of cookies) {
     const [name, value] = c.trim().split('=');
     if (name === 'csrf') return value;
   }

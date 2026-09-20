@@ -15,7 +15,7 @@ const ACCENT = '#C4451A';
 
 const getCsrfToken = () => {
   const cookies = document.cookie.split(';');
-  for (let c of cookies) {
+  for (const c of cookies) {
     const [name, value] = c.trim().split('=');
     if (name === 'csrf') return value;
   }
@@ -72,7 +72,8 @@ const BlogPostView = () => {
       const res = await fetch(`${BACKEND_URL}/api/follow/${post.author.id}/check`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setFollowing(data.following);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const fetchReactionCounts = async () => {
@@ -84,7 +85,8 @@ const BlogPostView = () => {
           Object.keys(prev).map(t => [t, { ...prev[t], count: data.counts[t] || 0 }])
         ));
       }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const checkReactionStatus = async () => {
@@ -97,7 +99,8 @@ const BlogPostView = () => {
           Object.keys(prev).map(t => [t, { ...prev[t], active: active.has(t) }])
         ));
       }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const checkSavedStatus = async () => {
@@ -105,7 +108,8 @@ const BlogPostView = () => {
       const res = await fetch(`${BACKEND_URL}/api/saved/check?postId=${id}`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setSaved(data.saved);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const handleReaction = async (type) => {
@@ -137,7 +141,8 @@ const BlogPostView = () => {
       });
       const data = await res.json();
       if (data.ok) setSaved(prev => !prev);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const handleFollow = async () => {
@@ -150,7 +155,8 @@ const BlogPostView = () => {
       });
       const data = await res.json();
       if (data.ok) setFollowing(data.following);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const fetchRepostCount = async () => {
@@ -158,7 +164,8 @@ const BlogPostView = () => {
       const res = await fetch(`${BACKEND_URL}/api/repost/counts?postId=${id}`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setRepostCount(data.count);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const checkRepostStatus = async () => {
@@ -167,7 +174,8 @@ const BlogPostView = () => {
       const res = await fetch(`${BACKEND_URL}/api/repost/check?postId=${id}`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setReposted(data.reposted);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const handleRepost = async () => {

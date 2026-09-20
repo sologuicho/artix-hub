@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config/client';
 
@@ -306,8 +306,7 @@ const STATUS_OPTIONS = [
 const PAGE_SIZE = 10;
 
 const Research = () => {
-  const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const [allResearch, setAllResearch] = useState([]);
   const [loading, setLoading]         = useState(true);

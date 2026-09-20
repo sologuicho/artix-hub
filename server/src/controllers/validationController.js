@@ -319,7 +319,7 @@ exports.validateBlogPost = async (req, res) => {
 // Validate research with AI support
 exports.validateResearch = async (req, res) => {
   try {
-    const { title, content, category, description, tags, methodology, mode } = req.body;
+    const { title, content, category, description, methodology, mode } = req.body;
 
     // AI Improve Mode
     if (mode === 'improve') {

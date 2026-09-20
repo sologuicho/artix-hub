@@ -6,7 +6,8 @@ function getInitialTheme() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'dark' || stored === 'light') return stored === 'dark';
-  } catch (_) {}
+  } catch (_) { // intentional
+  }
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
@@ -22,7 +23,8 @@ export function useDarkMode() {
     }
     try {
       localStorage.setItem(STORAGE_KEY, isDark ? 'dark' : 'light');
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   }, [isDark]);
 
   const toggle = () => setIsDark(prev => !prev);

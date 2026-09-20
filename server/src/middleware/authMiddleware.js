@@ -1,5 +1,6 @@
 const { verifyToken } = require('../utils/jwt');
 const { verifyAuthToken, AuthTokenErrorCodes } = require('../core/auth/policy');
+const logger = require('../lib/logger');
 
 async function protect(req, res, next) {
   try {
@@ -19,7 +20,7 @@ async function protect(req, res, next) {
     req.user = user;
     next();
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, '[authMiddleware] Token verification failed');
     if (err.code === AuthTokenErrorCodes.USER_NOT_FOUND) {
       return res.status(401).json({ message: 'User not found' });
     }

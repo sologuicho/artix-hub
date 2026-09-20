@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Wand2, Lightbulb, GraduationCap, X, Loader, Check, ArrowRight, Send } from 'lucide-react';
+import { Sparkles, Lightbulb, GraduationCap, X, Loader, Check, ArrowRight, Send } from 'lucide-react';
 
 import { BACKEND_URL } from '../config/client';
 
@@ -16,7 +16,7 @@ const AIEditorPanel = ({ selectedText, onTextReplace, onInsertText, category, is
   // Get CSRF token from cookie
   const getCsrfToken = () => {
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'csrf') {
         return value;
@@ -107,7 +107,7 @@ const AIEditorPanel = ({ selectedText, onTextReplace, onInsertText, category, is
         // Show more user-friendly error messages
         let errorMsg = data.message || data.details || 'Error al generar ideas';
         if (errorMsg.includes('habilitada') || errorMsg.includes('habilitarla')) {
-          errorMsg = errorMsg; // Keep the Spanish message about enabling API
+          // Keep the Spanish message about enabling API — no change needed
         } else if (errorMsg.includes('API key') || errorMsg.includes('API_KEY')) {
           errorMsg = 'Error de configuración: Verifica que la API key de Gemini esté correctamente configurada en el servidor.';
         }

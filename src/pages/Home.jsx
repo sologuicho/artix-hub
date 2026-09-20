@@ -76,7 +76,8 @@ export default function Home() {
         if (bD.ok) setBlogPosts(bD.posts || []);
         if (eD.ok) setEvents(eD.events || []);
         if (uD.ok) setSuggested(uD.users || []);
-      } catch (_) {}
+      } catch (_) { // intentional
+      }
       finally { setLoading(false); }
     })();
   }, []);

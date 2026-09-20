@@ -192,7 +192,7 @@ router.get('/content', async (req, res) => {
     const fetchEvents    = () => prisma.event.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { id: true, title: true, createdAt: true, creatorId: true, creator: AUTHOR_SEL } }).then(rs => rs.map(r => ({ ...r, status: 'published', authorId: r.creatorId, author: r.creator, type: 'event' })));
     const fetchBlogPosts = () => prisma.blogPost.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { id: true, title: true, createdAt: true, authorId: true, author: AUTHOR_SEL } }).then(rs => rs.map(r => ({ ...r, status: 'published', type: 'blogpost' })));
 
-    let items = [];
+    const items = [];
     if (!type || type === 'article')  items.push(...await fetchArticles());
     if (!type || type === 'research') items.push(...await fetchResearch());
     if (!type || type === 'event')    items.push(...await fetchEvents());
@@ -202,7 +202,7 @@ router.get('/content', async (req, res) => {
 
     const total   = items.length;
     const offset  = (page - 1) * limit;
-    const content = items.slice(offset, offset + limit).map(({ authorId, creatorId, creator, ...rest }) => rest);
+    const content = items.slice(offset, offset + limit).map(({ authorId: _authorId, creatorId: _creatorId, creator: _creator, ...rest }) => rest);
 
     res.json({ ok: true, content, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) {
@@ -288,7 +288,7 @@ router.post('/student-verifications/:id/approve', verifyCsrf, async (req, res) =
       prisma.user.update({ where: { id: verification.userId }, data: { subscriptionTier: 'STUDENT' } }),
     ]);
 
-    try { await emailService.sendStudentApproved(verification.user); } catch (_) {}
+    try { await emailService.sendStudentApproved(verification.user); } catch (_) { /* intentional */ }
 
     res.json({ ok: true, message: 'Verificación aprobada.' });
   } catch (err) {
@@ -313,7 +313,7 @@ router.post('/student-verifications/:id/reject', verifyCsrf, async (req, res) =>
       data: { status: 'REJECTED', reviewNote: reason || '' },
     });
 
-    try { await emailService.sendStudentRejected(verification.user, reason); } catch (_) {}
+    try { await emailService.sendStudentRejected(verification.user, reason); } catch (_) { /* intentional */ }
 
     res.json({ ok: true, message: 'Verificación rechazada.' });
   } catch (err) {

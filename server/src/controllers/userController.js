@@ -18,7 +18,7 @@ exports.getSuggestedUsers = async (req, res) => {
       take: 5,
     });
     res.json({ ok: true, users });
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ ok: false, message: 'Failed to fetch suggested users' });
   }
 };

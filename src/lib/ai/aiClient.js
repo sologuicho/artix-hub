@@ -5,8 +5,8 @@ import { callGemini } from './providers/gemini.js';
  * Helper to load environment variables both on the Node server
  * and (if needed) in other runtimes.
  */
-const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY);
-const hasGeminiKey = Boolean(process.env.GOOGLE_API_KEY);
+const hasOpenAIKey = Boolean(import.meta.env.VITE_OPENAI_API_KEY);
+const hasGeminiKey = Boolean(import.meta.env.VITE_GOOGLE_API_KEY);
 
 const selectProvider = () => {
   if (hasOpenAIKey) return 'openai';
@@ -42,12 +42,12 @@ The JSON MUST match this schema:
 Mode: ${mode}
 Metadata: ${JSON.stringify(metadata)}
 Content:
-\"\"\"${text}\"\"\"`;
+"""${text}"""`;
 
 const parseJSON = (raw) => {
   try {
     return JSON.parse(raw);
-  } catch (error) {
+  } catch (err) {
     // Attempt to extract JSON substring
     const start = raw.indexOf('{');
     const end = raw.lastIndexOf('}');
@@ -55,7 +55,7 @@ const parseJSON = (raw) => {
       const sliced = raw.slice(start, end + 1);
       return JSON.parse(sliced);
     }
-    throw new Error(`Unable to parse AI response: ${raw}`);
+    throw new Error(`Unable to parse AI response: ${raw}`, { cause: err });
   }
 };
 

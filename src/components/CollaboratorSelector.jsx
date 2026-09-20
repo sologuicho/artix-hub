@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, X, UserPlus, Check, XCircle } from 'lucide-react';
+import { Search, X, UserPlus } from 'lucide-react';
 
 import { BACKEND_URL } from '../config/client';
 
@@ -7,7 +7,6 @@ const CollaboratorSelector = ({ selectedCollaborators, onSelect, onRemove, place
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useState(null);
 
   useEffect(() => {
     if (searchQuery.length >= 2) {

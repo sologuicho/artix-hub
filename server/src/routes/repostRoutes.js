@@ -50,7 +50,7 @@ router.post('/', protect, verifyCsrf, async (req, res) => {
     const userId = req.user.id;
 
     const where = { userId };
-    let createData = { userId };
+    const createData = { userId };
 
     if (articleId) { where.articleId = articleId; createData.articleId = articleId; }
     else if (researchId) { where.researchId = researchId; createData.researchId = researchId; }

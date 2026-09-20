@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { User, MapPin, Briefcase, GraduationCap, Eye, TrendingUp, Building2, Bookmark, Archive, Search, Sparkles } from 'lucide-react';
+import { MapPin, Briefcase, GraduationCap, TrendingUp, Bookmark, Archive, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const ProfileSidebar = ({ user: profileUser, stats }) => {

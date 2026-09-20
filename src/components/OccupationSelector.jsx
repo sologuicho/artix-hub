@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Briefcase, X } from 'lucide-react';
+import { ChevronDown, Briefcase } from 'lucide-react';
 
 const OCCUPATIONS = [
   'Estudiante', 'Profesor', 'Investigador', 'Científico', 'Ingeniero de Software',

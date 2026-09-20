@@ -167,7 +167,7 @@ Responde SOLO con el JSON, sin texto adicional.`;
 const parseJSON = (raw) => {
   try {
     return JSON.parse(raw);
-  } catch (error) {
+  } catch (_error) {
     // Attempt to extract JSON substring
     const start = raw.indexOf('{');
     const end = raw.lastIndexOf('}');
@@ -192,27 +192,25 @@ const validateContent = async ({
   const { hasOpenAIKey, hasGeminiKey } = checkAPIKeys();
 
   let response;
-  let lastError;
 
   // Always prefer Gemini if available, only use OpenAI if Gemini is not available
   if (hasGeminiKey) {
     try {
       response = await callGemini({ prompt });
     } catch (error) {
-      lastError = error;
       console.error('❌ Gemini failed:', error.message);
 
       // Check for specific error types and provide helpful messages
       const errorMessage = error.message || '';
       if (errorMessage.includes('SERVICE_DISABLED') || errorMessage.includes('PERMISSION_DENIED') || errorMessage.includes('not been used') || errorMessage.includes('it is disabled')) {
-        throw new Error('La API de Generative Language (Gemini) no está habilitada en tu proyecto de Google Cloud. Por favor, habilítala visitando: https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/overview');
+        throw new Error('La API de Generative Language (Gemini) no está habilitada en tu proyecto de Google Cloud. Por favor, habilítala visitando: https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/overview', { cause: error });
       }
       if (errorMessage.includes('API_KEY_INVALID') || errorMessage.includes('invalid')) {
-        throw new Error('La API key de Google no es válida. Por favor, verifica tu GOOGLE_API_KEY en el archivo .env');
+        throw new Error('La API key de Google no es válida. Por favor, verifica tu GOOGLE_API_KEY en el archivo .env', { cause: error });
       }
 
       // Generic error
-      throw new Error(`Error de Gemini API: ${errorMessage}. Por favor, verifica tu configuración.`);
+      throw new Error(`Error de Gemini API: ${errorMessage}. Por favor, verifica tu configuración.`, { cause: error });
     }
   } else if (hasOpenAIKey) {
     // Only OpenAI available (not recommended if quota is exceeded)
@@ -222,7 +220,7 @@ const validateContent = async ({
       const errorMessage = error.message || '';
       console.error('❌ OpenAI failed:', errorMessage);
       if (errorMessage.includes('quota') || errorMessage.includes('insufficient_quota')) {
-        throw new Error('OpenAI quota exceeded. Please configure GOOGLE_API_KEY in your .env file to use Gemini instead.');
+        throw new Error('OpenAI quota exceeded. Please configure GOOGLE_API_KEY in your .env file to use Gemini instead.', { cause: error });
       }
       throw error;
     }
@@ -281,7 +279,7 @@ const validateContent = async ({
       });
 
       if (lines.length > 0) {
-        const ideas = lines.slice(0, metadata.count || 5).map((line, idx) => ({
+        const ideas = lines.slice(0, metadata.count || 5).map((line, _idx) => ({
           title: line.trim().substring(0, 80),
           description: line.trim(),
           keyPoints: []
@@ -343,7 +341,7 @@ const validateContent = async ({
       plagiarismRisk: parsed.plagiarismRisk ?? 'low',
       improvedText: parsed.improvedText ?? null,
     };
-  } catch (error) {
+  } catch (_error) {
     // If parsing fails, return raw response
     return {
       improvedText: response.trim(),

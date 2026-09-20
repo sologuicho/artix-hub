@@ -133,7 +133,7 @@ exports.getBlogPost = async (req, res) => {
 // Create blog post
 exports.createBlogPost = async (req, res) => {
   try {
-    const { title, content, category, coverUrl, imageUrl, videoUrl, documents, mentions, publishAsArtixResearch } = req.body;
+    const { title, content, category, tags, coverUrl, imageUrl, videoUrl, documents, mentions, publishAsArtixResearch } = req.body;
     const userId = req.user.id;
     
     // Only admin users can publish as Artix Research
@@ -173,7 +173,7 @@ exports.createBlogPost = async (req, res) => {
     }
 
     // Extract user IDs from mentions if they're usernames
-    let mentionIds = [];
+    const mentionIds = [];
     if (mentions && Array.isArray(mentions)) {
       for (const mention of mentions) {
         if (typeof mention === 'string' && !mention.startsWith('@')) {
@@ -257,10 +257,10 @@ exports.updateBlogPost = async (req, res) => {
     }
 
     // Process mentions if provided
-    let mentionIds = [];
+    const mentionIds = [];
     if (mentions && Array.isArray(mentions) && mentions.length > 0) {
       for (const mention of mentions) {
-        if (typeof mention === 'string' && mention.length > 0) {
+        if (typeof mention === 'string' && !mention.startsWith('@') && mention.length > 0) {
           const user = await prisma.user.findUnique({
             where: { username: mention },
             select: { id: true }

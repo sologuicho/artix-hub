@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { BACKEND_URL } from '../config/client';
 
@@ -60,7 +60,7 @@ const UserMentionInput = ({ value, onChange, placeholder = 'Mencionar a alguien.
   const removeMention = (userId) => {
     setSelectedUsers(prev => prev.filter(id => id !== userId));
     // Remove mention from text
-    const newValue = value.replace(new RegExp(`@[^\\s]+`, 'g'), (match) => {
+    const newValue = value.replace(new RegExp(`@[^\\s]+`, 'g'), (_match) => {
       // This is a simplified version - you might want to track mentions better
       return '';
     });

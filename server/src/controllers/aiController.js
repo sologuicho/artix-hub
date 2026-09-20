@@ -111,7 +111,7 @@ exports.generateIdeas = async (req, res) => {
         } else {
           // Try to parse as plain text and create ideas
           const lines = textToParse.split('\n').filter(line => line.trim() && line.length > 10);
-          ideas = lines.slice(0, count).map((line, idx) => ({
+          ideas = lines.slice(0, count).map((line, _idx) => ({
             title: line.trim().substring(0, 80),
             description: line.trim(),
             keyPoints: []

@@ -47,7 +47,8 @@ export function useEventLobby(eventId, enabled = true) {
         s.on('lobby:live', (info) => setLiveInfo(info));
         s.on('stream:broadcaster-online', ({ broadcasterId: bid }) => setBroadcasterId(bid));
         s.on('stream:ended', () => setBroadcasterId(null));
-      } catch (_) {}
+      } catch (_) { // intentional
+      }
     };
 
     connect();

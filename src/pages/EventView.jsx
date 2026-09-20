@@ -75,7 +75,8 @@ const EventView = () => {
       const res = await fetch(`${BACKEND_URL}/api/events/${id}`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) { setEvent(data.event); fetchRepostCount(); checkRepostStatus(); }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setLoading(false); }
   };
 
@@ -94,7 +95,8 @@ const EventView = () => {
         if (data.waitlisted) { setWaitlisted(true); setWaitlistPosition(data.position); }
         else { setRegistered(true); setReminderEnabled(true); fetchEvent(); }
       }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setRegisterLoading(false); }
   };
 
@@ -106,7 +108,8 @@ const EventView = () => {
       });
       const data = await res.json();
       if (data.ok) { setRegistered(false); setReminderEnabled(false); fetchEvent(); }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const handleToggleReminder = async (reminderType) => {
@@ -120,7 +123,8 @@ const EventView = () => {
       });
       const data = await res.json();
       if (data.ok) setReminderEnabled(!reminderEnabled);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const fetchRepostCount = async () => {
@@ -128,7 +132,8 @@ const EventView = () => {
       const res = await fetch(`${BACKEND_URL}/api/repost/counts?eventId=${id}`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setRepostCount(data.count);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const checkRepostStatus = async () => {
@@ -137,7 +142,8 @@ const EventView = () => {
       const res = await fetch(`${BACKEND_URL}/api/repost/check?eventId=${id}`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setReposted(data.reposted);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const handleRepost = async () => {

@@ -277,7 +277,7 @@ const TABS = ['En vivo', 'Próximo', 'Grabado'];
 const TOPICS_FIXED = ['Todos', 'Conferencia', 'Taller', 'Charla', 'Grupo de lectura', 'Defensa'];
 
 export default function Events() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [allEvents, setAllEvents] = useState([]);

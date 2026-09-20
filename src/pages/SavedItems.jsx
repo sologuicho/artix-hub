@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Bookmark, FileText, Calendar, MessageSquare, BookOpen, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -22,7 +22,6 @@ const TYPE_ICON = { article: FileText, research: BookOpen, post: MessageSquare, 
 
 const SavedItems = () => {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const [savedItems, setSavedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');

@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
-import { useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 const PremiumPageLayout = ({ children, title, subtitle, className }) => {

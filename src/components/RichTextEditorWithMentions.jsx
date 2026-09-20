@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import ReactQuill, { Quill } from 'react-quill';
+import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 import { BACKEND_URL } from '../config/client';
@@ -173,36 +173,6 @@ const RichTextEditorWithMentions = ({
     }
   }, [showDropdown]);
 
-  // Handle keyboard navigation - only when editor has focus
-  const handleKeyDown = useCallback((e) => {
-    // Only handle keys if dropdown is open and editor has focus
-    if (!showDropdown || users.length === 0) return;
-
-    // Check if the event is coming from the editor
-    if (!quillRef.current) return;
-    const quill = quillRef.current.getEditor();
-    if (!quill || !quill.hasFocus()) return;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      e.stopPropagation();
-      setSelectedUserIndex(prev => (prev + 1) % users.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      e.stopPropagation();
-      setSelectedUserIndex(prev => (prev - 1 + users.length) % users.length);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      e.stopPropagation();
-      if (users[selectedUserIndex]) {
-        insertMention(users[selectedUserIndex]);
-      }
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      setShowDropdown(false);
-    }
-  }, [showDropdown, users, selectedUserIndex, insertMention]);
 
   const modules = useMemo(() => ({
     toolbar: {

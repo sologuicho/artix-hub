@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Sparkles, X, Send, Bot, Wand2, Lightbulb, GraduationCap, Copy, Check, RefreshCw, Maximize2, Minimize2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
@@ -9,7 +9,7 @@ const AIAssistantOverlay = ({ isOpen, onClose, contextData = {}, onInsertText })
     const [prompt, setPrompt] = useState('');
     const [response, setResponse] = useState('');
     const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState('chat'); // chat, improve, ideas
+    // mode state removed — not used in this component
     const [isExpanded, setIsExpanded] = useState(false);
     const location = useLocation();
     const inputRef = useRef(null);
@@ -27,7 +27,7 @@ const AIAssistantOverlay = ({ isOpen, onClose, contextData = {}, onInsertText })
         try {
             const getCsrfToken = () => {
                 const cookies = document.cookie.split(';');
-                for (let cookie of cookies) {
+                for (const cookie of cookies) {
                     const [name, value] = cookie.trim().split('=');
                     if (name === 'csrf') return value;
                 }

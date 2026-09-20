@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "prisma": "prisma"
   },
   "dependencies": {
@@ -35,6 +38,7 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.22",
-    "prisma": "^5.0.0"
+    "prisma": "^5.0.0",
+    "vitest": "^4.1.11"
   }
 }

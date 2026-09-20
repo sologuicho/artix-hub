@@ -145,7 +145,7 @@ const TagSelector = ({
                 }}
               >
                 <Plus size={11} style={{ flexShrink: 0 }} />
-                Crear "{searchQuery.trim()}"
+                Crear {'"'}{searchQuery.trim()}{'"'}
               </button>
             )}
           </div>

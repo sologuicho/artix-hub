@@ -1,4 +1,4 @@
-import { Lock, User, Calendar } from 'lucide-react';
+import { User, Calendar } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import ContentActions from './ContentActions';
 import { useAuth } from '../context/AuthContext';

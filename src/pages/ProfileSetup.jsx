@@ -1,8 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, User, MapPin, Briefcase, FileText, Tag } from 'lucide-react';
+import { Upload, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/LanguageContext';
 import useAIValidation from '../hooks/useAIValidation';
 import AIValidationPanel from '../components/AIValidationPanel';
 import { BACKEND_URL } from '../config/client';
@@ -25,8 +24,7 @@ const interestsOptions = [
 ];
 
 const ProfileSetup = () => {
-  const { user, updateUser, checkAuth } = useAuth();
-  const { t } = useLanguage();
+  const { user, checkAuth } = useAuth();
   const navigate = useNavigate();
   const profileValidation = useAIValidation('profile');
   const fileInputRef = useRef(null);
@@ -34,7 +32,7 @@ const ProfileSetup = () => {
   // Get CSRF token from cookie
   const getCsrfToken = () => {
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'csrf') {
         return value;

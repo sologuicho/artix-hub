@@ -13,7 +13,7 @@ export const callOpenAI = async ({ prompt, model = 'gpt-4o-mini' }) => {
    *
    * The server will load this value via process.env.OPENAI_API_KEY.
    */
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
   if (!apiKey) {
     throw new Error(

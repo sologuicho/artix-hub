@@ -303,7 +303,7 @@ app.use((req, res) => {
 startEmailReminderJob();
 
 // Global error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   logger.error({ err }, 'Unhandled error');
   res.status(err.status || 500).json({
     ok: false,

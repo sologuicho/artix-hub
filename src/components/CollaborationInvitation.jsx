@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, Check, XCircle, Users } from 'lucide-react';
+import { Check, XCircle, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNotifications } from '../context/NotificationContext';
 
 import { BACKEND_URL } from '../config/client';
 
@@ -38,7 +37,7 @@ const CollaborationInvitation = ({ type, itemId, onUpdate }) => {
     try {
       const getCsrfToken = () => {
         const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
+        for (const cookie of cookies) {
           const [name, value] = cookie.trim().split('=');
           if (name === 'csrf') return value;
         }

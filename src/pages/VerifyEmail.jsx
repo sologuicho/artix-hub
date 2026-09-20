@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { CheckCircle, XCircle, Loader } from 'lucide-react';
+import { XCircle, Loader } from 'lucide-react';
 import { BACKEND_URL } from '../config/client';
 import { useAuth } from '../context/AuthContext';
 

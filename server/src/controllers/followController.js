@@ -35,7 +35,6 @@ exports.toggleFollow = async (req, res) => {
       });
 
       // Send notification
-      const user = await prisma.user.findUnique({ where: { id: userId } });
       await createNotification(
         userId,
         'follow',

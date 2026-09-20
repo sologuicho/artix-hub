@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 const HeroVideo = ({ onScroll }) => {
@@ -9,7 +9,7 @@ const HeroVideo = ({ onScroll }) => {
   const videoRef = useRef(null);
   const heroRef = useRef(null);
   const contentRef = useRef(null);
-  const [scrollY, setScrollY] = useState(0);
+  const [, setScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {

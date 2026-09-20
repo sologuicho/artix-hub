@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { BACKEND_URL } from '../config/client';
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -255,7 +254,7 @@ const ArticleCell = ({ article, isRight }) => {
         </div>
         <span style={{ fontSize: 12.5, color: '#c8c6c1' }}>{article.author?.name || 'Anónimo'}</span>
         <span style={{ flex: 1 }} />
-        {article.viewCount != null && (
+        {article.viewCount !== null && (
           <span
             style={{
               fontFamily: "'IBM Plex Mono', monospace",
@@ -273,9 +272,6 @@ const ArticleCell = ({ article, isRight }) => {
 
 /* ─── Main page ────────────────────────────────────────────────────────────── */
 const Articles = () => {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-
   const [articles, setArticles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -312,7 +308,8 @@ const Articles = () => {
           setArticles(reset ? list : prev => [...prev, ...list]);
           setHasMore(list.length === LIMIT);
         }
-      } catch (_) {}
+      } catch (_) { // intentional
+      }
       finally { setLoading(false); }
     },
     [activeCategory]

@@ -20,7 +20,7 @@ const applyLimiter = rateLimit({
 // POST /api/student/apply
 router.post('/apply', protect, verifyCsrf, applyLimiter, async (req, res) => {
   try {
-    const { institutionalEmail, documentBase64, documentMimeType } = req.body;
+    const { institutionalEmail, documentBase64 } = req.body;
     const userId = req.user.id;
 
     const existing = await prisma.studentVerification.findUnique({ where: { userId } });
@@ -48,7 +48,7 @@ router.post('/apply', protect, verifyCsrf, applyLimiter, async (req, res) => {
         }),
       ]);
 
-      try { await emailService.sendStudentApproved(req.user); } catch (_) {}
+      try { await emailService.sendStudentApproved(req.user); } catch (_) { /* intentional */ }
 
       return res.json({ ok: true, autoApproved: true, message: 'Tu plan Estudiante está activo.' });
     }

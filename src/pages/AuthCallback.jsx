@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config/client';
 
 const MONO = "'IBM Plex Mono', monospace";
-const SANS = "'IBM Plex Sans', sans-serif";
 
 const AuthCallback = () => {
   const navigate = useNavigate();

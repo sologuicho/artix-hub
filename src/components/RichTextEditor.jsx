@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -52,7 +52,7 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Escribe aquí...', cla
           backgroundColor: 'transparent',
         }}
       />
-      <style jsx global>{`
+      <style>{`
         .rich-text-editor .ql-container {
           min-height: 200px;
           font-size: 16px;

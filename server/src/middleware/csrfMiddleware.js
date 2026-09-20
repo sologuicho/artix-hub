@@ -1,3 +1,5 @@
+const logger = require('../lib/logger');
+
 // Double Submit Cookie CSRF protection
 // Server sets a 'csrf' cookie readable by JS; client must send that value in header 'x-csrf-token'
 function verifyCsrf(req, res, next) {
@@ -8,7 +10,7 @@ function verifyCsrf(req, res, next) {
     if (csrfCookie !== csrfHeader) return res.status(403).json({ message: 'CSRF token invalid' });
     next();
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, '[csrfMiddleware] CSRF validation error');
     return res.status(403).json({ message: 'CSRF error' });
   }
 }

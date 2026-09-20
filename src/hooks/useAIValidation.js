@@ -19,7 +19,7 @@ const useAIValidation = (endpoint) => {
     // Get CSRF token
     const getCsrfToken = () => {
       const cookies = document.cookie.split(';');
-      for (let cookie of cookies) {
+      for (const cookie of cookies) {
         const [name, value] = cookie.trim().split('=');
         if (name === 'csrf') return value;
       }

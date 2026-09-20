@@ -77,8 +77,8 @@ const CommentSection = ({ postId, articleId, researchId, discussionId, eventId }
       const res  = await fetch(`${BACKEND_URL}/api/comments?${p}`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setComments(data.comments || []);
-    } catch (_) {}
-    finally { setLoading(false); }
+    } catch (_) { // intentional
+    } finally { setLoading(false); }
   };
 
   const postComment = async (extra) => {

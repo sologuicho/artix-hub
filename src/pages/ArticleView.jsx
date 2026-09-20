@@ -80,8 +80,6 @@ const ArticleView = () => {
   const [activeSection, setActiveSection] = useState('');
   const articleRef = useRef(null);
 
-  /* comment count */
-  const [commentCount, setCommentCount] = useState(0);
 
   /* ── Fetch article ── */
   const fetchArticle = useCallback(async () => {
@@ -98,7 +96,8 @@ const ArticleView = () => {
         setToc(sections);
         if (sections.length > 0) setActiveSection(sections[0].id);
       }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setLoading(false); }
   }, [id]);
 
@@ -795,7 +794,7 @@ const ArticleView = () => {
               >
                 {rt} min lectura
               </span>
-              {article.viewCount != null && (
+              {article.viewCount !== null && (
                 <>
                   <span style={{ color: '#3a3a36' }}>·</span>
                   <span

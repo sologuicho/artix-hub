@@ -128,7 +128,7 @@ const SearchResults = () => {
               Sin resultados
             </p>
             <p style={{ fontFamily: SANS, fontSize: '0.9375rem', color: 'var(--muted)' }}>
-              No se encontró nada para "{q}"
+              No se encontró nada para &quot;{q}&quot;
             </p>
           </div>
         )}

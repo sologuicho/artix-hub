@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { User, MapPin, Briefcase, Users, Heart, MessageSquare, Settings, Search } from 'lucide-react';
+import { User, MapPin, Briefcase, Heart, MessageSquare, Settings, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CommentSection from '../components/CommentSection';
 import { BACKEND_URL } from '../config/client';
@@ -67,7 +67,8 @@ const UserProfile = () => {
       const res  = await fetch(`${BACKEND_URL}/api/users/${userId}`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) { setProfileUser(data.user); setStats(data.stats || stats); }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setLoading(false); }
   };
 
@@ -77,7 +78,8 @@ const UserProfile = () => {
       const res  = await fetch(`${BACKEND_URL}/api/follow/${userId}/check`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setFollowing(data.following || false);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setCheckingFollow(false); }
   };
 
@@ -146,7 +148,8 @@ const UserProfile = () => {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setContentLoaded(true); }
   };
 
@@ -162,7 +165,8 @@ const UserProfile = () => {
       });
       const data = await res.json();
       if (data.ok) setReactions(prev => ({ ...prev, [postId]: data.reactions }));
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const formatDate = (d) => new Date(d).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });

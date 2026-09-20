@@ -45,7 +45,8 @@ const SuggestionCard = ({ user, onFollow }) => {
         setFollowing(data.following);
         if (data.following) onFollow?.(user.id);
       }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setLoading(false); }
   };
 
@@ -129,7 +130,8 @@ const FeedPage = () => {
         setPagination({ page: data.pagination.page, hasMore: data.pagination.hasMore });
         setIsPersonalized(data.isPersonalized);
       }
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
     finally { setLoading(false); setLoadingMore(false); }
   };
 
@@ -138,7 +140,8 @@ const FeedPage = () => {
       const res = await fetch(`${BACKEND_URL}/api/feed/suggestions`, { credentials: 'include' });
       const data = await res.json();
       if (data.ok) setSuggestions(data.suggestions);
-    } catch (_) {}
+    } catch (_) { // intentional
+    }
   };
 
   const handleFollowUser = (userId) => setSuggestions(prev => prev.filter(u => u.id !== userId));
