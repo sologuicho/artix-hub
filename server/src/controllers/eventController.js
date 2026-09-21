@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const logger = require('../lib/logger');
 
 // Helper: check if user can manage event content (creator, admin, or Artix Research proxy)
 const canManageContent = async (creatorId, userId, userUsername, userRole) => {
@@ -39,7 +40,7 @@ exports.getCategories = async (req, res) => {
 
     res.json({ ok: true, categories: typeList });
   } catch (error) {
-    console.error('Error fetching event types:', error);
+    logger.error({ err: error }, '[eventController] Error fetching event types');
     res.status(500).json({ ok: false, message: 'Failed to fetch event types' });
   }
 };
@@ -109,7 +110,7 @@ exports.getAllEvents = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching events:', error);
+    logger.error({ err: error }, '[eventController] Error fetching events');
     res.status(500).json({ ok: false, message: 'Failed to fetch events' });
   }
 };
@@ -151,7 +152,7 @@ exports.getEvent = async (req, res) => {
 
     res.json({ ok: true, event });
   } catch (error) {
-    console.error('Error fetching event:', error);
+    logger.error({ err: error }, '[eventController] Error fetching event');
     res.status(500).json({ ok: false, message: 'Failed to fetch event' });
   }
 };
@@ -227,7 +228,7 @@ exports.createEvent = async (req, res) => {
 
     res.status(201).json({ ok: true, event });
   } catch (error) {
-    console.error('Error creating event:', error);
+    logger.error({ err: error }, '[eventController] Error creating event');
     res.status(500).json({ ok: false, message: 'Failed to create event' });
   }
 };
@@ -279,7 +280,7 @@ exports.updateEvent = async (req, res) => {
 
     res.json({ ok: true, event });
   } catch (error) {
-    console.error('Error updating event:', error);
+    logger.error({ err: error }, '[eventController] Error updating event');
     res.status(500).json({ ok: false, message: 'Failed to update event' });
   }
 };
@@ -317,7 +318,7 @@ exports.archiveEvent = async (req, res) => {
 
     res.json({ ok: true, event, message: archived ? 'Event archived' : 'Event unarchived' });
   } catch (error) {
-    console.error('Error archiving event:', error);
+    logger.error({ err: error }, '[eventController] Error archiving event');
     res.status(500).json({ ok: false, message: 'Failed to archive event' });
   }
 };
@@ -342,7 +343,7 @@ exports.deleteEvent = async (req, res) => {
     await prisma.event.delete({ where: { id } });
     res.json({ ok: true, message: 'Event deleted successfully' });
   } catch (error) {
-    console.error('Error deleting event:', error);
+    logger.error({ err: error }, '[eventController] Error deleting event');
     res.status(500).json({ ok: false, message: 'Failed to delete event' });
   }
 };
@@ -411,12 +412,12 @@ exports.registerForEvent = async (req, res) => {
 
     const emailService = require('../services/emailService');
     emailService.sendEventRegistration(registration.user, registration.event).catch(err => {
-      console.error('Error sending event registration email:', err);
+      logger.error({ err }, '[eventController] Error sending event registration email');
     });
 
     res.status(201).json({ ok: true, registration });
   } catch (error) {
-    console.error('Error registering for event:', error);
+    logger.error({ err: error }, '[eventController] Error registering for event');
     res.status(500).json({ ok: false, message: 'Failed to register for event' });
   }
 };
@@ -458,7 +459,7 @@ exports.unregisterFromEvent = async (req, res) => {
 
     res.json({ ok: true, message: 'Registro cancelado' });
   } catch (error) {
-    console.error('Error unregistering:', error);
+    logger.error({ err: error }, '[eventController] Error unregistering');
     res.status(500).json({ ok: false, message: 'Failed to unregister' });
   }
 };
@@ -511,7 +512,7 @@ exports.setLive = async (req, res) => {
 
     res.json({ ok: true, event: updated });
   } catch (err) {
-    console.error('Error setting live:', err);
+    logger.error({ err }, '[eventController] Error setting live');
     res.status(500).json({ ok: false, message: 'Error' });
   }
 };

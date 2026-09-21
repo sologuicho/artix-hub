@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const logger = require('../lib/logger');
 
 const feedCache = new Map(); // key: userId → { items: [], timestamp: number }
 const CACHE_TTL = 2 * 60 * 1000;
@@ -198,7 +199,7 @@ exports.getFeed = async (req, res) => {
       isPersonalized,
     });
   } catch (error) {
-    console.error('[feedController] getFeed:', error);
+    logger.error({ err: error }, '[feedController] getFeed');
     res.status(500).json({ ok: false, message: 'Failed to fetch feed' });
   }
 };
@@ -235,7 +236,7 @@ exports.getSuggestions = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error('[feedController] getSuggestions:', error);
+    logger.error({ err: error }, '[feedController] getSuggestions');
     res.status(500).json({ ok: false, message: 'Failed to fetch suggestions' });
   }
 };

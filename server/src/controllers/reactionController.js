@@ -1,5 +1,6 @@
 const prisma = require('../prismaClient');
 const { createNotification } = require('./notificationController');
+const logger = require('../lib/logger');
 
 // Toggle reaction on post, article, or research
 exports.toggleReaction = async (req, res) => {
@@ -59,7 +60,7 @@ exports.toggleReaction = async (req, res) => {
 
     return res.json({ ok: true, reacted: true, reaction });
   } catch (error) {
-    console.error('Error toggling reaction:', error);
+    logger.error({ err: error }, '[reactionController] Error toggling reaction');
     res.status(500).json({ ok: false, message: 'Failed to toggle reaction' });
   }
 };
@@ -93,7 +94,7 @@ exports.getReactionCounts = async (req, res) => {
 
     res.json({ ok: true, counts });
   } catch (error) {
-    console.error('Error getting reaction counts:', error);
+    logger.error({ err: error }, '[reactionController] Error getting reaction counts');
     res.status(500).json({ ok: false, message: 'Failed to get reaction counts' });
   }
 };
@@ -113,7 +114,7 @@ exports.getUserReactions = async (req, res) => {
 
     res.json({ ok: true, reactions });
   } catch (error) {
-    console.error('Error getting user reactions:', error);
+    logger.error({ err: error }, '[reactionController] Error getting user reactions');
     res.status(500).json({ ok: false, message: 'Failed to get user reactions' });
   }
 };

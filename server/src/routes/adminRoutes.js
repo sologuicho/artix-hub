@@ -5,6 +5,7 @@ const { protect } = require('../middleware/authMiddleware');
 const { checkAdmin } = require('../middleware/checkAdmin');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const emailService = require('../services/emailService');
+const logger = require('../lib/logger');
 
 // Base middlewares for all admin routes: protect + checkAdmin
 router.use(protect);
@@ -42,7 +43,7 @@ router.get('/stats', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Error fetching admin stats:', err);
+    logger.error({ err }, '[adminRoutes] Error fetching admin stats');
     res.status(500).json({ ok: false, message: 'Failed to fetch stats' });
   }
 });
@@ -97,7 +98,7 @@ router.get('/users', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Error fetching users:', err);
+    logger.error({ err }, '[adminRoutes] Error fetching users');
     res.status(500).json({ ok: false, message: 'Failed to fetch users' });
   }
 });
@@ -122,7 +123,7 @@ router.patch('/users/:id/tier', verifyCsrf, async (req, res) => {
 
     res.json({ ok: true, user: updatedUser });
   } catch (err) {
-    console.error('Error updating user tier:', err);
+    logger.error({ err }, '[adminRoutes] Error updating user tier');
     res.status(500).json({ ok: false, message: 'Failed to update user tier' });
   }
 });
@@ -145,7 +146,7 @@ router.patch('/users/:id/role', verifyCsrf, async (req, res) => {
 
     res.json({ ok: true, user: updatedUser });
   } catch (err) {
-    console.error('Error updating user role:', err);
+    logger.error({ err }, '[adminRoutes] Error updating user role');
     res.status(500).json({ ok: false, message: 'Failed to update user role' });
   }
 });
@@ -173,7 +174,7 @@ router.patch('/users/:id/ban', verifyCsrf, async (req, res) => {
 
     res.json({ ok: true, user: updatedUser });
   } catch (err) {
-    console.error('Error updating user ban status:', err);
+    logger.error({ err }, '[adminRoutes] Error updating user ban status');
     res.status(500).json({ ok: false, message: 'Failed to update user ban status' });
   }
 });
@@ -206,7 +207,7 @@ router.get('/content', async (req, res) => {
 
     res.json({ ok: true, content, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) {
-    console.error('Error fetching admin content:', err);
+    logger.error({ err }, '[adminRoutes] Error fetching admin content');
     res.status(500).json({ ok: false, message: 'Failed to fetch content' });
   }
 });
@@ -237,7 +238,7 @@ router.delete('/content/:type/:id', verifyCsrf, async (req, res) => {
     await prisma[def.model].delete({ where: { id } });
     res.json({ ok: true, message: 'Contenido eliminado correctamente' });
   } catch (err) {
-    console.error('Error deleting content:', err);
+    logger.error({ err }, '[adminRoutes] Error deleting content');
     res.status(500).json({ ok: false, message: 'Failed to delete content' });
   }
 });
@@ -268,7 +269,7 @@ router.get('/student-verifications', async (req, res) => {
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) || 1 },
     });
   } catch (err) {
-    console.error('Error fetching student verifications:', err);
+    logger.error({ err }, '[adminRoutes] Error fetching student verifications');
     res.status(500).json({ ok: false, message: 'Failed to fetch student verifications' });
   }
 });
@@ -292,7 +293,7 @@ router.post('/student-verifications/:id/approve', verifyCsrf, async (req, res) =
 
     res.json({ ok: true, message: 'Verificación aprobada.' });
   } catch (err) {
-    console.error('Error approving student verification:', err);
+    logger.error({ err }, '[adminRoutes] Error approving student verification');
     res.status(500).json({ ok: false, message: 'Failed to approve verification' });
   }
 });
@@ -317,7 +318,7 @@ router.post('/student-verifications/:id/reject', verifyCsrf, async (req, res) =>
 
     res.json({ ok: true, message: 'Verificación rechazada.' });
   } catch (err) {
-    console.error('Error rejecting student verification:', err);
+    logger.error({ err }, '[adminRoutes] Error rejecting student verification');
     res.status(500).json({ ok: false, message: 'Failed to reject verification' });
   }
 });

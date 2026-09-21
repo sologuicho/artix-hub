@@ -6,6 +6,7 @@ const prisma = require('../prismaClient');
 const { protect } = require('../middleware/authMiddleware');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const { stripe } = require('../config/payments');
+const logger = require('../lib/logger');
 
 // DESHABILITADO POR SEGURIDAD — este endpoint permitía que cualquier usuario autenticado
 // cambiara su subscriptionTier a cualquier nivel sin verificar pago.
@@ -74,7 +75,7 @@ router.get('/status', protect, async (req, res) => {
       cancelAtPeriodEnd: subscription.cancel_at_period_end
     });
   } catch (err) {
-    console.error('[Subscription] Error obteniendo status:', err);
+    logger.error({ err }, '[Subscription] Error obteniendo status');
     res.status(500).json({ ok: false, message: err.message || 'Error al obtener estado de suscripción' });
   }
 });
@@ -106,7 +107,7 @@ router.post('/cancel', protect, verifyCsrf, async (req, res) => {
       cancelAtPeriodEnd: true
     });
   } catch (err) {
-    console.error('[Subscription] Error cancelando suscripción:', err);
+    logger.error({ err }, '[Subscription] Error cancelando suscripción');
     res.status(500).json({ ok: false, message: err.message || 'Error al cancelar suscripción' });
   }
 });
@@ -135,7 +136,7 @@ router.post('/reactivate', protect, verifyCsrf, async (req, res) => {
       message: 'Suscripción reactivada'
     });
   } catch (err) {
-    console.error('[Subscription] Error reactivando suscripción:', err);
+    logger.error({ err }, '[Subscription] Error reactivando suscripción');
     res.status(500).json({ ok: false, message: err.message || 'Error al reactivar suscripción' });
   }
 });
@@ -172,7 +173,7 @@ router.get('/invoices', protect, async (req, res) => {
 
     res.json({ ok: true, invoices });
   } catch (err) {
-    console.error('[Subscription] Error fetching invoices:', err);
+    logger.error({ err }, '[Subscription] Error fetching invoices');
     res.status(500).json({ ok: false, message: err.message || 'Error al obtener facturas' });
   }
 });

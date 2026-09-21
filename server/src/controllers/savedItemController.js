@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const logger = require('../lib/logger');
 
 // Save item (article, research, post, or event)
 exports.saveItem = async (req, res) => {
@@ -37,7 +38,7 @@ exports.saveItem = async (req, res) => {
       return res.json({ ok: true, saved: true, savedItem });
     }
   } catch (error) {
-    console.error('Error saving item:', error);
+    logger.error({ err: error }, '[savedItemController] Error saving item');
     res.status(500).json({ ok: false, message: 'Failed to save item' });
   }
 };
@@ -104,7 +105,7 @@ exports.getSavedItems = async (req, res) => {
 
     res.json({ ok: true, savedItems });
   } catch (error) {
-    console.error('Error fetching saved items:', error);
+    logger.error({ err: error }, '[savedItemController] Error fetching saved items');
     res.status(500).json({ ok: false, message: 'Failed to fetch saved items' });
   }
 };
@@ -125,7 +126,7 @@ exports.checkSaved = async (req, res) => {
 
     res.json({ ok: true, saved: !!saved });
   } catch (error) {
-    console.error('Error checking saved status:', error);
+    logger.error({ err: error }, '[savedItemController] Error checking saved status');
     res.status(500).json({ ok: false, message: 'Failed to check saved status' });
   }
 };

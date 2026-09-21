@@ -1,5 +1,6 @@
 
 const prisma = require('../prismaClient');
+const logger = require('../lib/logger');
 
 const updateProgress = async (req, res) => {
     try {
@@ -38,7 +39,7 @@ const updateProgress = async (req, res) => {
 
         res.json(progress);
     } catch (error) {
-        console.error('Error updating reading progress:', error);
+        logger.error({ err: error }, '[readingProgressController] Error updating reading progress');
         res.status(500).json({ message: 'Error updating progress' });
     }
 };
@@ -73,7 +74,7 @@ const getProgress = async (req, res) => {
 
         res.json(allProgress);
     } catch (error) {
-        console.error('Error getting reading progress:', error);
+        logger.error({ err: error }, '[readingProgressController] Error getting reading progress');
         res.status(500).json({ message: 'Error fetching progress' });
     }
 };
@@ -161,7 +162,7 @@ const getRecommendations = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error getting recommendations:', error);
+        logger.error({ err: error }, '[readingProgressController] Error getting recommendations');
         res.status(500).json({ message: 'Error getting recommendations' });
     }
 };

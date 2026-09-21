@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const logger = require('../lib/logger');
 
 // Global search across all content types
 exports.globalSearch = async (req, res) => {
@@ -214,7 +215,7 @@ exports.globalSearch = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error in global search:', error);
+    logger.error({ err: error }, '[searchController] Error in global search');
     res.status(500).json({ ok: false, message: 'Failed to perform search' });
   }
 };

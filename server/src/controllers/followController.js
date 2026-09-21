@@ -1,5 +1,6 @@
 const prisma = require('../prismaClient');
 const { createNotification } = require('./notificationController');
+const logger = require('../lib/logger');
 
 // Follow/Unfollow user
 exports.toggleFollow = async (req, res) => {
@@ -46,7 +47,7 @@ exports.toggleFollow = async (req, res) => {
       return res.json({ ok: true, following: true, follow });
     }
   } catch (error) {
-    console.error('Error toggling follow:', error);
+    logger.error({ err: error }, '[followController] Error toggling follow');
     res.status(500).json({ ok: false, message: 'Failed to toggle follow' });
   }
 };
@@ -77,7 +78,7 @@ exports.getFollowers = async (req, res) => {
 
     res.json({ ok: true, followers: followers.map(f => f.follower) });
   } catch (error) {
-    console.error('Error fetching followers:', error);
+    logger.error({ err: error }, '[followController] Error fetching followers');
     res.status(500).json({ ok: false, message: 'Failed to fetch followers' });
   }
 };
@@ -108,7 +109,7 @@ exports.getFollowing = async (req, res) => {
 
     res.json({ ok: true, following: following.map(f => f.following) });
   } catch (error) {
-    console.error('Error fetching following:', error);
+    logger.error({ err: error }, '[followController] Error fetching following');
     res.status(500).json({ ok: false, message: 'Failed to fetch following' });
   }
 };
@@ -130,7 +131,7 @@ exports.checkFollow = async (req, res) => {
 
     res.json({ ok: true, following: !!follow });
   } catch (error) {
-    console.error('Error checking follow status:', error);
+    logger.error({ err: error }, '[followController] Error checking follow status');
     res.status(500).json({ ok: false, message: 'Failed to check follow status' });
   }
 };

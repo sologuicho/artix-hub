@@ -1,5 +1,6 @@
 const prisma = require('../prismaClient');
 const { createNotification } = require('./notificationController');
+const logger = require('../lib/logger');
 
 // Helper function to check if user can manage content (including Artix Research content for luisflores01)
 const canManageContent = async (authorId, userId, userUsername, userRole) => {
@@ -88,7 +89,7 @@ exports.inviteArticleCollaborator = async (req, res) => {
 
     res.status(201).json({ ok: true, collaboration });
   } catch (error) {
-    console.error('Error inviting collaborator:', error);
+    logger.error({ err: error }, '[collaborationController] Error inviting collaborator');
     res.status(500).json({ ok: false, message: 'Failed to invite collaborator' });
   }
 };
@@ -133,7 +134,7 @@ exports.respondToArticleInvitation = async (req, res) => {
 
     res.json({ ok: true });
   } catch (error) {
-    console.error('Error responding to invitation:', error);
+    logger.error({ err: error }, '[collaborationController] Error responding to invitation');
     res.status(500).json({ ok: false, message: 'Failed to respond to invitation' });
   }
 };
@@ -159,7 +160,7 @@ exports.getArticleCollaborations = async (req, res) => {
 
     res.json({ ok: true, collaborations });
   } catch (error) {
-    console.error('Error fetching collaborations:', error);
+    logger.error({ err: error }, '[collaborationController] Error fetching collaborations');
     res.status(500).json({ ok: false, message: 'Failed to fetch collaborations' });
   }
 };
@@ -221,7 +222,7 @@ exports.inviteEventCollaborator = async (req, res) => {
 
     res.status(201).json({ ok: true, collaboration });
   } catch (error) {
-    console.error('Error inviting collaborator:', error);
+    logger.error({ err: error }, '[collaborationController] Error inviting collaborator');
     res.status(500).json({ ok: false, message: 'Failed to invite collaborator' });
   }
 };
@@ -265,7 +266,7 @@ exports.respondToEventInvitation = async (req, res) => {
 
     res.json({ ok: true });
   } catch (error) {
-    console.error('Error responding to invitation:', error);
+    logger.error({ err: error }, '[collaborationController] Error responding to invitation');
     res.status(500).json({ ok: false, message: 'Failed to respond to invitation' });
   }
 };
@@ -291,7 +292,7 @@ exports.getEventCollaborations = async (req, res) => {
 
     res.json({ ok: true, collaborations });
   } catch (error) {
-    console.error('Error fetching collaborations:', error);
+    logger.error({ err: error }, '[collaborationController] Error fetching collaborations');
     res.status(500).json({ ok: false, message: 'Failed to fetch collaborations' });
   }
 };

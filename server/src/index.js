@@ -106,7 +106,6 @@ app.get('/', (req, res) => {
             <div class="endpoint"><span class="method">GET</span> /health - Estado del servidor</div>
             <div class="endpoint"><span class="method">GET</span> /auth - Rutas de autenticación OAuth</div>
             <div class="endpoint"><span class="method">GET</span> /me - Información del usuario (requiere autenticación)</div>
-            <div class="endpoint"><span class="method">POST</span> /profile/update - Actualizar perfil (requiere autenticación)</div>
             <p style="margin-top: 30px; color: #666; font-size: 14px;">
               <strong>Timestamp:</strong> ${new Date().toISOString()}
             </p>
@@ -126,7 +125,6 @@ app.get('/', (req, res) => {
         events: '/api/events',
         blog: '/api/blog',
         me: '/me (protected)',
-        profile: '/profile/update (protected)'
       },
       timestamp: new Date().toISOString()
     });
@@ -248,45 +246,6 @@ app.put('/api/auth/me', protect, verifyCsrf, async (req, res) => {
       message: errorMessage,
       ...(process.env.NODE_ENV === 'development' && { error: err.stack })
     });
-  }
-});
-
-// Update profile (legacy endpoint)
-app.post('/profile/update', protect, verifyCsrf, async (req, res) => {
-  try {
-    const { name, bio, country, occupation, interests, avatar } = req.body;
-    const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: {
-        ...(name && { name }),
-        ...(bio !== undefined && { bio }),
-        ...(country !== undefined && { country }),
-        ...(occupation !== undefined && { occupation }),
-        ...(interests && { interests }),
-        ...(avatar !== undefined && { avatar }),
-        profileComplete: true
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        name: true,
-        bio: true,
-        avatar: true,
-        country: true,
-        occupation: true,
-        interests: true,
-        profileComplete: true,
-        subscriptionTier: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
-    res.json({ ok: true, user });
-  } catch (error) {
-    logger.error({ err: error }, 'Error updating profile');
-    res.status(500).json({ ok: false, message: 'Failed to update profile' });
   }
 });
 

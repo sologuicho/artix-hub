@@ -46,6 +46,31 @@ jobs:
       - name: Run frontend tests
         run: npm test
 
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+
+      - name: Install backend dependencies
+        run: cd server && npm ci
+
+      - name: Audit backend dependencies
+        run: cd server && npm audit --audit-level=high
+
   test-backend:
     name: Backend Tests
     runs-on: ubuntu-latest

@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const logger = require('../lib/logger');
 
 // Create or update event reminder
 exports.setEventReminder = async (req, res) => {
@@ -71,7 +72,7 @@ exports.setEventReminder = async (req, res) => {
       return res.json({ ok: true, reminder });
     }
   } catch (error) {
-    console.error('Error setting reminder:', error);
+    logger.error({ err: error }, '[reminderController] Error setting reminder');
     res.status(500).json({ ok: false, message: 'Failed to set reminder' });
   }
 };
@@ -98,7 +99,7 @@ exports.removeEventReminder = async (req, res) => {
     await prisma.eventReminder.delete({ where: { id: reminder.id } });
     res.json({ ok: true, message: 'Reminder removed' });
   } catch (error) {
-    console.error('Error removing reminder:', error);
+    logger.error({ err: error }, '[reminderController] Error removing reminder');
     res.status(500).json({ ok: false, message: 'Failed to remove reminder' });
   }
 };
@@ -118,7 +119,7 @@ exports.getEventReminders = async (req, res) => {
 
     res.json({ ok: true, reminders });
   } catch (error) {
-    console.error('Error getting reminders:', error);
+    logger.error({ err: error }, '[reminderController] Error getting reminders');
     res.status(500).json({ ok: false, message: 'Failed to get reminders' });
   }
 };

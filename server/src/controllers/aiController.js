@@ -1,4 +1,5 @@
 const { validateContent } = require('../lib/ai/aiClient');
+const logger = require('../lib/logger');
 
 // Improve selected text
 exports.improveText = async (req, res) => {
@@ -25,7 +26,7 @@ exports.improveText = async (req, res) => {
       qualityScore: result.qualityScore || 0
     });
   } catch (error) {
-    console.error('Error improving text:', error);
+    logger.error({ err: error }, '[aiController] Error improving text');
     res.status(500).json({ ok: false, message: 'Error improving text', details: error.message });
   }
 };
@@ -51,7 +52,7 @@ exports.chat = async (req, res) => {
       reply: result.reply || "I couldn't generate a response."
     });
   } catch (error) {
-    console.error('Error in chat:', error);
+    logger.error({ err: error }, '[aiController] Error in chat');
 
     // Check for quota issues
     const errorMessage = error.message || 'Error desconocido';
@@ -89,7 +90,7 @@ exports.generateIdeas = async (req, res) => {
         mode: 'generate'
       });
     } catch (validateError) {
-      console.error('Error in validateContent:', validateError);
+      logger.error({ err: validateError }, '[aiController] Error in validateContent');
       throw validateError; // Re-throw to be caught by outer catch
     }
 
@@ -118,7 +119,7 @@ exports.generateIdeas = async (req, res) => {
           }));
         }
       } catch (parseError) {
-        console.error('Error parsing ideas:', parseError);
+        logger.error({ err: parseError }, '[aiController] Error parsing ideas');
         // Fallback: create ideas from summary
         const summaryLines = (result.summary || '').split('\n').filter(line => line.trim() && line.length > 10);
         if (summaryLines.length > 0) {
@@ -143,7 +144,7 @@ exports.generateIdeas = async (req, res) => {
       ideas: ideas.slice(0, count)
     });
   } catch (error) {
-    console.error('Error generating ideas:', error);
+    logger.error({ err: error }, '[aiController] Error generating ideas');
     // Provide more detailed error message
     const errorMessage = error.message || 'Error desconocido al generar ideas';
     const isApiKeyError = errorMessage.includes('API_KEY') || errorMessage.includes('Missing');
@@ -211,7 +212,7 @@ exports.getSuggestions = async (req, res) => {
       suggestions: suggestions.slice(0, 5)
     });
   } catch (error) {
-    console.error('Error getting suggestions:', error);
+    logger.error({ err: error }, '[aiController] Error getting suggestions');
     res.status(500).json({ ok: false, message: 'Error getting suggestions', details: error.message });
   }
 };

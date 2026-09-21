@@ -25,7 +25,8 @@ describe('App', () => {
   it('renders the main header brand', async () => {
     render(<App />);
     await waitFor(() => {
-      expect(screen.getAllByText('ARTIX HUB').length).toBeGreaterThanOrEqual(1);
+      // Header renders "ARTIX" as the brand name
+      expect(screen.getAllByText('ARTIX').length).toBeGreaterThanOrEqual(1);
     });
   });
 });

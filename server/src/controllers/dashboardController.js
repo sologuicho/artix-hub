@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const logger = require('../lib/logger');
 
 // Get user dashboard statistics
 exports.getDashboardStats = async (req, res) => {
@@ -113,7 +114,7 @@ exports.getDashboardStats = async (req, res) => {
       drafts
     });
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
+    logger.error({ err: error }, '[dashboardController] Error fetching dashboard stats');
     res.status(500).json({ ok: false, message: 'Failed to fetch dashboard statistics' });
   }
 };

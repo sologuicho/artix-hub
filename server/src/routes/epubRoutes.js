@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../prismaClient');
 const { generateEpub } = require('../utils/epubGenerator');
+const logger = require('../lib/logger');
 
 const toSlug = (str) => (str || 'document').replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 60);
 
@@ -25,7 +26,7 @@ router.get('/articles/:id/epub', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${toSlug(article.title)}.epub"`);
     res.send(buffer);
   } catch (err) {
-    console.error('EPUB error:', err);
+    logger.error({ err }, '[epubRoutes] EPUB error');
     res.status(500).json({ ok: false, message: 'Error generating EPUB' });
   }
 });
@@ -50,7 +51,7 @@ router.get('/research/:id/epub', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${toSlug(research.title)}.epub"`);
     res.send(buffer);
   } catch (err) {
-    console.error('EPUB error:', err);
+    logger.error({ err }, '[epubRoutes] EPUB error');
     res.status(500).json({ ok: false, message: 'Error generating EPUB' });
   }
 });

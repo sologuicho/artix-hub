@@ -1,5 +1,6 @@
 const prisma = require('../prismaClient');
 const bcrypt = require('bcryptjs');
+const logger = require('../lib/logger');
 
 // Suggested users — ordered by follower count, excludes current user
 exports.getSuggestedUsers = async (req, res) => {
@@ -50,7 +51,7 @@ exports.searchUsers = async (req, res) => {
 
     res.json({ ok: true, users });
   } catch (error) {
-    console.error('Error searching users:', error);
+    logger.error({ err: error }, '[userController] Error searching users');
     res.status(500).json({ ok: false, message: 'Failed to search users' });
   }
 };
@@ -121,7 +122,7 @@ exports.getUserProfile = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    logger.error({ err: error }, '[userController] Error fetching user profile');
     res.status(500).json({ ok: false, message: 'Failed to fetch user profile' });
   }
 };// Change password (local accounts only)
@@ -156,7 +157,7 @@ exports.changePassword = async (req, res) => {
 
     res.json({ ok: true, message: 'Contraseña actualizada correctamente. Por seguridad, se han cerrado todas las sesiones activas.' });
   } catch (error) {
-    console.error('Error changing password:', error);
+    logger.error({ err: error }, '[userController] Error changing password');
     res.status(500).json({ ok: false, message: 'Error al cambiar la contraseña' });
   }
 };
@@ -174,7 +175,7 @@ exports.deleteAccount = async (req, res) => {
     res.clearCookie('csrf');
     res.json({ ok: true, message: 'Cuenta eliminada permanentemente' });
   } catch (error) {
-    console.error('Error deleting account:', error);
+    logger.error({ err: error }, '[userController] Error deleting account');
     res.status(500).json({ ok: false, message: 'Error al eliminar la cuenta' });
   }
 };

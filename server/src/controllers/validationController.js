@@ -1,4 +1,5 @@
 const { validateContent } = require('../lib/ai/aiClient');
+const logger = require('../lib/logger');
 
 // Basic validation helpers (fallback)
 const badWords = [
@@ -124,7 +125,7 @@ exports.validateArticle = async (req, res) => {
         });
         return res.json({ ok: true, ...aiResult });
       } catch (aiError) {
-        console.error('AI Improvement failed:', aiError.message);
+        logger.error({ err: aiError }, '[validationController] AI Improvement failed');
         return res.status(500).json({ ok: false, message: 'AI service unavailable for improvements', details: aiError.message });
       }
     }
@@ -140,7 +141,7 @@ exports.validateArticle = async (req, res) => {
         });
         return res.json({ ok: true, ...aiResult, valid: aiResult.safeToPublish });
       } catch (aiError) {
-        console.warn('AI Validation failed, falling back to basic rules:', aiError.message);
+        logger.warn({ err: aiError }, '[validationController] AI Validation failed, falling back to basic rules');
         // Continue to basic validation below
       }
     }
@@ -217,7 +218,7 @@ exports.validateArticle = async (req, res) => {
       source: 'basic' // Flag to indicate basic validation was used
     });
   } catch (error) {
-    console.error('Validation error:', error);
+    logger.error({ err: error }, '[validationController] Validation error');
     res.status(500).json({ ok: false, message: 'Error en la validación' });
   }
 };
@@ -252,7 +253,7 @@ exports.validateBlogPost = async (req, res) => {
       });
       return res.json({ ok: true, ...aiResult, valid: aiResult.safeToPublish });
     } catch (aiError) {
-      console.warn('AI failed, fallback to basic:', aiError.message);
+      logger.warn({ err: aiError }, '[validationController] AI failed, fallback to basic');
     }
 
     // --- Manual Fallback ---
@@ -311,7 +312,7 @@ exports.validateBlogPost = async (req, res) => {
       qualityScore: hasErrors ? 40 : hasWarnings ? 70 : 90
     });
   } catch (error) {
-    console.error('Validation error:', error);
+    logger.error({ err: error }, '[validationController] Validation error');
     res.status(500).json({ ok: false, message: 'Error en la validación' });
   }
 };
@@ -346,7 +347,7 @@ exports.validateResearch = async (req, res) => {
       });
       return res.json({ ok: true, ...aiResult, valid: aiResult.safeToPublish });
     } catch (aiError) {
-      console.warn('AI failed, fallback to basic:', aiError.message);
+      logger.warn({ err: aiError }, '[validationController] AI failed, fallback to basic');
     }
 
     // --- Manual Fallback ---
@@ -428,7 +429,7 @@ exports.validateResearch = async (req, res) => {
       qualityScore: hasErrors ? 40 : hasWarnings ? 70 : 90
     });
   } catch (error) {
-    console.error('Validation error:', error);
+    logger.error({ err: error }, '[validationController] Validation error');
     res.status(500).json({ ok: false, message: 'Error en la validación' });
   }
 };
@@ -463,7 +464,7 @@ exports.validateEvent = async (req, res) => {
       });
       return res.json({ ok: true, ...aiResult, valid: aiResult.safeToPublish });
     } catch (aiError) {
-      console.warn('AI failed, fallback to basic:', aiError.message);
+      logger.warn({ err: aiError }, '[validationController] AI failed, fallback to basic');
     }
 
     // --- Manual Fallback ---
@@ -519,7 +520,7 @@ exports.validateEvent = async (req, res) => {
       qualityScore: hasErrors ? 40 : hasWarnings ? 70 : 90
     });
   } catch (error) {
-    console.error('Validation error:', error);
+    logger.error({ err: error }, '[validationController] Validation error');
     res.status(500).json({ ok: false, message: 'Error en la validación' });
   }
 };

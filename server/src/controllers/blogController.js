@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const logger = require('../lib/logger');
 
 // Helper: only author or admin can manage content
 const canManageContent = (authorId, userId, userRole) =>
@@ -24,7 +25,7 @@ exports.getCategories = async (req, res) => {
 
     res.json({ ok: true, categories: categoryList });
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    logger.error({ err: error }, '[blogController] Error fetching categories');
     res.status(500).json({ ok: false, message: 'Failed to fetch categories' });
   }
 };
@@ -96,7 +97,7 @@ exports.getAllBlogPosts = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching blog posts:', error);
+    logger.error({ err: error }, '[blogController] Error fetching blog posts');
     res.status(500).json({ ok: false, message: 'Failed to fetch blog posts' });
   }
 };
@@ -125,7 +126,7 @@ exports.getBlogPost = async (req, res) => {
 
     res.json({ ok: true, post });
   } catch (error) {
-    console.error('Error fetching blog post:', error);
+    logger.error({ err: error }, '[blogController] Error fetching blog post');
     res.status(500).json({ ok: false, message: 'Failed to fetch blog post' });
   }
 };
@@ -233,7 +234,7 @@ exports.createBlogPost = async (req, res) => {
 
     res.status(201).json({ ok: true, post });
   } catch (error) {
-    console.error('Error creating blog post:', error);
+    logger.error({ err: error }, '[blogController] Error creating blog post');
     res.status(500).json({ ok: false, message: 'Failed to create blog post' });
   }
 };
@@ -298,7 +299,7 @@ exports.updateBlogPost = async (req, res) => {
 
     res.json({ ok: true, post });
   } catch (error) {
-    console.error('Error updating blog post:', error);
+    logger.error({ err: error }, '[blogController] Error updating blog post');
     res.status(500).json({ ok: false, message: 'Failed to update blog post' });
   }
 };
@@ -336,7 +337,7 @@ exports.archiveBlogPost = async (req, res) => {
 
     res.json({ ok: true, post, message: archived ? 'Post archived' : 'Post unarchived' });
   } catch (error) {
-    console.error('Error archiving blog post:', error);
+    logger.error({ err: error }, '[blogController] Error archiving blog post');
     res.status(500).json({ ok: false, message: 'Failed to archive blog post' });
   }
 };
@@ -361,7 +362,7 @@ exports.deleteBlogPost = async (req, res) => {
     await prisma.blogPost.delete({ where: { id } });
     res.json({ ok: true, message: 'Blog post deleted successfully' });
   } catch (error) {
-    console.error('Error deleting blog post:', error);
+    logger.error({ err: error }, '[blogController] Error deleting blog post');
     res.status(500).json({ ok: false, message: 'Failed to delete blog post' });
   }
 };

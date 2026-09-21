@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const logger = require('../lib/logger');
 
 // Helper function to check if user can edit/delete content (including Artix Research content for luisflores01)
 const canManageContent = async (authorId, userId, userUsername, userRole) => {
@@ -47,7 +48,7 @@ exports.getCategories = async (req, res) => {
 
     res.json({ ok: true, categories: categoryList });
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    logger.error({ err: error }, '[researchController] Error fetching categories');
     res.status(500).json({ ok: false, message: 'Failed to fetch categories' });
   }
 };
@@ -106,7 +107,7 @@ exports.getAllResearch = async (req, res) => {
 
     res.json({ ok: true, research });
   } catch (error) {
-    console.error('Error fetching research:', error);
+    logger.error({ err: error }, '[researchController] Error fetching research');
     res.status(500).json({ ok: false, message: 'Failed to fetch research' });
   }
 };
@@ -161,7 +162,7 @@ exports.getResearch = async (req, res) => {
 
     res.json({ ok: true, research });
   } catch (error) {
-    console.error('Error fetching research:', error);
+    logger.error({ err: error }, '[researchController] Error fetching research');
     res.status(500).json({ ok: false, message: 'Failed to fetch research' });
   }
 };
@@ -210,7 +211,7 @@ exports.getResearchPreview = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching research preview:', error);
+    logger.error({ err: error }, '[researchController] Error fetching research preview');
     res.status(500).json({ ok: false, message: 'Failed to fetch research preview' });
   }
 };
@@ -294,13 +295,13 @@ exports.createResearch = async (req, res) => {
           data: { status: 'published' }
         });
       } catch (error) {
-        console.error('Error in research validation:', error);
+        logger.error({ err: error }, '[researchController] Error in research validation');
       }
     }, 60000); // 1 minute
 
     res.status(201).json({ ok: true, research });
   } catch (error) {
-    console.error('Error creating research:', error);
+    logger.error({ err: error }, '[researchController] Error creating research');
     res.status(500).json({ ok: false, message: 'Failed to create research' });
   }
 };
@@ -346,7 +347,7 @@ exports.updateResearch = async (req, res) => {
 
     res.json({ ok: true, research });
   } catch (error) {
-    console.error('Error updating research:', error);
+    logger.error({ err: error }, '[researchController] Error updating research');
     res.status(500).json({ ok: false, message: 'Failed to update research' });
   }
 };
@@ -384,7 +385,7 @@ exports.archiveResearch = async (req, res) => {
 
     res.json({ ok: true, research, message: archived ? 'Research archived' : 'Research unarchived' });
   } catch (error) {
-    console.error('Error archiving research:', error);
+    logger.error({ err: error }, '[researchController] Error archiving research');
     res.status(500).json({ ok: false, message: 'Failed to archive research' });
   }
 };
@@ -408,7 +409,7 @@ exports.deleteResearch = async (req, res) => {
     await prisma.research.delete({ where: { id } });
     res.json({ ok: true, message: 'Research deleted' });
   } catch (error) {
-    console.error('Error deleting research:', error);
+    logger.error({ err: error }, '[researchController] Error deleting research');
     res.status(500).json({ ok: false, message: 'Failed to delete research' });
   }
 };

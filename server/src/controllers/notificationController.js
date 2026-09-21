@@ -1,5 +1,6 @@
 const prisma = require('../prismaClient');
 const { notify } = require('../services/notification/notificationService');
+const logger = require('../lib/logger');
 
 // Re-export notify as createNotification for backward compatibility with other controllers
 // (followController, reactionController, collaborationController, blogController, commentController)
@@ -33,7 +34,7 @@ exports.getNotifications = async (req, res) => {
       unreadCount
     });
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    logger.error({ err: error }, '[notificationController] Error fetching notifications');
     res.status(500).json({ ok: false, message: 'Failed to fetch notifications' });
   }
 };
@@ -56,7 +57,7 @@ exports.markAsRead = async (req, res) => {
 
     res.json({ ok: true });
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    logger.error({ err: error }, '[notificationController] Error marking notification as read');
     res.status(500).json({ ok: false, message: 'Failed to mark notification as read' });
   }
 };
@@ -73,7 +74,7 @@ exports.markAllAsRead = async (req, res) => {
 
     res.json({ ok: true });
   } catch (error) {
-    console.error('Error marking all notifications as read:', error);
+    logger.error({ err: error }, '[notificationController] Error marking all notifications as read');
     res.status(500).json({ ok: false, message: 'Failed to mark all as read' });
   }
 };
@@ -92,7 +93,7 @@ exports.deleteNotification = async (req, res) => {
     await prisma.notification.delete({ where: { id } });
     res.json({ ok: true });
   } catch (error) {
-    console.error('Error deleting notification:', error);
+    logger.error({ err: error }, '[notificationController] Error deleting notification');
     res.status(500).json({ ok: false, message: 'Failed to delete notification' });
   }
 };

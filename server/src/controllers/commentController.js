@@ -1,5 +1,6 @@
 const prisma = require('../prismaClient');
 const { createNotification } = require('./notificationController');
+const logger = require('../lib/logger');
 
 // Add comment to post, article, research, or discussion
 exports.addComment = async (req, res) => {
@@ -149,7 +150,7 @@ exports.addComment = async (req, res) => {
 
     res.status(201).json({ ok: true, comment });
   } catch (error) {
-    console.error('Error adding comment:', error);
+    logger.error({ err: error }, '[commentController] Error adding comment');
     res.status(500).json({ ok: false, message: 'Failed to add comment' });
   }
 };
@@ -215,7 +216,7 @@ exports.getComments = async (req, res) => {
 
     res.json({ ok: true, comments });
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    logger.error({ err: error }, '[commentController] Error fetching comments');
     res.status(500).json({ ok: false, message: 'Failed to fetch comments' });
   }
 };
@@ -253,7 +254,7 @@ exports.updateComment = async (req, res) => {
 
     res.json({ ok: true, comment });
   } catch (error) {
-    console.error('Error updating comment:', error);
+    logger.error({ err: error }, '[commentController] Error updating comment');
     res.status(500).json({ ok: false, message: 'Failed to update comment' });
   }
 };
@@ -276,7 +277,7 @@ exports.deleteComment = async (req, res) => {
     await prisma.comment.delete({ where: { id } });
     res.json({ ok: true, message: 'Comment deleted successfully' });
   } catch (error) {
-    console.error('Error deleting comment:', error);
+    logger.error({ err: error }, '[commentController] Error deleting comment');
     res.status(500).json({ ok: false, message: 'Failed to delete comment' });
   }
 };
