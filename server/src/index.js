@@ -1,4 +1,10 @@
 require('dotenv').config();
+
+const Sentry = require('@sentry/node');
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN, environment: process.env.NODE_ENV || 'development' });
+}
+
 const http = require('http');
 const express = require('express');
 const helmet = require('helmet');
@@ -18,6 +24,7 @@ const { protect } = require('./middleware/authMiddleware');
 const { initializeSocket } = require('./socket/socketServer');
 const { ALLOWED_ORIGINS } = require('./config/urls');
 const { startEmailReminderJob } = require('./jobs/emailReminderJob');
+const correlationMiddleware = require('./middleware/correlationMiddleware');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -37,6 +44,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(helmet());
+app.use(correlationMiddleware);
 
 // HTTP request logging — stream pino at 'info' level
 app.use(morgan('combined', {
@@ -262,6 +270,7 @@ startEmailReminderJob();
 
 // Global error handler
 app.use((err, req, res, _next) => {
+  if (process.env.SENTRY_DSN) Sentry.captureException(err);
   logger.error({ err }, 'Unhandled error');
   res.status(err.status || 500).json({
     ok: false,
