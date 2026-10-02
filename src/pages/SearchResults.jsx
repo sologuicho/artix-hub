@@ -81,6 +81,7 @@ const SearchResults = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!q.trim()) { setResults(null); return; }
     const controller = new AbortController();
     setLoading(true);

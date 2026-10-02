@@ -13,7 +13,6 @@ const articleRoutes = require('./routes/articleRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const readingProgressRoutes = require('./routes/readingProgressRoutes');
-const prisma = require('./prismaClient');
 const { verifyCsrf } = require('./middleware/csrfMiddleware');
 const { protect } = require('./middleware/authMiddleware');
 const { initializeSocket } = require('./socket/socketServer');

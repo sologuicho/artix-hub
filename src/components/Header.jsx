@@ -20,10 +20,11 @@ const Header = () => {
 
   useEffect(() => {
     if (location.search.includes('pricing=true')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowPricing(true);
       navigate(location.pathname, { replace: true });
     }
-  }, [location.search]);
+  }, [location.search, location.pathname, navigate]);
 
   const navLinks = [
     ...(isAuthenticated() ? [{ to: '/feed', label: 'Feed' }] : []),

@@ -132,6 +132,7 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
 
           {/* Font size */}
           <div style={{ display: 'flex', gap: '0.125rem' }}>
+            {/* eslint-disable-next-line react-hooks/static-components */}
             <Btn
               onClick={() => setSizeIdx(i => Math.max(0, i - 1))}
               disabled={sizeIdx === 0}
@@ -140,6 +141,7 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
             >
               A−
             </Btn>
+            {/* eslint-disable-next-line react-hooks/static-components */}
             <Btn
               onClick={() => setSizeIdx(i => Math.min(SIZES.length - 1, i + 1))}
               disabled={sizeIdx === SIZES.length - 1}

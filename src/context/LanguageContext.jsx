@@ -29,12 +29,14 @@ export const LanguageProvider = ({ children }) => {
         }
         setTranslations(translationsModule.default || translationsModule);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error loading translations:', error);
         // Fallback to Spanish
         try {
           const fallback = await import('../locales/es.json');
           setTranslations(fallback.default || fallback);
         } catch (fallbackError) {
+          // eslint-disable-next-line no-console
           console.error('Error loading fallback translations:', fallbackError);
         }
       }

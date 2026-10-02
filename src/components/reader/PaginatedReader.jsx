@@ -69,6 +69,7 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
 
   useEffect(() => {
     if (initialProgress?.lastPage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentPage(Math.min(initialProgress.lastPage, totalPages));
     }
   }, [initialProgress, totalPages]);

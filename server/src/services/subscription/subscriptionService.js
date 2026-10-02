@@ -1,4 +1,5 @@
 const prisma = require('../../prismaClient');
+const logger = require('../../lib/logger');
 
 // Subscription Limits
 const TIER_LIMITS = {
@@ -45,7 +46,7 @@ const checkUsageLimit = async (req, res, next) => {
     req.dailyUsage = usage;
     next();
   } catch (error) {
-    console.error('[SubscriptionService] checkUsageLimit error:', error);
+    logger.error({ err: error }, '[SubscriptionService] checkUsageLimit error');
     next();
   }
 };
@@ -84,7 +85,7 @@ const updateSubscription = async (req, res) => {
 
     res.json({ message: 'Subscription updated successfully', user: updatedUser });
   } catch (error) {
-    console.error('[SubscriptionService] updateSubscription error:', error);
+    logger.error({ err: error }, '[SubscriptionService] updateSubscription error');
     res.status(500).json({ message: 'Error updating subscription' });
   }
 };

@@ -227,8 +227,11 @@ export default function Profile() {
     }
   }, [profile, contentLoaded]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { checkFollow(); }, [checkFollow]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (profile) loadContent(); }, [profile, loadContent]);
 
   /* Toggle follow */

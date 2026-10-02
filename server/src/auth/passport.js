@@ -4,6 +4,7 @@ const GitHubStrategy = require('passport-github2').Strategy;
 const AzureOAuth2Strategy = require('passport-azure-ad-oauth2').Strategy;
 const prisma = require('../prismaClient');
 const jwt = require('jsonwebtoken');
+const logger = require('../lib/logger');
 const jwksClient = require('jwks-rsa');
 
 // Microsoft JWKS client — fetches Microsoft's public signing keys to verify id_tokens
@@ -38,7 +39,7 @@ async function verifyMicrosoftIdToken(idToken) {
     });
     return verified;
   } catch (err) {
-    console.error('Microsoft id_token verification failed:', err.message);
+    logger.error({ err }, 'Microsoft id_token verification failed');
     throw err; // Propagate — do NOT fall back to unverified payload
   }
 }
@@ -106,7 +107,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && BACKEND_URL) {
   }
 }));
 } else {
-  console.warn('⚠️  Google OAuth not configured (missing GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or BACKEND_URL)');
+  logger.warn('Google OAuth not configured (missing GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or BACKEND_URL)');
 }
 
 if (GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET && BACKEND_URL) {
@@ -158,7 +159,7 @@ if (GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET && BACKEND_URL) {
   }
 }));
 } else {
-  console.warn('⚠️  GitHub OAuth not configured (missing GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, or BACKEND_URL)');
+  logger.warn('GitHub OAuth not configured (missing GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, or BACKEND_URL)');
 }
 
 if (MICROSOFT_CLIENT_ID && MICROSOFT_CLIENT_SECRET && BACKEND_URL) {
@@ -177,7 +178,7 @@ if (MICROSOFT_CLIENT_ID && MICROSOFT_CLIENT_SECRET && BACKEND_URL) {
     try {
       payload = await verifyMicrosoftIdToken(params.id_token);
     } catch (verifyErr) {
-      console.error('Microsoft id_token signature verification failed:', verifyErr.message);
+      logger.error({ err: verifyErr }, 'Microsoft id_token signature verification failed');
       return done(new Error('Microsoft OAuth: id_token verification failed'));
     }
 
@@ -221,7 +222,7 @@ if (MICROSOFT_CLIENT_ID && MICROSOFT_CLIENT_SECRET && BACKEND_URL) {
   }
 }));
 } else {
-  console.warn('⚠️  Microsoft OAuth not configured (missing MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, or BACKEND_URL)');
+  logger.warn('Microsoft OAuth not configured (missing MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, or BACKEND_URL)');
 }
 
 module.exports = passport;

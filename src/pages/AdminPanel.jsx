@@ -71,18 +71,6 @@ const AdminPanel = () => {
   const getCsrfToken = () =>
     document.cookie.split('; ').find(r => r.startsWith('csrf='))?.split('=')[1] || '';
 
-  useEffect(() => { fetchStats(); }, []);
-
-  useEffect(() => {
-    const t = setTimeout(() => fetchUsers(pagination.page, searchQuery), 400);
-    return () => clearTimeout(t);
-  }, [pagination.page, searchQuery]);
-
-  useEffect(() => {
-    if (activeTab === 'content') fetchContent(1, contentType);
-    if (activeTab === 'students') fetchStudents(1);
-  }, [activeTab, contentType]);
-
   const fetchStats = async () => {
     try {
       setLoadingStats(true);
@@ -108,6 +96,14 @@ const AdminPanel = () => {
     } catch { setError('Error de conexión'); }
     finally { setLoadingUsers(false); }
   };
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchStats(); }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => fetchUsers(pagination.page, searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [pagination.page, searchQuery]);
 
   const handleRoleChange = async (userId, newRole) => {
     setError(null);
@@ -181,6 +177,12 @@ const AdminPanel = () => {
     } catch { setError('Error de conexión'); }
     finally { setLoadingStudents(false); }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (activeTab === 'content') fetchContent(1, contentType);
+    if (activeTab === 'students') fetchStudents(1);
+  }, [activeTab, contentType]);
 
   const handleApproveStudent = async (id) => {
     setError(null);

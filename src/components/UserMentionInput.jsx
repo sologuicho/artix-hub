@@ -12,15 +12,32 @@ const UserMentionInput = ({ value, onChange, placeholder = 'Mencionar a alguien.
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
+  const fetchUsers = async (query) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error fetching users:', error);
+    }
+  };
+
   useEffect(() => {
     if (searchQuery.startsWith('@') && searchQuery.length > 1) {
       const query = searchQuery.substring(1);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUsers(query);
       setShowDropdown(true);
       setMentionStart(value.lastIndexOf('@'));
     } else {
       setShowDropdown(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   useEffect(() => {
@@ -32,20 +49,6 @@ const UserMentionInput = ({ value, onChange, placeholder = 'Mencionar a alguien.
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const fetchUsers = async (query) => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (data.ok) {
-        setUsers(data.users || []);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
 
   const handleMention = (user) => {
     const beforeMention = value.substring(0, mentionStart);

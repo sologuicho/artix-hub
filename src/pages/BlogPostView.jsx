@@ -38,17 +38,6 @@ const BlogPostView = () => {
   const [reposted, setReposted] = useState(false);
   const [repostCount, setRepostCount] = useState(0);
 
-  useEffect(() => { fetchPost(); }, [id]);
-  useEffect(() => {
-    if (post) { fetchReactionCounts(); fetchRepostCount(); }
-    if (user && post) {
-      checkFollowStatus();
-      checkReactionStatus();
-      checkSavedStatus();
-      checkRepostStatus();
-    }
-  }, [user, post]);
-
   const fetchPost = async () => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/blog/${id}`, { credentials: 'include' });
@@ -112,6 +101,39 @@ const BlogPostView = () => {
     }
   };
 
+  const fetchRepostCount = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/counts?postId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setRepostCount(data.count);
+    } catch (_) { // intentional
+    }
+  };
+
+  const checkRepostStatus = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/repost/check?postId=${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) setReposted(data.reposted);
+    } catch (_) { // intentional
+    }
+  };
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+  useEffect(() => { fetchPost(); }, [id]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (post) { fetchReactionCounts(); fetchRepostCount(); }
+    if (user && post) {
+      checkFollowStatus();
+      checkReactionStatus();
+      checkSavedStatus();
+      checkRepostStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, post]);
+
   const handleReaction = async (type) => {
     if (!user) return navigate('/auth');
     const snap = reactions[type];
@@ -155,25 +177,6 @@ const BlogPostView = () => {
       });
       const data = await res.json();
       if (data.ok) setFollowing(data.following);
-    } catch (_) { // intentional
-    }
-  };
-
-  const fetchRepostCount = async () => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/repost/counts?postId=${id}`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.ok) setRepostCount(data.count);
-    } catch (_) { // intentional
-    }
-  };
-
-  const checkRepostStatus = async () => {
-    if (!user) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/repost/check?postId=${id}`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.ok) setReposted(data.reposted);
     } catch (_) { // intentional
     }
   };

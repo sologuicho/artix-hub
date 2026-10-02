@@ -32,15 +32,6 @@ const GlobalSearch = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (debouncedQuery.trim().length >= 2) {
-      performSearch(debouncedQuery);
-    } else {
-      setResults(null);
-      setIsOpen(false);
-    }
-  }, [debouncedQuery]);
-
   const performSearch = async (searchQuery) => {
     try {
       setLoading(true);
@@ -54,11 +45,22 @@ const GlobalSearch = () => {
         setIsOpen(true);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error searching:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (debouncedQuery.trim().length >= 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      performSearch(debouncedQuery);
+    } else {
+      setResults(null);
+      setIsOpen(false);
+    }
+  }, [debouncedQuery]);
 
   const handleResultClick = (type, id, category = null) => {
     setIsOpen(false);

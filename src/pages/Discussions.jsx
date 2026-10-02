@@ -31,10 +31,6 @@ const Discussions = () => {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
 
-  useEffect(() => {
-    fetchDiscussions();
-  }, []);
-
   const fetchDiscussions = async () => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/discussions`, { credentials: 'include' });
@@ -43,11 +39,17 @@ const Discussions = () => {
         if (data.ok) setDiscussions(data.discussions || []);
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching discussions:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchDiscussions();
+  }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -87,6 +89,7 @@ const Discussions = () => {
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
+    // eslint-disable-next-line react-hooks/purity
     const diff = Date.now() - d.getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `hace ${mins}m`;

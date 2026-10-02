@@ -115,11 +115,6 @@ const FeedPage = () => {
   const [pagination, setPagination] = useState({ page: 1, hasMore: false });
   const [activeFilter, setActiveFilter] = useState('all');
 
-  useEffect(() => {
-    fetchFeed(1, true);
-    fetchSuggestions();
-  }, []);
-
   const fetchFeed = async (page = 1, replace = false) => {
     if (replace) setLoading(true); else setLoadingMore(true);
     try {
@@ -143,6 +138,12 @@ const FeedPage = () => {
     } catch (_) { // intentional
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchFeed(1, true);
+    fetchSuggestions();
+  }, []);
 
   const handleFollowUser = (userId) => setSuggestions(prev => prev.filter(u => u.id !== userId));
 

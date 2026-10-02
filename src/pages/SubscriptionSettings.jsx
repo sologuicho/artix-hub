@@ -94,7 +94,9 @@ const SubscriptionSettings = () => {
     finally { setLoadingInvoices(false); }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchStatus();   }, [fetchStatus]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
 
   const handleCancel = async () => {

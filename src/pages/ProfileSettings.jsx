@@ -34,6 +34,7 @@ const ProfileSettings = () => {
       const nameParts = (user.name || '').trim().split(/\s+/);
       const lastName = nameParts.length > 1 ? nameParts.pop() : '';
       const firstName = nameParts.join(' ');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         firstName,
         lastName,

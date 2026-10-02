@@ -98,8 +98,10 @@ const Auth = () => {
       oauth_error:     'Ocurrió un error durante la autenticación.',
       oauth_cancelled: 'La autenticación fue cancelada.',
     };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (errorParam) setError(msgs[errorParam] || 'Ocurrió un error durante la autenticación.');
     if (isStudentIntent) setActiveTab('signup');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const checkUsername = async (username) => {

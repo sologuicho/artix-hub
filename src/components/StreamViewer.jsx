@@ -44,6 +44,7 @@ const StreamViewer = ({ socket, eventId, broadcasterId, onEnded }) => {
         await pc.setLocalDescription(answer);
         socket.emit('stream:answer', { to: broadcasterId, answer });
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('Error handling offer:', err);
         setStatus('error');
       }

@@ -1,6 +1,7 @@
 // CommonJS version of AI client for backend
 const { callOpenAI } = require('./providers/openai');
 const { callGemini } = require('./providers/gemini');
+const logger = require('../logger');
 
 const checkAPIKeys = () => {
   const openaiKey = process.env.OPENAI_API_KEY || '';
@@ -198,7 +199,7 @@ const validateContent = async ({
     try {
       response = await callGemini({ prompt });
     } catch (error) {
-      console.error('❌ Gemini failed:', error.message);
+      logger.error({ err: error }, 'Gemini failed');
 
       // Check for specific error types and provide helpful messages
       const errorMessage = error.message || '';
@@ -218,7 +219,7 @@ const validateContent = async ({
       response = await callOpenAI({ prompt });
     } catch (error) {
       const errorMessage = error.message || '';
-      console.error('❌ OpenAI failed:', errorMessage);
+      logger.error({ message: errorMessage }, 'OpenAI failed');
       if (errorMessage.includes('quota') || errorMessage.includes('insufficient_quota')) {
         throw new Error('OpenAI quota exceeded. Please configure GOOGLE_API_KEY in your .env file to use Gemini instead.', { cause: error });
       }
@@ -226,7 +227,7 @@ const validateContent = async ({
     }
   } else {
     const errorMsg = 'No AI provider configured. Please set GOOGLE_API_KEY (recommended) or OPENAI_API_KEY in your .env file in the server directory.';
-    console.error('❌', errorMsg);
+    logger.error(errorMsg);
     throw new Error(errorMsg);
   }
 
@@ -268,7 +269,7 @@ const validateContent = async ({
             };
           }
         } catch (parseError) {
-          console.error('JSON parse error:', parseError, 'Trying to parse:', jsonStr.substring(0, 200));
+          logger.error({ err: parseError, snippet: jsonStr.substring(0, 200) }, 'JSON parse error in generate mode');
         }
       }
 
@@ -301,7 +302,7 @@ const validateContent = async ({
         ideas: []
       };
     } catch (error) {
-      console.error('Error in generate mode:', error);
+      logger.error({ err: error }, 'Error in generate mode');
       // If parsing fails, return raw response
       return {
         raw: response.trim(),

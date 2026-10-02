@@ -55,6 +55,7 @@ const StreamBroadcaster = ({ socket, eventId, viewerCount, onStreamStart, onStre
         await pc.setLocalDescription(offer);
         socket.emit('stream:offer', { to: viewerId, offer });
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('Error creating offer:', err);
       }
     };
@@ -65,6 +66,7 @@ const StreamBroadcaster = ({ socket, eventId, viewerCount, onStreamStart, onStre
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('Error setting answer:', err);
       }
     };

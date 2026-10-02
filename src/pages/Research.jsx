@@ -350,6 +350,7 @@ const Research = () => {
         );
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching research:', err);
     } finally {
       setLoading(false);
@@ -357,11 +358,13 @@ const Research = () => {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchResearch();
   }, [fetchResearch]);
 
   // Reset page when filters change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
   }, [activeField, activeSort, activeStatus]);
 

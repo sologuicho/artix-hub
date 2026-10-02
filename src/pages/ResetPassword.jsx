@@ -16,6 +16,7 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!token) setError('Link inválido. Solicita un nuevo link de restablecimiento.');
   }, [token]);
 

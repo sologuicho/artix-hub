@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('user');
       return false;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error checking auth:', error);
       // Network error: keep the localStorage snapshot so UX doesn't break on flaky network,
       // but do NOT set user from it — remain in loading:false state with whatever was already set
@@ -51,6 +52,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Always verify with backend on mount — do not pre-populate from localStorage.
     // This prevents showing stale/invalid user state before the server response.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkAuth();
   }, []);
 
@@ -73,6 +75,7 @@ export const AuthProvider = ({ children }) => {
         headers: { 'x-csrf-token': csrfToken || '' },
       });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error logging out:', error);
     }
     setUser(null);

@@ -105,6 +105,7 @@ const CreateResearch = () => {
             });
             if (r.collaborators) setCollaborators(r.collaborators);
           }
+        // eslint-disable-next-line no-console
         } catch (err) { console.error(err); }
       };
       fetchResearch();

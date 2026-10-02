@@ -64,6 +64,7 @@ const AIAssistantOverlay = ({ isOpen, onClose, contextData = {}, onInsertText })
             }
 
         } catch (e) {
+            // eslint-disable-next-line no-console
             console.error(e);
             setResponse("Connection error. Please check your API keys and server status.");
         } finally {

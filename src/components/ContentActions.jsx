@@ -17,6 +17,7 @@ const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) =>
   // Check if user can manage this content (including Artix Research content for luisflores01)
   useEffect(() => {
     if (!user || !authorId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsAuthor(false);
       return;
     }
@@ -26,7 +27,7 @@ const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) =>
       setIsAuthor(true);
       return;
     }
-    
+
     // If user is luisflores01 and content was published by Artix Research, allow
     if (user.username === 'luisflores01') {
       const authorUsername = author?.username || author?.name;
@@ -35,31 +36,9 @@ const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) =>
         return;
       }
     }
-    
+
     setIsAuthor(false);
   }, [user, authorId, author]);
-
-  useEffect(() => {
-    if (user && itemId) {
-      checkSavedStatus();
-      if (isAuthor) {
-        checkArchivedStatus();
-      }
-    }
-  }, [user, itemId, isAuthor]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
-    };
-
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showMenu]);
 
   const checkSavedStatus = async () => {
     try {
@@ -77,6 +56,7 @@ const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) =>
         setSaved(data.saved);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error checking saved status:', error);
     }
   };
@@ -97,9 +77,34 @@ const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) =>
         }
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error checking archived status:', error);
     }
   };
+
+  useEffect(() => {
+    if (user && itemId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      checkSavedStatus();
+      if (isAuthor) {
+        checkArchivedStatus();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, itemId, isAuthor]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
 
   const handleArchive = async () => {
     try {
@@ -129,6 +134,7 @@ const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) =>
         if (onDelete) onDelete(); // Refresh list
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error archiving item:', error);
     }
   };
@@ -165,6 +171,7 @@ const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) =>
         setSaved(data.saved);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error saving item:', error);
     }
   };
@@ -204,6 +211,7 @@ const ContentActions = ({ type, itemId, authorId, author, onDelete, onEdit }) =>
         onDelete();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error deleting item:', error);
     }
   };

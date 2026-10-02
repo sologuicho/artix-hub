@@ -114,6 +114,7 @@ const CreateEvent = () => {
             });
             if (ev.collaborators) setCollaborators(ev.collaborators);
           }
+        // eslint-disable-next-line no-console
         } catch (err) { console.error(err); }
       };
       fetchEvent();

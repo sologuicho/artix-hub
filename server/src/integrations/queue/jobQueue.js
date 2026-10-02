@@ -12,6 +12,8 @@
  *   await jobQueue.enqueue('article:validate', { articleId });
  */
 
+const logger = require('../../lib/logger');
+
 const handlers = {};
 
 /**
@@ -32,13 +34,13 @@ const enqueue = (jobName, data) => {
   setImmediate(async () => {
     const handler = handlers[jobName];
     if (!handler) {
-      console.warn(`[JobQueue] No handler registered for job: ${jobName}`);
+      logger.warn({ jobName }, '[JobQueue] No handler registered for job');
       return;
     }
     try {
       await handler(data);
     } catch (err) {
-      console.error(`[JobQueue] Job "${jobName}" failed:`, err);
+      logger.error({ err, jobName }, '[JobQueue] Job failed');
     }
   });
 };

@@ -70,6 +70,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsAdmin(user.email === 'floresescobedoluisalberto@gmail.com');
       if (user.subscriptionTier === 'OBSERVER') {
         setShowStudentBanner(localStorage.getItem(STUDENT_BANNER_KEY) !== 'true');
@@ -86,12 +87,6 @@ const Dashboard = () => {
     localStorage.setItem(STUDENT_BANNER_KEY, 'true');
     setShowStudentBanner(false);
   };
-
-  useEffect(() => {
-    if (authLoading || !user) return;
-    fetchDashboardData();
-    fetchRecommendations();
-  }, [user, authLoading]);
 
   const fetchRecommendations = async () => {
     try {
@@ -125,6 +120,13 @@ const Dashboard = () => {
     }
     finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchDashboardData();
+    fetchRecommendations();
+  }, [user, authLoading]);
 
   const formatDate = (d) =>
     new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });

@@ -153,6 +153,7 @@ const CreatePostCard = ({ onPostCreated }) => {
         setValidationMessage(data.message || 'Error al crear el post');
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error creating post:', error);
       setValidationMessage('Error al crear el post');
     } finally {

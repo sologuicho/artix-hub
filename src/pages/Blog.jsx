@@ -261,6 +261,7 @@ const Blog = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPosts(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);

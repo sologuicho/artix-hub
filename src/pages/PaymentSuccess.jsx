@@ -27,16 +27,21 @@ const PaymentSuccess = () => {
   const [retrying, setRetrying] = useState(false);
   const [settling, setSettling] = useState(false);
 
-  useEffect(() => { doRefresh(); }, []);
-
   const doRefresh = async () => {
     setLoading(true);
     try { await refreshUser(); }
-    catch (err) { console.error('[PaymentSuccess] Error refrescando usuario:', err); }
+    catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[PaymentSuccess] Error refrescando usuario:', err);
+    }
     finally { setLoading(false); }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+  useEffect(() => { doRefresh(); }, []);
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!loading && user) setSettling(!PAID_TIERS.includes(user.subscriptionTier));
   }, [loading, user]);
 

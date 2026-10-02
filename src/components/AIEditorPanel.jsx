@@ -61,6 +61,7 @@ const AIEditorPanel = ({ selectedText, onTextReplace, onInsertText, category, is
         setError(data.message || 'Error al mejorar el texto');
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error improving text:', err);
       setError('Error al mejorar el texto. Por favor intenta de nuevo.');
     } finally {
@@ -114,6 +115,7 @@ const AIEditorPanel = ({ selectedText, onTextReplace, onInsertText, category, is
         setError(errorMsg);
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error generating ideas:', err);
       setError(`Error de conexión: ${err.message || 'No se pudo conectar con el servidor. Verifica tu conexión.'}`);
     } finally {
@@ -158,6 +160,7 @@ const AIEditorPanel = ({ selectedText, onTextReplace, onInsertText, category, is
         setError(data.message || 'Error al corregir el estilo académico');
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error correcting academic style:', err);
       setError('Error al corregir el estilo académico. Por favor intenta de nuevo.');
     } finally {

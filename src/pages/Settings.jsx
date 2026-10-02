@@ -208,6 +208,7 @@ const Settings = () => {
   /* populate form when user is ready */
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         name:     user.name     || '',
         username: user.username || '',

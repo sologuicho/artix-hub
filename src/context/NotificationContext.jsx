@@ -12,12 +12,29 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const socketRef = useRef(null);
 
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/notifications`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated() || !user) {
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNotifications([]);
       setUnreadCount(0);
       return;
@@ -40,6 +57,7 @@ export const NotificationProvider = ({ children }) => {
         });
 
         newSocket.on('connect', () => {
+          // eslint-disable-next-line no-console
           console.log('Connected to notification server');
         });
 
@@ -56,6 +74,7 @@ export const NotificationProvider = ({ children }) => {
         });
 
         newSocket.on('disconnect', () => {
+          // eslint-disable-next-line no-console
           console.log('Disconnected from notification server');
         });
 
@@ -67,6 +86,7 @@ export const NotificationProvider = ({ children }) => {
         socketRef.current = newSocket;
         fetchNotifications();
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Socket setup failed:', error);
       }
     };
@@ -80,22 +100,8 @@ export const NotificationProvider = ({ children }) => {
         socketRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isAuthenticated()]);
-
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/notifications`, {
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (data.ok) {
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
 
   const markAsRead = async (id) => {
     try {
@@ -121,6 +127,7 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error marking notification as read:', error);
     }
   };
@@ -149,6 +156,7 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(0);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error marking all as read:', error);
     }
   };

@@ -38,6 +38,18 @@ const EventView = () => {
   const [waitlistPosition, setWaitlistPosition] = useState(null);
   const [registerLoading, setRegisterLoading] = useState(false);
 
+  const fetchEvent = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/events/${id}`, { credentials: 'include' });
+      const data = await res.json();
+      // eslint-disable-next-line react-hooks/immutability
+      if (data.ok) { setEvent(data.event); fetchRepostCount(); checkRepostStatus(); }
+    } catch (_) { // intentional
+    }
+    finally { setLoading(false); }
+  };
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { fetchEvent(); }, [id]);
 
   useEffect(() => {
@@ -59,6 +71,7 @@ const EventView = () => {
   }, [event]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (event && user) setRegistered(event.registrations?.some(r => r.userId === user.id) || false);
   }, [event, user]);
 
@@ -68,17 +81,8 @@ const EventView = () => {
       .then(r => r.json())
       .then(d => { if (d.ok && d.onWaitlist) { setWaitlisted(true); setWaitlistPosition(d.position); } })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event, user]);
-
-  const fetchEvent = async () => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/events/${id}`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.ok) { setEvent(data.event); fetchRepostCount(); checkRepostStatus(); }
-    } catch (_) { // intentional
-    }
-    finally { setLoading(false); }
-  };
 
   const handleRegister = async () => {
     if (!isAuthenticated()) { navigate('/auth'); return; }

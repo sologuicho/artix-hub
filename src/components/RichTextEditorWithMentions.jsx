@@ -20,6 +20,7 @@ const RichTextEditorWithMentions = ({
 
   // Ensure component is mounted before rendering Quill
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -43,6 +44,7 @@ const RichTextEditorWithMentions = ({
         setShowDropdown(false);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching users:', error);
       setUsers([]);
       setShowDropdown(false);

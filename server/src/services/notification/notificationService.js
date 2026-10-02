@@ -1,5 +1,6 @@
 const prisma = require('../../prismaClient');
 const { sendNotification } = require('../../socket/socketServer');
+const logger = require('../../lib/logger');
 
 /**
  * Creates a notification in the DB and pushes it via Socket.IO.
@@ -17,7 +18,7 @@ const notify = async (userId, type, title, message, link = null) => {
 
     return notification;
   } catch (error) {
-    console.error('[NotificationService] Error creating notification:', error);
+    logger.error({ err: error }, '[NotificationService] Error creating notification');
     return null;
   }
 };

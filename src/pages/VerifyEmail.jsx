@@ -27,6 +27,7 @@ const VerifyEmail = () => {
 
   useEffect(() => {
     if (errorParam) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus('error');
       setErrorType(errorParam);
       return;

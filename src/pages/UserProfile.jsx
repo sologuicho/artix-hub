@@ -41,18 +41,6 @@ const UserProfile = () => {
   const [expandedComments, setExpandedComments] = useState({});
   const [reactions, setReactions]       = useState({});
 
-  useEffect(() => {
-    if (userId) {
-      fetchProfile();
-      if (isAuthenticated()) checkFollowStatus();
-      else setCheckingFollow(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    if (profileUser) fetchContent();
-  }, [profileUser, activeTab, searchQuery]);
-
   const getCsrfToken = () => {
     for (const c of document.cookie.split(';')) {
       const [n, v] = c.trim().split('=');
@@ -152,6 +140,22 @@ const UserProfile = () => {
     }
     finally { setContentLoaded(true); }
   };
+
+  useEffect(() => {
+    if (userId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchProfile();
+      if (isAuthenticated()) checkFollowStatus();
+      else setCheckingFollow(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (profileUser) fetchContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileUser, activeTab, searchQuery]);
 
   const handlePostReaction = async (e, postId) => {
     e.preventDefault(); e.stopPropagation();

@@ -107,6 +107,7 @@ const ProfileSetup = () => {
             return;
           }
         } catch (valErr) {
+          // eslint-disable-next-line no-console
           console.warn('AI Validation is currently unavailable, bypassing validation:', valErr);
           // Permitimos continuar el flujo incluso si la API de IA falla
         }
@@ -151,6 +152,7 @@ const ProfileSetup = () => {
         setValidationMessage(data.message || 'Error al guardar el perfil');
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Profile setup error:', err);
       setValidationMessage('Error de conexión al guardar el perfil');
     } finally {

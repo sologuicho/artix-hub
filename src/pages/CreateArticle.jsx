@@ -104,6 +104,7 @@ const CreateArticle = () => {
               isCollaborative: a.isCollaborative || false,
             });
           }
+        // eslint-disable-next-line no-console
         } catch (err) { console.error(err); }
       };
       fetchArticle();

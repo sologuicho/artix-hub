@@ -27,10 +27,6 @@ const SavedItems = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (isAuthenticated()) fetchSavedItems();
-  }, [isAuthenticated, activeTab, searchQuery]);
-
   const fetchSavedItems = async () => {
     try {
       setLoading(true);
@@ -57,11 +53,18 @@ const SavedItems = () => {
         setSavedItems(items);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching saved items:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isAuthenticated()) fetchSavedItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, activeTab, searchQuery]);
 
   const formatDate = (d) => new Date(d).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
 

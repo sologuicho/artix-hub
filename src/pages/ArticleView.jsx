@@ -101,6 +101,7 @@ const ArticleView = () => {
     finally { setLoading(false); }
   }, [id]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchArticle(); }, [fetchArticle]);
 
   /* ── Check bookmark ── */

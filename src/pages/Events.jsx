@@ -302,12 +302,14 @@ export default function Events() {
         if (hasLive) setActiveTab('En vivo');
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching events:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   /* Derived data */

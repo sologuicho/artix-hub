@@ -43,17 +43,15 @@ import StudentVerification from './pages/StudentVerification';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 
-function AppRoutes() {
+function HomeOrDashboard() {
   const { isAuthenticated, needsProfileSetup } = useAuth();
+  if (needsProfileSetup()) {
+    return <Navigate to="/profile/setup" replace />;
+  }
+  return isAuthenticated() ? <Dashboard /> : <Home />;
+}
 
-  // Redirect to profile setup if needed
-  const HomeOrDashboard = () => {
-    if (needsProfileSetup()) {
-      return <Navigate to="/profile/setup" replace />;
-    }
-    return isAuthenticated() ? <Dashboard /> : <Home />;
-  };
-
+function AppRoutes() {
   return (
     <Router>
       <Routes>

@@ -1,6 +1,7 @@
 const articleRepository = require('../../repositories/articleRepository');
 const { getArtixResearchAuthorId, canPublishAsArtixResearch } = require('../shared/artixResearchService');
 const jobQueue = require('../../integrations/queue/jobQueue');
+const logger = require('../../lib/logger');
 
 // ——————————————————————————————————————————
 // Job handlers — registered once at import time
@@ -26,7 +27,7 @@ jobQueue.register('article:validate', async ({ articleId }) => {
       : 'draft';
     await prisma.article.update({ where: { id: articleId }, data: { status: newStatus } });
   } catch (err) {
-    console.error('[articleService] AI validation failed, falling back to draft:', err.message);
+    logger.error({ err }, '[articleService] AI validation failed, falling back to draft');
     await prisma.article.update({ where: { id: articleId }, data: { status: 'draft' } });
   }
 });

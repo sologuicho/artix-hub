@@ -9,9 +9,7 @@ const CollaborationInvitation = ({ type, itemId, onUpdate }) => {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchInvitations();
-  }, [type, itemId]);
+  // moved below fetchInvitations
 
   const fetchInvitations = async () => {
     try {
@@ -27,11 +25,18 @@ const CollaborationInvitation = ({ type, itemId, onUpdate }) => {
         setInvitations(userInvitations);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching invitations:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchInvitations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, itemId]);
 
   const handleResponse = async (collaborationId, accept) => {
     try {
@@ -60,6 +65,7 @@ const CollaborationInvitation = ({ type, itemId, onUpdate }) => {
         if (onUpdate) onUpdate();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error responding to invitation:', error);
     }
   };

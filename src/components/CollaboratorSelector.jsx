@@ -8,18 +8,6 @@ const CollaboratorSelector = ({ selectedCollaborators, onSelect, onRemove, place
   const [users, setUsers] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  useEffect(() => {
-    if (searchQuery.length >= 2) {
-      const timeoutId = setTimeout(() => {
-        fetchUsers(searchQuery);
-      }, 300);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setUsers([]);
-      setShowDropdown(false);
-    }
-  }, [searchQuery]);
-
   const fetchUsers = async (query) => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
@@ -35,9 +23,24 @@ const CollaboratorSelector = ({ selectedCollaborators, onSelect, onRemove, place
         setShowDropdown(filtered.length > 0);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching users:', error);
     }
   };
+
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      const timeoutId = setTimeout(() => {
+        fetchUsers(searchQuery);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUsers([]);
+      setShowDropdown(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   const handleSelect = (user) => {
     onSelect(user);

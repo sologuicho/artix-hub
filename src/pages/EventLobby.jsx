@@ -71,6 +71,7 @@ const EventLobby = () => {
       if (evData.ok) setEvent(evData.event);
       if (msgData.ok) setMessages(msgData.messages);
     }).catch(() => {}).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {

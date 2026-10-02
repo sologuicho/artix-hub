@@ -23,10 +23,6 @@ const Archived = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (user) fetchArchived();
-  }, [user, activeTab, searchQuery]);
-
   const fetchArchived = async () => {
     if (!user) return;
     try {
@@ -54,11 +50,18 @@ const Archived = () => {
         }
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching archived:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user) fetchArchived();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, activeTab, searchQuery]);
 
   const formatDate = (d) => new Date(d).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
 

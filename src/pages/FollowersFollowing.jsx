@@ -17,14 +17,6 @@ const FollowersFollowing = () => {
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState({});
 
-  useEffect(() => {
-    if (userId && type) fetchData();
-  }, [userId, type]);
-
-  useEffect(() => {
-    if (isAuthenticated() && users.length > 0) checkFollowStatuses();
-  }, [users]);
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -42,6 +34,7 @@ const FollowersFollowing = () => {
       if (profileData.ok) setProfileUser(profileData.user);
       if (usersData.ok) setUsers(type === 'followers' ? usersData.followers : usersData.following);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
@@ -62,6 +55,18 @@ const FollowersFollowing = () => {
     }));
     setFollowing(prev => ({ ...prev, ...statuses }));
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (userId && type) fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, type]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isAuthenticated() && users.length > 0) checkFollowStatuses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [users]);
 
   const getCsrfToken = () => {
     for (const c of document.cookie.split(';')) {

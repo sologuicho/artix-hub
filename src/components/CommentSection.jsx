@@ -63,8 +63,6 @@ const CommentSection = ({ postId, articleId, researchId, discussionId, eventId }
   const [replyText, setReplyText] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  useEffect(() => { fetchComments(); }, [postId, articleId, researchId, discussionId, eventId]);
-
   const fetchComments = async () => {
     setLoading(true);
     try {
@@ -80,6 +78,9 @@ const CommentSection = ({ postId, articleId, researchId, discussionId, eventId }
     } catch (_) { // intentional
     } finally { setLoading(false); }
   };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchComments(); }, [postId, articleId, researchId, discussionId, eventId]);
 
   const postComment = async (extra) => {
     const res = await fetch(`${BACKEND_URL}/api/comments`, {

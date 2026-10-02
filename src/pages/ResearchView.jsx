@@ -141,6 +141,7 @@ const ResearchView = () => {
         setResearch(data.research);
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching research:', err);
     } finally {
       setLoading(false);
@@ -176,11 +177,13 @@ const ResearchView = () => {
 
   // ── Mount effects ────────────────────────────────────────────────────────────
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchResearch();
   }, [fetchResearch]);
 
   useEffect(() => {
     if (!research) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkSaved();
     checkFollow(research.author?.id);
   }, [research, checkSaved, checkFollow]);

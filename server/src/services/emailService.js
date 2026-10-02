@@ -2,6 +2,7 @@
 // Supports Gmail, SendGrid, AWS SES, and other SMTP providers
 
 const nodemailer = require('nodemailer');
+const logger = require('../lib/logger');
 
 // Create transporter based on environment variables
 const createTransporter = () => {
@@ -43,8 +44,7 @@ const sendEmail = async (to, subject, html, text = null) => {
   try {
     // If no email config, just log (development mode)
     if (!process.env.SMTP_USER && !process.env.SENDGRID_API_KEY && !process.env.AWS_SES_ACCESS_KEY_ID) {
-      console.log(`[EMAIL] Would send to ${to}: ${subject}`);
-      console.log(`[EMAIL] Content: ${text || html.substring(0, 100)}...`);
+      logger.info({ to, subject }, '[EMAIL] Would send (dev mode — no SMTP configured)');
       return true;
     }
 
@@ -59,10 +59,10 @@ const sendEmail = async (to, subject, html, text = null) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL] Sent to ${to}: ${info.messageId}`);
+    logger.info({ to, messageId: info.messageId }, '[EMAIL] Sent');
     return true;
   } catch (error) {
-    console.error('[EMAIL] Error sending email:', error);
+    logger.error({ err: error, to }, '[EMAIL] Error sending email');
     throw error;
   }
 };
@@ -405,11 +405,11 @@ exports.checkAndSendReminders = async () => {
           data: { sent: true }
         });
       } catch (error) {
-        console.error(`Error sending reminder ${reminder.id}:`, error);
+        logger.error({ err: error, reminderId: reminder.id }, 'Error sending reminder');
       }
     }
   } catch (error) {
-    console.error('Error checking reminders:', error);
+    logger.error({ err: error }, 'Error checking reminders');
   } finally {
     await prisma.$disconnect();
   }

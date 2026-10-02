@@ -97,6 +97,7 @@ const CreateBlogPost = () => {
             setVideoUrl(post.videoUrl || '');
             setDocuments(post.documents ? post.documents.map(url => ({ url })) : []);
           }
+        // eslint-disable-next-line no-console
         } catch (error) { console.error('Error loading post:', error); }
       };
       fetchPost();

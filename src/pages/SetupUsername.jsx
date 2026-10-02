@@ -59,6 +59,7 @@ const SetupUsername = () => {
         setError(data.message || 'Error al verificar el username');
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error checking username:', err);
       setIsAvailable(false);
       setError('Error al verificar el username');
@@ -127,6 +128,7 @@ const SetupUsername = () => {
         setError(data.message || 'Error al configurar el username');
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error setting up username:', err);
       setError('Error al configurar el username. Por favor intenta de nuevo.');
     } finally {
