@@ -1,193 +1,210 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, Check, X, Loader } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { User, Check, X, Loader } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
-import { BACKEND_URL } from '../config/client';
+import { BACKEND_URL } from '../config/client'
 
-const MONO = "'IBM Plex Mono', monospace";
-const SANS = "'IBM Plex Sans', sans-serif";
-const ACCENT = '#C4451A';
+const MONO = "'IBM Plex Mono', monospace"
+const SANS = "'IBM Plex Sans', sans-serif"
+const ACCENT = '#C4451A'
 
 const SetupUsername = () => {
-  const [username, setUsername] = useState('');
-  const [isChecking, setIsChecking] = useState(false);
-  const [isAvailable, setIsAvailable] = useState(null);
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
-  const { checkAuth } = useAuth();
+  const [username, setUsername] = useState('')
+  const [isChecking, setIsChecking] = useState(false)
+  const [isAvailable, setIsAvailable] = useState(null)
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const navigate = useNavigate()
+  const { checkAuth } = useAuth()
 
   // Get CSRF token from cookie
   const getCsrfToken = () => {
-    const cookies = document.cookie.split(';');
+    const cookies = document.cookie.split(';')
     for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
+      const [name, value] = cookie.trim().split('=')
       if (name === 'csrf') {
-        return value;
+        return value
       }
     }
-    return null;
-  };
+    return null
+  }
 
   // Check username availability
-  const checkUsername = async (value) => {
+  const checkUsername = async value => {
     if (!value || value.trim().length < 3) {
-      setIsAvailable(null);
-      return;
+      setIsAvailable(null)
+      return
     }
 
-    setIsChecking(true);
-    setError('');
+    setIsChecking(true)
+    setError('')
 
     try {
-      const response = await fetch(`${BACKEND_URL}/auth/check-username?username=${encodeURIComponent(value)}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(
+        `${BACKEND_URL}/auth/check-username?username=${encodeURIComponent(value)}`,
+        {
+          credentials: 'include',
+        }
+      )
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (data.ok) {
-        setIsAvailable(data.available);
+        setIsAvailable(data.available)
         if (!data.available) {
-          setError(data.message || 'Ese nombre de usuario no está disponible');
+          setError(data.message || 'Ese nombre de usuario no está disponible')
         } else {
-          setError('');
+          setError('')
         }
       } else {
-        setIsAvailable(false);
-        setError(data.message || 'Error al verificar el username');
+        setIsAvailable(false)
+        setError(data.message || 'Error al verificar el username')
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('Error checking username:', err);
-      setIsAvailable(false);
-      setError('Error al verificar el username');
+      console.error('Error checking username:', err)
+      setIsAvailable(false)
+      setError('Error al verificar el username')
     } finally {
-      setIsChecking(false);
+      setIsChecking(false)
     }
-  };
+  }
 
   // Handle username input change
-  const handleUsernameChange = (e) => {
-    const value = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
-    setUsername(value);
-    setError('');
-    setIsAvailable(null);
+  const handleUsernameChange = e => {
+    const value = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
+    setUsername(value)
+    setError('')
+    setIsAvailable(null)
 
     // Debounce check
     if (value.length >= 3) {
       const timeoutId = setTimeout(() => {
-        checkUsername(value);
-      }, 500);
-      return () => clearTimeout(timeoutId);
+        checkUsername(value)
+      }, 500)
+      return () => clearTimeout(timeoutId)
     }
-  };
+  }
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  const handleSubmit = async e => {
+    e.preventDefault()
+    setError('')
 
     if (!username || username.trim().length < 3) {
-      setError('El username debe tener al menos 3 caracteres');
-      return;
+      setError('El username debe tener al menos 3 caracteres')
+      return
     }
 
     if (isAvailable === false) {
-      setError('Ese nombre de usuario no está disponible');
-      return;
+      setError('Ese nombre de usuario no está disponible')
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
 
     try {
-      const csrfToken = getCsrfToken();
+      const csrfToken = getCsrfToken()
       if (!csrfToken) {
-        throw new Error('CSRF token not found');
+        throw new Error('CSRF token not found')
       }
 
       const response = await fetch(`${BACKEND_URL}/auth/setup-username`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken
+          'x-csrf-token': csrfToken,
         },
         credentials: 'include',
-        body: JSON.stringify({ username })
-      });
+        body: JSON.stringify({ username }),
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (data.ok) {
         // Refresh auth state
-        await checkAuth();
+        await checkAuth()
         // Redirect to home or dashboard
-        navigate('/');
+        navigate('/')
       } else {
-        setError(data.message || 'Error al configurar el username');
+        setError(data.message || 'Error al configurar el username')
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('Error setting up username:', err);
-      setError('Error al configurar el username. Por favor intenta de nuevo.');
+      console.error('Error setting up username:', err)
+      setError('Error al configurar el username. Por favor intenta de nuevo.')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const inputBorderColor = isAvailable === true
-    ? ACCENT
-    : isAvailable === false
-    ? '#ef4444'
-    : 'var(--border)';
+  const inputBorderColor =
+    isAvailable === true ? ACCENT : isAvailable === false ? '#ef4444' : 'var(--border)'
 
-  const isDisabled = isSubmitting || isAvailable !== true || username.length < 3;
+  const isDisabled = isSubmitting || isAvailable !== true || username.length < 3
 
   return (
-    <div style={{
-      backgroundColor: 'var(--bg)',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-    }}>
+    <div
+      style={{
+        backgroundColor: 'var(--bg)',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+      }}
+    >
       <div style={{ maxWidth: '400px', width: '100%' }}>
-
         {/* Card */}
-        <div style={{
-          padding: '2.5rem',
-          backgroundColor: 'var(--surface)',
-          border: '1px solid var(--border)',
-        }}>
+        <div
+          style={{
+            padding: '2.5rem',
+            backgroundColor: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        >
           {/* Section tag */}
-          <span style={{
-            fontFamily: MONO,
-            fontSize: '0.5625rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--muted)',
-          }}>
+          <span
+            style={{
+              fontFamily: MONO,
+              fontSize: '0.5625rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+            }}
+          >
             Cuenta
           </span>
 
-          <h1 style={{
-            fontFamily: SANS,
-            fontWeight: 700,
-            fontSize: '1.75rem',
-            color: 'var(--text)',
-            lineHeight: 1.15,
-            marginTop: '0.375rem',
-            marginBottom: '0.5rem',
-          }}>
+          <h1
+            style={{
+              fontFamily: SANS,
+              fontWeight: 700,
+              fontSize: '1.75rem',
+              color: 'var(--text)',
+              lineHeight: 1.15,
+              marginTop: '0.375rem',
+              marginBottom: '0.5rem',
+            }}
+          >
             Elige tu nombre de usuario
           </h1>
-          <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--muted)', marginBottom: '2rem' }}>
+          <p
+            style={{
+              fontFamily: SANS,
+              fontSize: '0.875rem',
+              color: 'var(--muted)',
+              marginBottom: '2rem',
+            }}
+          >
             Este será tu nombre único en Artix Hub
           </p>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+          >
             <div>
               <label
                 htmlFor="username"
@@ -240,12 +257,14 @@ const SetupUsername = () => {
                   pattern="[a-zA-Z0-9_-]{3,20}"
                   required
                 />
-                <div style={{
-                  position: 'absolute',
-                  right: '0.75rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                  }}
+                >
                   {isChecking && (
                     <Loader
                       size={14}
@@ -263,21 +282,49 @@ const SetupUsername = () => {
 
               {/* Feedback messages */}
               {username.length > 0 && username.length < 3 && (
-                <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
+                <p
+                  style={{
+                    fontFamily: SANS,
+                    fontSize: '0.75rem',
+                    color: 'var(--muted)',
+                    marginTop: '0.5rem',
+                  }}
+                >
                   Mínimo 3 caracteres
                 </p>
               )}
               {username.length >= 3 && isAvailable === true && (
-                <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: ACCENT, marginTop: '0.5rem' }}>
+                <p
+                  style={{
+                    fontFamily: SANS,
+                    fontSize: '0.75rem',
+                    color: ACCENT,
+                    marginTop: '0.5rem',
+                  }}
+                >
                   Username disponible
                 </p>
               )}
               {error && (
-                <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: '#ef4444', marginTop: '0.5rem' }}>
+                <p
+                  style={{
+                    fontFamily: SANS,
+                    fontSize: '0.75rem',
+                    color: '#ef4444',
+                    marginTop: '0.5rem',
+                  }}
+                >
                   {error}
                 </p>
               )}
-              <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
+              <p
+                style={{
+                  fontFamily: SANS,
+                  fontSize: '0.75rem',
+                  color: 'var(--muted)',
+                  marginTop: '0.5rem',
+                }}
+              >
                 Solo letras, números, guiones y guiones bajos. 3–20 caracteres.
               </p>
             </div>
@@ -306,7 +353,7 @@ const SetupUsername = () => {
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
-  );
-};
+  )
+}
 
-export default SetupUsername;
+export default SetupUsername

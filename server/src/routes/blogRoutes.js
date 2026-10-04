@@ -1,22 +1,52 @@
-const express = require('express');
-const router = express.Router();
-const blogController = require('../controllers/blogController');
-const { protect } = require('../middleware/authMiddleware');
-const { checkPermission } = require('../middleware/checkTier');
-const { verifyCsrf } = require('../middleware/csrfMiddleware');
-const { validateBlogPost } = require('../middleware/validationMiddleware');
+const express = require('express')
+const router = express.Router()
+const blogController = require('../controllers/blogController')
+const { protect } = require('../middleware/authMiddleware')
+const { checkPermission } = require('../middleware/checkTier')
+const { verifyCsrf } = require('../middleware/csrfMiddleware')
+const { validateBlogPost } = require('../middleware/validationMiddleware')
 
 // Public routes
-router.get('/', blogController.getAllBlogPosts);
-router.get('/categories', blogController.getCategories);
-router.get('/:id', blogController.getBlogPost);
+router.get('/', blogController.getAllBlogPosts)
+router.get('/categories', blogController.getCategories)
+router.get('/:id', blogController.getBlogPost)
 
 // Protected routes
-router.post('/', protect, checkPermission('canPublishBlog'), verifyCsrf, validateBlogPost, blogController.createBlogPost);
-router.put('/:id', protect, checkPermission('canPublishBlog'), verifyCsrf, blogController.updateBlogPost);
-router.post('/:id/archive', protect, checkPermission('canPublishBlog'), verifyCsrf, blogController.archiveBlogPost);
-router.post('/:id/unarchive', protect, checkPermission('canPublishBlog'), verifyCsrf, blogController.archiveBlogPost);
-router.delete('/:id', protect, checkPermission('canPublishBlog'), verifyCsrf, blogController.deleteBlogPost);
+router.post(
+  '/',
+  protect,
+  checkPermission('canPublishBlog'),
+  verifyCsrf,
+  validateBlogPost,
+  blogController.createBlogPost
+)
+router.put(
+  '/:id',
+  protect,
+  checkPermission('canPublishBlog'),
+  verifyCsrf,
+  blogController.updateBlogPost
+)
+router.post(
+  '/:id/archive',
+  protect,
+  checkPermission('canPublishBlog'),
+  verifyCsrf,
+  blogController.archiveBlogPost
+)
+router.post(
+  '/:id/unarchive',
+  protect,
+  checkPermission('canPublishBlog'),
+  verifyCsrf,
+  blogController.archiveBlogPost
+)
+router.delete(
+  '/:id',
+  protect,
+  checkPermission('canPublishBlog'),
+  verifyCsrf,
+  blogController.deleteBlogPost
+)
 
-module.exports = router;
-
+module.exports = router

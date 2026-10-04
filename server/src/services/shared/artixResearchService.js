@@ -1,4 +1,4 @@
-const prisma = require('../../prismaClient');
+const prisma = require('../../prismaClient')
 
 const ARTIX_RESEARCH_DATA = {
   provider: 'system',
@@ -11,8 +11,8 @@ const ARTIX_RESEARCH_DATA = {
   bio: 'Cuenta oficial de investigación de Artix Hub. Publicamos artículos científicos, investigaciones avanzadas y contenido académico de alta calidad sobre física cuántica, inteligencia artificial, química computacional y más.',
   occupation: 'Organización de Investigación',
   country: 'Global',
-  interests: ['Quantum Physics', 'AI Research', 'Chemistry', 'Machine Learning', 'Data Science']
-};
+  interests: ['Quantum Physics', 'AI Research', 'Chemistry', 'Machine Learning', 'Data Science'],
+}
 
 /**
  * Returns the ID of the Artix Research user, creating it if it doesn't exist.
@@ -24,20 +24,20 @@ exports.getArtixResearchAuthorId = async () => {
       OR: [
         { username: 'artixresearch' },
         { username: 'artix-research' },
-        { name: 'Artix Research' }
-      ]
-    }
-  });
+        { name: 'Artix Research' },
+      ],
+    },
+  })
 
-  if (existing) return existing.id;
+  if (existing) return existing.id
 
-  const created = await prisma.user.create({ data: ARTIX_RESEARCH_DATA });
-  return created.id;
-};
+  const created = await prisma.user.create({ data: ARTIX_RESEARCH_DATA })
+  return created.id
+}
 
 /**
  * Returns true if the given user is allowed to publish content as Artix Research.
  */
-exports.canPublishAsArtixResearch = (user) => {
-  return user.username === 'luisflores01' || user.role === 'ADMIN';
-};
+exports.canPublishAsArtixResearch = user => {
+  return user.username === 'luisflores01' || user.role === 'ADMIN'
+}

@@ -1,76 +1,82 @@
-import { useState, useEffect } from 'react';
-import { Check, XCircle, Users } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from 'react'
+import { Check, XCircle, Users } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
-import { BACKEND_URL } from '../config/client';
+import { BACKEND_URL } from '../config/client'
 
 const CollaborationInvitation = ({ type, itemId, onUpdate }) => {
-  const { user } = useAuth();
-  const [invitations, setInvitations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth()
+  const [invitations, setInvitations] = useState([])
+  const [loading, setLoading] = useState(true)
 
   // moved below fetchInvitations
 
   const fetchInvitations = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/${type === 'article' ? 'articles' : 'events'}/${itemId}/collaborations`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const response = await fetch(
+        `${BACKEND_URL}/api/${type === 'article' ? 'articles' : 'events'}/${itemId}/collaborations`,
+        {
+          credentials: 'include',
+        }
+      )
+      const data = await response.json()
       if (data.ok) {
         // Filter invitations for current user
         const userInvitations = (data.collaborations || []).filter(
           collab => collab.userId === user?.id && collab.status === 'pending'
-        );
-        setInvitations(userInvitations);
+        )
+        setInvitations(userInvitations)
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error fetching invitations:', error);
+      console.error('Error fetching invitations:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchInvitations();
+    fetchInvitations()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, itemId]);
+  }, [type, itemId])
 
   const handleResponse = async (collaborationId, accept) => {
     try {
       const getCsrfToken = () => {
-        const cookies = document.cookie.split(';');
+        const cookies = document.cookie.split(';')
         for (const cookie of cookies) {
-          const [name, value] = cookie.trim().split('=');
-          if (name === 'csrf') return value;
+          const [name, value] = cookie.trim().split('=')
+          if (name === 'csrf') return value
         }
-        return null;
-      };
+        return null
+      }
 
-      const response = await fetch(`${BACKEND_URL}/api/${type === 'article' ? 'articles' : 'events'}/${itemId}/collaborations/${collaborationId}/respond`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': getCsrfToken() || ''
-        },
-        credentials: 'include',
-        body: JSON.stringify({ accept })
-      });
+      const response = await fetch(
+        `${BACKEND_URL}/api/${type === 'article' ? 'articles' : 'events'}/${itemId}/collaborations/${collaborationId}/respond`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrf-token': getCsrfToken() || '',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ accept }),
+        }
+      )
 
-      const data = await response.json();
+      const data = await response.json()
       if (data.ok) {
-        setInvitations(prev => prev.filter(inv => inv.id !== collaborationId));
-        if (onUpdate) onUpdate();
+        setInvitations(prev => prev.filter(inv => inv.id !== collaborationId))
+        if (onUpdate) onUpdate()
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error responding to invitation:', error);
+      console.error('Error responding to invitation:', error)
     }
-  };
+  }
 
-  if (loading || invitations.length === 0) return null;
+  if (loading || invitations.length === 0) return null
 
   return (
     <div className="glass-card p-4 mb-6 border-l-4 border-blue-500">
@@ -80,10 +86,14 @@ const CollaborationInvitation = ({ type, itemId, onUpdate }) => {
           <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
             Invitaciones de colaboración
           </h3>
-          {invitations.map((invitation) => (
-            <div key={invitation.id} className="mb-3 last:mb-0 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          {invitations.map(invitation => (
+            <div
+              key={invitation.id}
+              className="mb-3 last:mb-0 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+            >
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                Has sido invitado a colaborar en este {type === 'article' ? 'artículo' : 'evento'} como <strong>{invitation.role}</strong>.
+                Has sido invitado a colaborar en este {type === 'article' ? 'artículo' : 'evento'}{' '}
+                como <strong>{invitation.role}</strong>.
               </p>
               <div className="flex gap-2">
                 <button
@@ -106,12 +116,7 @@ const CollaborationInvitation = ({ type, itemId, onUpdate }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CollaborationInvitation;
-
-
-
-
-
+export default CollaborationInvitation

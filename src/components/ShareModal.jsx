@@ -1,33 +1,31 @@
-import { X, Facebook, Twitter, Linkedin, MessageCircle, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { X, Facebook, Twitter, Linkedin, MessageCircle, Copy, Check } from 'lucide-react'
+import { useState } from 'react'
 
 const ShareModal = ({ url, title, onClose }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const shareLinks = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
     twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}`
-  };
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}`,
+  }
 
-  const handleShare = (platform) => {
-    window.open(shareLinks[platform], '_blank', 'width=600,height=400');
-  };
+  const handleShare = platform => {
+    window.open(shareLinks[platform], '_blank', 'width=600,height=400')
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in slide-in-from-bottom">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Compartir
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Compartir</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -97,13 +95,7 @@ const ShareModal = ({ url, title, onClose }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ShareModal;
-
-
-
-
-
-
+export default ShareModal

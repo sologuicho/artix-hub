@@ -1,13 +1,11 @@
 // CommonJS version for backend
-const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions'
 
 const callOpenAI = async ({ prompt, model = 'gpt-4o-mini' }) => {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY
 
   if (!apiKey) {
-    throw new Error(
-      'Missing OPENAI_API_KEY. Set OPENAI_API_KEY in .env.'
-    );
+    throw new Error('Missing OPENAI_API_KEY. Set OPENAI_API_KEY in .env.')
   }
 
   const response = await fetch(OPENAI_ENDPOINT, {
@@ -31,22 +29,15 @@ const callOpenAI = async ({ prompt, model = 'gpt-4o-mini' }) => {
         },
       ],
     }),
-  });
+  })
 
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`OpenAI API error: ${errText}`);
+    const errText = await response.text()
+    throw new Error(`OpenAI API error: ${errText}`)
   }
 
-  const data = await response.json();
-  return data?.choices?.[0]?.message?.content?.trim() ?? '';
-};
+  const data = await response.json()
+  return data?.choices?.[0]?.message?.content?.trim() ?? ''
+}
 
-module.exports = { callOpenAI };
-
-
-
-
-
-
-
+module.exports = { callOpenAI }

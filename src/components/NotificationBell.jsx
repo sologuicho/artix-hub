@@ -1,49 +1,49 @@
-import { useState, useEffect, useRef } from 'react';
-import { Bell } from 'lucide-react';
-import { useNotifications } from '../context/NotificationContext';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react'
+import { Bell } from 'lucide-react'
+import { useNotifications } from '../context/NotificationContext'
+import { useNavigate } from 'react-router-dom'
 
 const NotificationBell = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const navigate = useNavigate();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
+  const formatDate = dateString => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now - date
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
 
-    if (minutes < 1) return 'Ahora';
-    if (minutes < 60) return `Hace ${minutes}m`;
-    if (hours < 24) return `Hace ${hours}h`;
-    if (days < 7) return `Hace ${days}d`;
-    return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-  };
+    if (minutes < 1) return 'Ahora'
+    if (minutes < 60) return `Hace ${minutes}m`
+    if (hours < 24) return `Hace ${hours}h`
+    if (days < 7) return `Hace ${days}d`
+    return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })
+  }
 
-  const handleNotificationClick = (notification) => {
+  const handleNotificationClick = notification => {
     if (!notification.read) {
-      markAsRead(notification.id);
+      markAsRead(notification.id)
     }
     if (notification.link) {
-      navigate(notification.link);
+      navigate(notification.link)
     }
-    setIsOpen(false);
-  };
+    setIsOpen(false)
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -81,7 +81,7 @@ const NotificationBell = () => {
                 No hay notificaciones
               </div>
             ) : (
-              notifications.map((notification) => (
+              notifications.map(notification => (
                 <div
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
@@ -112,10 +112,7 @@ const NotificationBell = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default NotificationBell;
-
-
-
+export default NotificationBell

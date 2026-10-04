@@ -1,8 +1,8 @@
-import '@testing-library/jest-dom/vitest';
+import '@testing-library/jest-dom/vitest'
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: (query) => ({
+  value: query => ({
     matches: false,
     media: query,
     onchange: null,
@@ -12,4 +12,4 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   }),
-});
+})

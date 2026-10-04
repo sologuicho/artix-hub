@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
 
 const getCsrf = () => {
   for (const c of document.cookie.split(';')) {
-    const [k, v] = c.trim().split('=');
-    if (k === 'csrf') return decodeURIComponent(v || '');
+    const [k, v] = c.trim().split('=')
+    if (k === 'csrf') return decodeURIComponent(v || '')
   }
-  return '';
-};
+  return ''
+}
 
 /* ── Brutalist square toggle ── */
 const Toggle = ({ on, onToggle }) => (
@@ -44,7 +44,7 @@ const Toggle = ({ on, onToggle }) => (
       }}
     />
   </button>
-);
+)
 
 /* ── Section nav item ── */
 const NavItem = ({ name, active, onClick }) => (
@@ -68,7 +68,7 @@ const NavItem = ({ name, active, onClick }) => (
   >
     {name}
   </button>
-);
+)
 
 /* ── Row inside a bordered list ── */
 const AccountRow = ({ label, sub, subColor, action, onAction, last }) => (
@@ -115,7 +115,7 @@ const AccountRow = ({ label, sub, subColor, action, onAction, last }) => (
       </button>
     )}
   </div>
-);
+)
 
 /* ── Toggle row ── */
 const ToggleRow = ({ title, desc, on, onToggle, last }) => (
@@ -134,191 +134,226 @@ const ToggleRow = ({ title, desc, on, onToggle, last }) => (
     </div>
     <Toggle on={on} onToggle={onToggle} />
   </div>
-);
+)
 
 const NOTIF_DEFS = [
-  { key: 'followers',  title: 'Nuevos seguidores',       desc: 'Cuando alguien empieza a seguirte.' },
-  { key: 'replies',    title: 'Respuestas y menciones',   desc: 'Respuestas a tus posts o menciones en discusiones.' },
-  { key: 'events',     title: 'Recordatorios de eventos', desc: 'Avisos antes de eventos a los que te inscribiste.' },
-  { key: 'digest',     title: 'Resumen semanal',          desc: 'Lo más relevante de tus temas, cada lunes.' },
-];
+  { key: 'followers', title: 'Nuevos seguidores', desc: 'Cuando alguien empieza a seguirte.' },
+  {
+    key: 'replies',
+    title: 'Respuestas y menciones',
+    desc: 'Respuestas a tus posts o menciones en discusiones.',
+  },
+  {
+    key: 'events',
+    title: 'Recordatorios de eventos',
+    desc: 'Avisos antes de eventos a los que te inscribiste.',
+  },
+  { key: 'digest', title: 'Resumen semanal', desc: 'Lo más relevante de tus temas, cada lunes.' },
+]
 
 const PRIVACY_DEFS = [
-  { key: 'publicProfile', title: 'Perfil público',     desc: 'Cualquiera puede ver tu perfil y publicaciones.' },
-  { key: 'showActivity',  title: 'Mostrar actividad',  desc: 'Muestra likes, follows y lecturas recientes.' },
-];
+  {
+    key: 'publicProfile',
+    title: 'Perfil público',
+    desc: 'Cualquiera puede ver tu perfil y publicaciones.',
+  },
+  {
+    key: 'showActivity',
+    title: 'Mostrar actividad',
+    desc: 'Muestra likes, follows y lecturas recientes.',
+  },
+]
 
 const TIERS = [
-  { name: 'Free',    price: '$0',  note: 'lector'     },
-  { name: 'Student', price: '$4',  note: 'verificado' },
-  { name: 'Pro',     price: '$12', note: 'creadores'  },
-  { name: 'Team',    price: '$32', note: 'por asiento'},
-];
+  { name: 'Free', price: '$0', note: 'lector' },
+  { name: 'Student', price: '$4', note: 'verificado' },
+  { name: 'Pro', price: '$12', note: 'creadores' },
+  { name: 'Team', price: '$32', note: 'por asiento' },
+]
 
-const SECTIONS = ['Perfil', 'Cuenta', 'Notificaciones', 'Suscripción', 'Privacidad', 'Peligro'];
+const SECTIONS = ['Perfil', 'Cuenta', 'Notificaciones', 'Suscripción', 'Privacidad', 'Peligro']
 
 const loadPref = (key, fallback) => {
-  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
-};
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback
+  } catch {
+    return fallback
+  }
+}
 
 const Settings = () => {
-  const { user, isAuthenticated, logout, updateUser } = useAuth();
-  const navigate = useNavigate();
+  const { user, isAuthenticated, logout, updateUser } = useAuth()
+  const navigate = useNavigate()
 
   /* redirect if not authenticated */
   useEffect(() => {
-    if (!isAuthenticated()) navigate('/auth');
-  }, [isAuthenticated, navigate]);
+    if (!isAuthenticated()) navigate('/auth')
+  }, [isAuthenticated, navigate])
 
-  const [section, setSection] = useState('Perfil');
-  const [saved, setSaved] = useState(false);
-  const savedTimer = useRef(null);
+  const [section, setSection] = useState('Perfil')
+  const [saved, setSaved] = useState(false)
+  const savedTimer = useRef(null)
 
   /* profile form */
   const [form, setForm] = useState({
-    name:     '',
+    name: '',
     username: '',
-    bio:      '',
-    affil:    '',
-    website:  '',
-  });
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
+    bio: '',
+    affil: '',
+    website: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   /* notification & privacy prefs (localStorage fallback) */
   const [notif, setNotif] = useState(() =>
     loadPref('settings_notif', { followers: true, replies: true, events: false, digest: true })
-  );
+  )
   const [privacy, setPrivacy] = useState(() =>
     loadPref('settings_privacy', { publicProfile: true, showActivity: true })
-  );
+  )
 
   /* password modal state */
-  const [pwModal, setPwModal] = useState(false);
-  const [pwForm, setPwForm] = useState({ current: '', newPass: '', confirm: '' });
-  const [pwMsg, setPwMsg] = useState(null);
-  const [pwSaving, setPwSaving] = useState(false);
+  const [pwModal, setPwModal] = useState(false)
+  const [pwForm, setPwForm] = useState({ current: '', newPass: '', confirm: '' })
+  const [pwMsg, setPwMsg] = useState(null)
+  const [pwSaving, setPwSaving] = useState(false)
 
   /* delete confirm */
-  const [deleteModal, setDeleteModal] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState('');
-  const [deleteError, setDeleteError] = useState('');
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   /* populate form when user is ready */
   useEffect(() => {
     if (user) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
-        name:     user.name     || '',
+        name: user.name || '',
         username: user.username || '',
-        bio:      user.bio      || '',
-        affil:    user.occupation || '',
-        website:  '',
-      });
+        bio: user.bio || '',
+        affil: user.occupation || '',
+        website: '',
+      })
     }
-  }, [user]);
+  }, [user])
 
   /* persist prefs */
-  useEffect(() => { localStorage.setItem('settings_notif', JSON.stringify(notif)); }, [notif]);
-  useEffect(() => { localStorage.setItem('settings_privacy', JSON.stringify(privacy)); }, [privacy]);
+  useEffect(() => {
+    localStorage.setItem('settings_notif', JSON.stringify(notif))
+  }, [notif])
+  useEffect(() => {
+    localStorage.setItem('settings_privacy', JSON.stringify(privacy))
+  }, [privacy])
 
   const flash = () => {
-    setSaved(true);
-    if (savedTimer.current) clearTimeout(savedTimer.current);
-    savedTimer.current = setTimeout(() => setSaved(false), 3000);
-  };
+    setSaved(true)
+    if (savedTimer.current) clearTimeout(savedTimer.current)
+    savedTimer.current = setTimeout(() => setSaved(false), 3000)
+  }
 
   const handleSave = async () => {
-    if (section !== 'Perfil') { flash(); return; }
-    setSaving(true);
-    setSaveError('');
+    if (section !== 'Perfil') {
+      flash()
+      return
+    }
+    setSaving(true)
+    setSaveError('')
     try {
       const res = await fetch(`${BACKEND_URL}/api/auth/me`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrf() },
         credentials: 'include',
         body: JSON.stringify({
-          name:       form.name     || undefined,
-          username:   form.username || undefined,
-          bio:        form.bio      || undefined,
-          occupation: form.affil    || undefined,
+          name: form.name || undefined,
+          username: form.username || undefined,
+          bio: form.bio || undefined,
+          occupation: form.affil || undefined,
         }),
-      });
-      const data = await res.json();
+      })
+      const data = await res.json()
       if (data.ok) {
-        if (updateUser) updateUser(data.user);
-        flash();
+        if (updateUser) updateUser(data.user)
+        flash()
       } else {
-        setSaveError(data.message || 'Error al guardar');
+        setSaveError(data.message || 'Error al guardar')
       }
     } catch {
-      setSaveError('Error de conexión');
+      setSaveError('Error de conexión')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    setPwMsg(null);
+  const handlePasswordChange = async e => {
+    e.preventDefault()
+    setPwMsg(null)
     if (pwForm.newPass !== pwForm.confirm) {
-      setPwMsg({ type: 'error', text: 'Las contraseñas nuevas no coinciden' });
-      return;
+      setPwMsg({ type: 'error', text: 'Las contraseñas nuevas no coinciden' })
+      return
     }
     if (pwForm.newPass.length < 6) {
-      setPwMsg({ type: 'error', text: 'Mínimo 6 caracteres' });
-      return;
+      setPwMsg({ type: 'error', text: 'Mínimo 6 caracteres' })
+      return
     }
-    setPwSaving(true);
+    setPwSaving(true)
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/me/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrf() },
         credentials: 'include',
         body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.newPass }),
-      });
-      const data = await res.json();
+      })
+      const data = await res.json()
       if (data.ok) {
-        setPwMsg({ type: 'success', text: 'Contraseña actualizada' });
-        setPwForm({ current: '', newPass: '', confirm: '' });
-        setTimeout(() => { setPwModal(false); setPwMsg(null); }, 1500);
+        setPwMsg({ type: 'success', text: 'Contraseña actualizada' })
+        setPwForm({ current: '', newPass: '', confirm: '' })
+        setTimeout(() => {
+          setPwModal(false)
+          setPwMsg(null)
+        }, 1500)
       } else {
-        setPwMsg({ type: 'error', text: data.message || 'Error al cambiar' });
+        setPwMsg({ type: 'error', text: data.message || 'Error al cambiar' })
       }
     } catch {
-      setPwMsg({ type: 'error', text: 'Error de conexión' });
+      setPwMsg({ type: 'error', text: 'Error de conexión' })
     } finally {
-      setPwSaving(false);
+      setPwSaving(false)
     }
-  };
+  }
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirm !== user?.username) { setDeleteError('El nombre de usuario no coincide'); return; }
-    setDeleteLoading(true);
-    setDeleteError('');
+    if (deleteConfirm !== user?.username) {
+      setDeleteError('El nombre de usuario no coincide')
+      return
+    }
+    setDeleteLoading(true)
+    setDeleteError('')
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/me`, {
         method: 'DELETE',
         headers: { 'x-csrf-token': getCsrf() },
         credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.ok) { await logout(); navigate('/'); }
-      else setDeleteError(data.message || 'Error al eliminar');
+      })
+      const data = await res.json()
+      if (data.ok) {
+        await logout()
+        navigate('/')
+      } else setDeleteError(data.message || 'Error al eliminar')
     } catch {
-      setDeleteError('Error de conexión');
+      setDeleteError('Error de conexión')
     } finally {
-      setDeleteLoading(false);
+      setDeleteLoading(false)
     }
-  };
+  }
 
-  const toggleNotif = (key) => setNotif(p => ({ ...p, [key]: !p[key] }));
-  const togglePrivacy = (key) => setPrivacy(p => ({ ...p, [key]: !p[key] }));
+  const toggleNotif = key => setNotif(p => ({ ...p, [key]: !p[key] }))
+  const togglePrivacy = key => setPrivacy(p => ({ ...p, [key]: !p[key] }))
 
-  const bioLeft = 280 - (form.bio?.length || 0);
-  const tier = user?.subscriptionTier || 'free';
-  const tierDisplay = tier.charAt(0).toUpperCase() + tier.slice(1);
+  const bioLeft = 280 - (form.bio?.length || 0)
+  const tier = user?.subscriptionTier || 'free'
+  const tierDisplay = tier.charAt(0).toUpperCase() + tier.slice(1)
 
   const inputStyle = {
     width: '100%',
@@ -330,7 +365,7 @@ const Settings = () => {
     padding: '0 12px',
     outline: 'none',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-  };
+  }
 
   const labelStyle = {
     display: 'block',
@@ -339,12 +374,19 @@ const Settings = () => {
     letterSpacing: '0.06em',
     color: '#9a9a95',
     marginBottom: 8,
-  };
+  }
 
-  if (!isAuthenticated()) return null;
+  if (!isAuthenticated()) return null
 
   return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#e9e7e3', fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+    <div
+      style={{
+        background: '#0a0a0a',
+        minHeight: '100vh',
+        color: '#e9e7e3',
+        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      }}
+    >
       {/* ── Inner sticky save bar ── */}
       <div
         style={{
@@ -379,12 +421,16 @@ const Settings = () => {
             Configuración
           </span>
           {saveError && (
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#e0815e' }}>
+            <span
+              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#e0815e' }}
+            >
               {saveError}
             </span>
           )}
           {saved && (
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#9bbf8a' }}>
+            <span
+              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#9bbf8a' }}
+            >
               ✓ Cambios guardados
             </span>
           )}
@@ -463,7 +509,6 @@ const Settings = () => {
 
           {/* ── Main panel ── */}
           <main style={{ maxWidth: 660 }}>
-
             {/* ════ PERFIL ════ */}
             {section === 'Perfil' && (
               <section>
@@ -511,13 +556,19 @@ const Settings = () => {
                     }}
                   >
                     {user?.avatar ? (
-                      <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img
+                        src={user.avatar}
+                        alt=""
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
                     ) : (
                       (user?.name || user?.username || 'U').slice(0, 2).toUpperCase()
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, color: '#d4d2cd', fontWeight: 500 }}>Foto de perfil</div>
+                    <div style={{ fontSize: 13.5, color: '#d4d2cd', fontWeight: 500 }}>
+                      Foto de perfil
+                    </div>
                     <div
                       style={{
                         fontFamily: "'IBM Plex Mono', monospace",
@@ -585,7 +636,15 @@ const Settings = () => {
                           type="text"
                           value={form.username}
                           onChange={e => setForm(p => ({ ...p, username: e.target.value }))}
-                          style={{ ...inputStyle, width: 'auto', flex: 1, padding: '0 12px 0 2px', height: '100%', border: 'none', background: 'none' }}
+                          style={{
+                            ...inputStyle,
+                            width: 'auto',
+                            flex: 1,
+                            padding: '0 12px 0 2px',
+                            height: '100%',
+                            border: 'none',
+                            background: 'none',
+                          }}
                         />
                       </div>
                     </div>
@@ -679,13 +738,19 @@ const Settings = () => {
                   />
                   <AccountRow
                     label="Contraseña"
-                    sub={user?.provider && user.provider !== 'local' ? `Autenticación via ${user.provider}` : 'Actualizar contraseña'}
+                    sub={
+                      user?.provider && user.provider !== 'local'
+                        ? `Autenticación via ${user.provider}`
+                        : 'Actualizar contraseña'
+                    }
                     action="Cambiar"
                     onAction={() => {
                       if (user?.provider && user.provider !== 'local') {
-                        alert(`Tu cuenta usa ${user.provider}. Cambia la contraseña desde ese proveedor.`);
+                        alert(
+                          `Tu cuenta usa ${user.provider}. Cambia la contraseña desde ese proveedor.`
+                        )
                       } else {
-                        setPwModal(true);
+                        setPwModal(true)
                       }
                     }}
                   />
@@ -737,7 +802,8 @@ const Settings = () => {
                     fontFamily: "'IBM Plex Mono', monospace",
                   }}
                 >
-                  * Las preferencias de notificación se guardan localmente mientras no haya un endpoint de servidor.
+                  * Las preferencias de notificación se guardan localmente mientras no haya un
+                  endpoint de servidor.
                 </p>
               </section>
             )}
@@ -774,7 +840,9 @@ const Settings = () => {
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 16, fontWeight: 600, color: '#f2f0ec' }}>Plan {tierDisplay}</span>
+                      <span style={{ fontSize: 16, fontWeight: 600, color: '#f2f0ec' }}>
+                        Plan {tierDisplay}
+                      </span>
                       <span
                         style={{
                           fontFamily: "'IBM Plex Mono', monospace",
@@ -809,18 +877,21 @@ const Settings = () => {
                   }}
                 >
                   {TIERS.map((t, i) => {
-                    const isActive = tier.toLowerCase() === t.name.toLowerCase();
+                    const isActive = tier.toLowerCase() === t.name.toLowerCase()
                     return (
                       <div
                         key={t.name}
                         style={{
                           padding: 16,
-                          borderRight: i < TIERS.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                          borderRight:
+                            i < TIERS.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
                           borderTop: isActive ? '2px solid #C4451A' : '2px solid transparent',
                           background: isActive ? 'rgba(196,69,26,0.08)' : 'transparent',
                         }}
                       >
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#e4e2dd' }}>{t.name}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#e4e2dd' }}>
+                          {t.name}
+                        </div>
                         <div
                           style={{
                             fontFamily: "'IBM Plex Mono', monospace",
@@ -842,7 +913,7 @@ const Settings = () => {
                           {t.note}
                         </div>
                       </div>
-                    );
+                    )
                   })}
                 </div>
 
@@ -929,9 +1000,12 @@ const Settings = () => {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: 13.5, color: '#e0815e', fontWeight: 500 }}>Eliminar cuenta</div>
+                    <div style={{ fontSize: 13.5, color: '#e0815e', fontWeight: 500 }}>
+                      Eliminar cuenta
+                    </div>
                     <div style={{ fontSize: 12, color: '#6f6f6a', marginTop: 3 }}>
-                      Esta acción elimina todos tus datos de forma permanente y no se puede deshacer.
+                      Esta acción elimina todos tus datos de forma permanente y no se puede
+                      deshacer.
                     </div>
                   </div>
                   <button
@@ -953,7 +1027,6 @@ const Settings = () => {
                 </div>
               </section>
             )}
-
           </main>
         </div>
       </div>
@@ -993,7 +1066,10 @@ const Settings = () => {
             >
               CAMBIAR CONTRASEÑA
             </div>
-            <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form
+              onSubmit={handlePasswordChange}
+              style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+            >
               {[
                 { key: 'current', label: 'CONTRASEÑA ACTUAL' },
                 { key: 'newPass', label: 'NUEVA CONTRASEÑA' },
@@ -1025,7 +1101,11 @@ const Settings = () => {
               <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
                 <button
                   type="button"
-                  onClick={() => { setPwModal(false); setPwMsg(null); setPwForm({ current: '', newPass: '', confirm: '' }); }}
+                  onClick={() => {
+                    setPwModal(false)
+                    setPwMsg(null)
+                    setPwForm({ current: '', newPass: '', confirm: '' })
+                  }}
                   style={{
                     appearance: 'none',
                     cursor: 'pointer',
@@ -1122,7 +1202,11 @@ const Settings = () => {
             )}
             <div style={{ display: 'flex', gap: 12 }}>
               <button
-                onClick={() => { setDeleteModal(false); setDeleteError(''); setDeleteConfirm(''); }}
+                onClick={() => {
+                  setDeleteModal(false)
+                  setDeleteError('')
+                  setDeleteConfirm('')
+                }}
                 style={{
                   appearance: 'none',
                   cursor: 'pointer',
@@ -1141,7 +1225,11 @@ const Settings = () => {
                 disabled={deleteLoading || deleteConfirm !== user?.username}
                 style={{
                   appearance: 'none',
-                  cursor: deleteLoading ? 'wait' : deleteConfirm !== user?.username ? 'not-allowed' : 'pointer',
+                  cursor: deleteLoading
+                    ? 'wait'
+                    : deleteConfirm !== user?.username
+                      ? 'not-allowed'
+                      : 'pointer',
                   fontFamily: "'IBM Plex Mono', monospace",
                   fontSize: 12,
                   color: '#0a0a0a',
@@ -1159,7 +1247,7 @@ const Settings = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default Settings;
+export default Settings

@@ -1,20 +1,18 @@
-import { callOpenAI } from './providers/openai.js';
-import { callGemini } from './providers/gemini.js';
+import { callOpenAI } from './providers/openai.js'
+import { callGemini } from './providers/gemini.js'
 
 /**
  * Helper to load environment variables both on the Node server
  * and (if needed) in other runtimes.
  */
-const hasOpenAIKey = Boolean(import.meta.env.VITE_OPENAI_API_KEY);
-const hasGeminiKey = Boolean(import.meta.env.VITE_GOOGLE_API_KEY);
+const hasOpenAIKey = Boolean(import.meta.env.VITE_OPENAI_API_KEY)
+const hasGeminiKey = Boolean(import.meta.env.VITE_GOOGLE_API_KEY)
 
 const selectProvider = () => {
-  if (hasOpenAIKey) return 'openai';
-  if (hasGeminiKey) return 'gemini';
-  throw new Error(
-    'No AI provider configured. Set OPENAI_API_KEY or GOOGLE_API_KEY in .env.local.'
-  );
-};
+  if (hasOpenAIKey) return 'openai'
+  if (hasGeminiKey) return 'gemini'
+  throw new Error('No AI provider configured. Set OPENAI_API_KEY or GOOGLE_API_KEY in .env.local.')
+}
 
 const basePrompt = ({
   type,
@@ -42,38 +40,31 @@ The JSON MUST match this schema:
 Mode: ${mode}
 Metadata: ${JSON.stringify(metadata)}
 Content:
-"""${text}"""`;
+"""${text}"""`
 
-const parseJSON = (raw) => {
+const parseJSON = raw => {
   try {
-    return JSON.parse(raw);
+    return JSON.parse(raw)
   } catch (err) {
     // Attempt to extract JSON substring
-    const start = raw.indexOf('{');
-    const end = raw.lastIndexOf('}');
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
     if (start !== -1 && end !== -1) {
-      const sliced = raw.slice(start, end + 1);
-      return JSON.parse(sliced);
+      const sliced = raw.slice(start, end + 1)
+      return JSON.parse(sliced)
     }
-    throw new Error(`Unable to parse AI response: ${raw}`, { cause: err });
+    throw new Error(`Unable to parse AI response: ${raw}`, { cause: err })
   }
-};
+}
 
-export const validateContent = async ({
-  type,
-  text,
-  metadata = {},
-  mode = 'validate',
-}) => {
-  const provider = selectProvider();
-  const prompt = basePrompt({ type, text, metadata, mode });
+export const validateContent = async ({ type, text, metadata = {}, mode = 'validate' }) => {
+  const provider = selectProvider()
+  const prompt = basePrompt({ type, text, metadata, mode })
 
   const response =
-    provider === 'openai'
-      ? await callOpenAI({ prompt })
-      : await callGemini({ prompt });
+    provider === 'openai' ? await callOpenAI({ prompt }) : await callGemini({ prompt })
 
-  const parsed = parseJSON(response);
+  const parsed = parseJSON(response)
 
   // Normalize the response fields returned to the client.
   return {
@@ -87,11 +78,7 @@ export const validateContent = async ({
         : parsed.severity !== 'critical',
     severity:
       parsed.severity ||
-      (parsed.qualityScore >= 80
-        ? 'ok'
-        : parsed.qualityScore >= 60
-        ? 'review'
-        : 'critical'),
+      (parsed.qualityScore >= 80 ? 'ok' : parsed.qualityScore >= 60 ? 'review' : 'critical'),
     writingClarity: parsed.writingClarity ?? '',
     grammar: parsed.grammar ?? '',
     technicalQuality: parsed.technicalQuality ?? '',
@@ -99,6 +86,5 @@ export const validateContent = async ({
     suggestedReferences: parsed.suggestedReferences ?? [],
     plagiarismRisk: parsed.plagiarismRisk ?? 'low',
     improvedText: parsed.improvedText ?? null,
-  };
-};
-
+  }
+}

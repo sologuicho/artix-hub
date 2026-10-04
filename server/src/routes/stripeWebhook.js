@@ -1,12 +1,12 @@
-'use strict';
+'use strict'
 
-const prisma = require('../prismaClient');
-const { stripe } = require('../config/payments');
-const { PAID_TIERS } = require('../config/tiers');
-const emailService = require('../services/emailService');
-const logger = require('../lib/logger');
+const prisma = require('../prismaClient')
+const { stripe } = require('../config/payments')
+const { PAID_TIERS } = require('../config/tiers')
+const emailService = require('../services/emailService')
+const logger = require('../lib/logger')
 
-const VALID_TIERS = PAID_TIERS;
+const VALID_TIERS = PAID_TIERS
 
 /**
  * Stripe Webhook Handler
@@ -16,41 +16,41 @@ const VALID_TIERS = PAID_TIERS;
  */
 module.exports = async function stripeWebhookHandler(req, res) {
   if (!stripe) {
-    return res.status(503).json({ error: 'Stripe no está configurado en el servidor.' });
+    return res.status(503).json({ error: 'Stripe no está configurado en el servidor.' })
   }
 
-  const sig = req.headers['stripe-signature'];
+  const sig = req.headers['stripe-signature']
 
-  let event;
+  let event
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
-    logger.error({ err: err.message }, '[Stripe Webhook] Firma inválida');
-    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+    logger.error({ err: err.message }, '[Stripe Webhook] Firma inválida')
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` })
   }
 
   // Procesar internamente sin bloquear la respuesta a Stripe
   try {
     // ── IDEMPOTENCIA: saltar eventos ya procesados ────────────────────────────
     const existing = await prisma.stripeEvent.findUnique({
-      where: { id: event.id }
-    });
+      where: { id: event.id },
+    })
     if (existing) {
-      logger.info({ eventId: event.id }, '[Stripe Webhook] Evento duplicado ignorado');
-      return res.json({ received: true });
+      logger.info({ eventId: event.id }, '[Stripe Webhook] Evento duplicado ignorado')
+      return res.json({ received: true })
     }
 
     // Registrar como procesado ANTES del switch para que cualquier evento
     // quede marcado aunque falle un paso posterior (ej: envío de email)
     await prisma.stripeEvent.create({
-      data: { id: event.id, type: event.type }
-    });
+      data: { id: event.id, type: event.type },
+    })
     // ── FIN IDEMPOTENCIA ──────────────────────────────────────────────────────
 
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object;
-        const { userId, tier, eventId, type: metaType } = session.metadata || {};
+        const session = event.data.object
+        const { userId, tier, eventId, type: metaType } = session.metadata || {}
 
         // ── Event ticket payment ──────────────────────────────────────────────
         if (metaType === 'event_ticket' && userId && eventId) {
@@ -58,22 +58,33 @@ module.exports = async function stripeWebhookHandler(req, res) {
             // Check not already registered
             const already = await prisma.eventRegistration.findUnique({
               where: { userId_eventId: { userId, eventId } },
-            });
+            })
             if (!already) {
               const registration = await prisma.eventRegistration.create({
                 data: { userId, eventId },
                 include: {
                   user: { select: { id: true, name: true, email: true, avatar: true } },
-                  event: { select: { id: true, title: true, date: true, time: true, location: true, type: true } },
+                  event: {
+                    select: {
+                      id: true,
+                      title: true,
+                      date: true,
+                      time: true,
+                      location: true,
+                      type: true,
+                    },
+                  },
                 },
-              });
-              emailService.sendEventRegistration(registration.user, registration.event).catch(() => {});
+              })
+              emailService
+                .sendEventRegistration(registration.user, registration.event)
+                .catch(() => {})
             }
-            logger.info({ userId, eventId }, '[Stripe Webhook] Event ticket registered');
+            logger.info({ userId, eventId }, '[Stripe Webhook] Event ticket registered')
           } catch (err) {
-            logger.error({ err }, '[Stripe Webhook] Error registering event ticket');
+            logger.error({ err }, '[Stripe Webhook] Error registering event ticket')
           }
-          break;
+          break
         }
 
         if (userId && VALID_TIERS.includes(tier)) {
@@ -81,86 +92,101 @@ module.exports = async function stripeWebhookHandler(req, res) {
             where: { id: userId },
             data: {
               subscriptionTier: tier,
-              stripeCustomerId:     session.customer     || undefined,
-              stripeSubscriptionId: session.subscription || undefined
+              stripeCustomerId: session.customer || undefined,
+              stripeSubscriptionId: session.subscription || undefined,
             },
-            select: { id: true, email: true, name: true, username: true }
-          });
-          logger.info({ userId, tier, customer: session.customer, sub: session.subscription }, '[Stripe Webhook] checkout.session.completed');
+            select: { id: true, email: true, name: true, username: true },
+          })
+          logger.info(
+            { userId, tier, customer: session.customer, sub: session.subscription },
+            '[Stripe Webhook] checkout.session.completed'
+          )
 
           // Send payment confirmation email
           try {
-            let renewalDate = null;
+            let renewalDate = null
             if (session.subscription) {
-              const sub = await stripe.subscriptions.retrieve(session.subscription);
-              renewalDate = sub.current_period_end;
+              const sub = await stripe.subscriptions.retrieve(session.subscription)
+              renewalDate = sub.current_period_end
             }
-            await emailService.sendPaymentConfirmation(updatedUser, tier, renewalDate);
+            await emailService.sendPaymentConfirmation(updatedUser, tier, renewalDate)
           } catch (emailErr) {
-            logger.error({ err: emailErr.message }, '[Stripe Webhook] Error enviando confirmación de pago');
+            logger.error(
+              { err: emailErr.message },
+              '[Stripe Webhook] Error enviando confirmación de pago'
+            )
           }
         }
-        break;
+        break
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
-        const customerId = subscription.customer;
+        const subscription = event.data.object
+        const customerId = subscription.customer
 
         if (customerId) {
-          const user = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } });
+          const user = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } })
           if (!user) {
-            logger.error({ customerId }, '[Stripe Webhook] sub.deleted: no user found for customerId');
-            break;
+            logger.error(
+              { customerId },
+              '[Stripe Webhook] sub.deleted: no user found for customerId'
+            )
+            break
           }
 
           await prisma.user.update({
             where: { id: user.id },
-            data: { subscriptionTier: 'OBSERVER' }
-          });
-          logger.info({ userId: user.id }, '[Stripe Webhook] Suscripción cancelada — bajado a OBSERVER');
+            data: { subscriptionTier: 'OBSERVER' },
+          })
+          logger.info(
+            { userId: user.id },
+            '[Stripe Webhook] Suscripción cancelada — bajado a OBSERVER'
+          )
         }
-        break;
+        break
       }
 
       case 'invoice.payment_failed': {
-        const invoice = event.data.object;
-        const customerId = invoice.customer;
+        const invoice = event.data.object
+        const customerId = invoice.customer
 
-        if (!customerId) break;
+        if (!customerId) break
 
         // Buscar usuario por stripeCustomerId
         const user = await prisma.user.findFirst({
           where: { stripeCustomerId: customerId },
-          select: { id: true, email: true, name: true, subscriptionTier: true }
-        });
+          select: { id: true, email: true, name: true, subscriptionTier: true },
+        })
 
-        if (!user) break;
+        if (!user) break
 
         // Contar facturas abiertas (intentos fallidos pendientes de cobro)
         const failedInvoices = await stripe.invoices.list({
           customer: customerId,
           status: 'open',
-          limit: 10
-        });
-        const failCount = failedInvoices.data.length;
+          limit: 10,
+        })
+        const failCount = failedInvoices.data.length
 
         // Bajar a OBSERVER después de 3 fallos acumulados
-        let downgraded = false;
+        let downgraded = false
         if (failCount >= 3) {
           await prisma.user.update({
             where: { id: user.id },
-            data: { subscriptionTier: 'OBSERVER' }
-          });
-          downgraded = true;
-          logger.warn({ userId: user.id, failCount }, '[Stripe Webhook] Usuario bajado a OBSERVER por pagos fallidos');
+            data: { subscriptionTier: 'OBSERVER' },
+          })
+          downgraded = true
+          logger.warn(
+            { userId: user.id, failCount },
+            '[Stripe Webhook] Usuario bajado a OBSERVER por pagos fallidos'
+          )
         }
 
         // Notificar al usuario — en su propio try/catch para no bloquear el 200
         if (user.email) {
           try {
-            const userName = user.name || 'Usuario';
-            const subject = 'Problema con tu pago en Artix Hub';
+            const userName = user.name || 'Usuario'
+            const subject = 'Problema con tu pago en Artix Hub'
 
             const suspendedBlock = downgraded
               ? `<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:16px;border-radius:6px;margin:20px 0;">
@@ -169,7 +195,7 @@ module.exports = async function stripeWebhookHandler(req, res) {
                    Una vez que actualices tu método de pago, podrás reactivar tu suscripción.
                  </div>`
               : `<p>Intentaremos cobrar de nuevo en los próximos días. Si el problema persiste,
-                 tu cuenta puede ser suspendida temporalmente.</p>`;
+                 tu cuenta puede ser suspendida temporalmente.</p>`
 
             const html = `
               <!DOCTYPE html>
@@ -200,25 +226,28 @@ module.exports = async function stripeWebhookHandler(req, res) {
                 </div>
               </body>
               </html>
-            `;
+            `
 
-            await emailService.sendEmail(user.email, subject, html);
-            logger.info({ to: user.email }, '[Stripe Webhook] Email de pago fallido enviado');
+            await emailService.sendEmail(user.email, subject, html)
+            logger.info({ to: user.email }, '[Stripe Webhook] Email de pago fallido enviado')
           } catch (emailErr) {
-            logger.error({ err: emailErr.message }, '[Stripe Webhook] Error enviando email de pago fallido');
+            logger.error(
+              { err: emailErr.message },
+              '[Stripe Webhook] Error enviando email de pago fallido'
+            )
           }
         }
-        break;
+        break
       }
 
       default:
         // Ignorar eventos no manejados
-        break;
+        break
     }
   } catch (processingErr) {
-    logger.error({ err: processingErr }, '[Stripe Webhook] Error procesando evento');
+    logger.error({ err: processingErr }, '[Stripe Webhook] Error procesando evento')
   }
 
   // Siempre responder 200 a Stripe
-  res.json({ received: true });
-};
+  res.json({ received: true })
+}

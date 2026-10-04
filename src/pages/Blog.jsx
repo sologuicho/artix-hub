@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
+import { useState, useEffect, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
 
 /* ── Helpers ── */
 const getInitials = (name = '') =>
@@ -10,22 +10,22 @@ const getInitials = (name = '') =>
     .slice(0, 2)
     .map(w => w[0] || '')
     .join('')
-    .toUpperCase() || '?';
+    .toUpperCase() || '?'
 
-const relativeTime = (dateStr) => {
-  if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'ahora';
-  if (m < 60) return `hace ${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `hace ${h}h`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `hace ${d}d`;
-  return new Date(dateStr).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' });
-};
+const relativeTime = dateStr => {
+  if (!dateStr) return ''
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'ahora'
+  if (m < 60) return `hace ${m}m`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `hace ${h}h`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `hace ${d}d`
+  return new Date(dateStr).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })
+}
 
-const stripHtml = (html = '') => html.replace(/<[^>]*>/g, '');
+const stripHtml = (html = '') => html.replace(/<[^>]*>/g, '')
 
 /* ── Filter pill ── */
 const Pill = ({ label, active, onClick }) => (
@@ -46,13 +46,13 @@ const Pill = ({ label, active, onClick }) => (
   >
     {label}
   </button>
-);
+)
 
 /* ── Post card ── */
 const PostCard = ({ post }) => {
-  const excerpt = stripHtml(post.content || post.summary || '').slice(0, 200);
-  const authorName = post.author?.name || post.author?.username || 'Anónimo';
-  const initials = getInitials(authorName);
+  const excerpt = stripHtml(post.content || post.summary || '').slice(0, 200)
+  const authorName = post.author?.name || post.author?.username || 'Anónimo'
+  const initials = getInitials(authorName)
 
   return (
     <article
@@ -95,22 +95,23 @@ const PostCard = ({ post }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13.5, fontWeight: 600, color: '#e4e2dd' }}>{authorName}</span>
             {post.author?.username && (
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6f6f6a' }}>
+              <span
+                style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6f6f6a' }}
+              >
                 @{post.author.username}
               </span>
             )}
             <span style={{ color: '#3a3a36' }}>·</span>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6f6f6a' }}>
+            <span
+              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6f6f6a' }}
+            >
               {relativeTime(post.createdAt)}
             </span>
           </div>
 
           {/* Title */}
           {post.title && (
-            <Link
-              to={`/blog/${post.id}`}
-              style={{ textDecoration: 'none' }}
-            >
+            <Link to={`/blog/${post.id}`} style={{ textDecoration: 'none' }}>
               <p
                 style={{
                   margin: '8px 0 0',
@@ -171,12 +172,8 @@ const PostCard = ({ post }) => {
               color: '#6f6f6a',
             }}
           >
-            {post.viewCount !== null && (
-              <span>{post.viewCount} lecturas</span>
-            )}
-            {post._count?.comments !== null && (
-              <span>{post._count.comments} comentarios</span>
-            )}
+            {post.viewCount !== null && <span>{post.viewCount} lecturas</span>}
+            {post._count?.comments !== null && <span>{post._count.comments} comentarios</span>}
             <Link
               to={`/blog/${post.id}`}
               style={{
@@ -193,8 +190,8 @@ const PostCard = ({ post }) => {
         </div>
       </div>
     </article>
-  );
-};
+  )
+}
 
 /* ── Skeleton card ── */
 const SkeletonCard = () => (
@@ -209,99 +206,99 @@ const SkeletonCard = () => (
       </div>
     </div>
   </div>
-);
+)
 
-const FILTERS = ['Recientes', 'Populares', 'Siguiendo'];
+const FILTERS = ['Recientes', 'Populares', 'Siguiendo']
 
 const Blog = () => {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth()
+  const navigate = useNavigate()
 
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [filter, setFilter] = useState('Recientes');
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [filter, setFilter] = useState('Recientes')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
 
-  const LIMIT = 10;
+  const LIMIT = 10
 
   const fetchPosts = async (pageNum = 1, replace = true) => {
-    if (replace) setLoading(true);
-    else setLoadingMore(true);
-    setError('');
+    if (replace) setLoading(true)
+    else setLoadingMore(true)
+    setError('')
     try {
-      const sort = filter === 'Populares' ? 'popular' : 'recent';
+      const sort = filter === 'Populares' ? 'popular' : 'recent'
       const params = new URLSearchParams({
         status: 'published',
         limit: LIMIT,
         offset: (pageNum - 1) * LIMIT,
         sort,
-      });
-      const res = await fetch(`${BACKEND_URL}/api/blog?${params}`, { credentials: 'include' });
-      const data = await res.json();
+      })
+      const res = await fetch(`${BACKEND_URL}/api/blog?${params}`, { credentials: 'include' })
+      const data = await res.json()
       if (data.ok && data.posts) {
         if (replace) {
-          setPosts(data.posts);
+          setPosts(data.posts)
         } else {
-          setPosts(prev => [...prev, ...data.posts]);
+          setPosts(prev => [...prev, ...data.posts])
         }
-        setHasMore(data.posts.length === LIMIT);
-        setPage(pageNum);
+        setHasMore(data.posts.length === LIMIT)
+        setPage(pageNum)
       } else {
-        setError('No se pudieron cargar los posts.');
+        setError('No se pudieron cargar los posts.')
       }
     } catch {
-      setError('Error de conexión.');
+      setError('Error de conexión.')
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      setLoading(false)
+      setLoadingMore(false)
     }
-  };
+  }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchPosts(1, true);
+    fetchPosts(1, true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter])
 
   /* Derive trends from post tags */
   const trends = useMemo(() => {
-    const freq = {};
+    const freq = {}
     posts.forEach(p =>
-      (p.tags || []).forEach(t => { freq[t] = (freq[t] || 0) + 1; })
-    );
+      (p.tags || []).forEach(t => {
+        freq[t] = (freq[t] || 0) + 1
+      })
+    )
     return Object.entries(freq)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
-      .map(([tag, count]) => ({ tag: `#${tag}`, count: `${count} post${count !== 1 ? 's' : ''}` }));
-  }, [posts]);
+      .map(([tag, count]) => ({ tag: `#${tag}`, count: `${count} post${count !== 1 ? 's' : ''}` }))
+  }, [posts])
 
   /* Derive active authors */
   const activeAuthors = useMemo(() => {
-    const map = {};
+    const map = {}
     posts.forEach(p => {
-      const id = p.author?.id;
-      if (!id) return;
-      if (!map[id]) map[id] = { ...p.author, count: 0 };
-      map[id].count += 1;
-    });
+      const id = p.author?.id
+      if (!id) return
+      if (!map[id]) map[id] = { ...p.author, count: 0 }
+      map[id].count += 1
+    })
     return Object.values(map)
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [posts]);
+      .slice(0, 5)
+  }, [posts])
 
   /* "Siguiendo" filter — client-side by followed IDs */
   const displayedPosts = useMemo(() => {
-    if (filter !== 'Siguiendo') return posts;
+    if (filter !== 'Siguiendo') return posts
     // If we can't determine following, show all
-    return posts;
-  }, [posts, filter]);
+    return posts
+  }, [posts, filter])
 
-  const visibleFilters = isAuthenticated()
-    ? FILTERS
-    : FILTERS.filter(f => f !== 'Siguiendo');
+  const visibleFilters = isAuthenticated() ? FILTERS : FILTERS.filter(f => f !== 'Siguiendo')
 
   return (
     <div
@@ -338,7 +335,14 @@ const Blog = () => {
               >
                 NOTAS CORTAS DE LA COMUNIDAD
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 16,
+                }}
+              >
                 <h1
                   style={{
                     margin: 0,
@@ -654,7 +658,7 @@ const Blog = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Blog;
+export default Blog

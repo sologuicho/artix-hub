@@ -1,8 +1,8 @@
 // Email service using nodemailer
 // Supports Gmail, SendGrid, AWS SES, and other SMTP providers
 
-const nodemailer = require('nodemailer');
-const logger = require('../lib/logger');
+const nodemailer = require('nodemailer')
+const logger = require('../lib/logger')
 
 // Create transporter based on environment variables
 const createTransporter = () => {
@@ -12,9 +12,9 @@ const createTransporter = () => {
       service: 'SendGrid',
       auth: {
         user: 'apikey',
-        pass: process.env.SENDGRID_API_KEY
-      }
-    });
+        pass: process.env.SENDGRID_API_KEY,
+      },
+    })
   }
 
   // Check if using AWS SES
@@ -23,9 +23,9 @@ const createTransporter = () => {
       SES: {
         accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY,
-        region: process.env.AWS_SES_REGION || 'us-east-1'
-      }
-    });
+        region: process.env.AWS_SES_REGION || 'us-east-1',
+      },
+    })
   }
 
   // Default: SMTP (Gmail, custom SMTP, etc.)
@@ -35,42 +35,47 @@ const createTransporter = () => {
     secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
-};
+      pass: process.env.SMTP_PASS,
+    },
+  })
+}
 
 const sendEmail = async (to, subject, html, text = null) => {
   try {
     // If no email config, just log (development mode)
-    if (!process.env.SMTP_USER && !process.env.SENDGRID_API_KEY && !process.env.AWS_SES_ACCESS_KEY_ID) {
-      logger.info({ to, subject }, '[EMAIL] Would send (dev mode — no SMTP configured)');
-      return true;
+    if (
+      !process.env.SMTP_USER &&
+      !process.env.SENDGRID_API_KEY &&
+      !process.env.AWS_SES_ACCESS_KEY_ID
+    ) {
+      logger.info({ to, subject }, '[EMAIL] Would send (dev mode — no SMTP configured)')
+      return true
     }
 
-    const transporter = createTransporter();
-    
+    const transporter = createTransporter()
+
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@artixhub.com',
       to,
       subject,
       html,
-      text: text || html.replace(/<[^>]*>/g, '') // Strip HTML for text version
-    };
+      text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+    }
 
-    const info = await transporter.sendMail(mailOptions);
-    logger.info({ to, messageId: info.messageId }, '[EMAIL] Sent');
-    return true;
+    const info = await transporter.sendMail(mailOptions)
+    logger.info({ to, messageId: info.messageId }, '[EMAIL] Sent')
+    return true
   } catch (error) {
-    logger.error({ err: error, to }, '[EMAIL] Error sending email');
-    throw error;
+    logger.error({ err: error, to }, '[EMAIL] Error sending email')
+    throw error
   }
-};
+}
 
 exports.sendEventReminder = async (user, event, reminderType) => {
-  const subject = reminderType === 'day_before' 
-    ? `Recordatorio: ${event.title} es mañana`
-    : `Recordatorio: ${event.title} es hoy`;
+  const subject =
+    reminderType === 'day_before'
+      ? `Recordatorio: ${event.title} es mañana`
+      : `Recordatorio: ${event.title} es hoy`
 
   const html = `
     <!DOCTYPE html>
@@ -103,17 +108,17 @@ exports.sendEventReminder = async (user, event, reminderType) => {
       </div>
     </body>
     </html>
-  `;
+  `
 
   if (user.email) {
-    await sendEmail(user.email, subject, html);
+    await sendEmail(user.email, subject, html)
   }
-};
+}
 
 // Send notification email
 exports.sendNotificationEmail = async (user, notification) => {
-  const subject = notification.title || 'Nueva notificación de Artix Hub';
-  
+  const subject = notification.title || 'Nueva notificación de Artix Hub'
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -131,25 +136,29 @@ exports.sendNotificationEmail = async (user, notification) => {
         <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
           <p style="margin: 0;">${notification.message || notification.content}</p>
         </div>
-        ${notification.link ? `
+        ${
+          notification.link
+            ? `
           <div style="text-align: center; margin: 30px 0;">
             <a href="${notification.link}" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Ver más</a>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
         <p>Saludos,<br><strong>El equipo de Artix Hub</strong></p>
       </div>
     </body>
     </html>
-  `;
+  `
 
   if (user.email) {
-    await sendEmail(user.email, subject, html);
+    await sendEmail(user.email, subject, html)
   }
-};
+}
 
-exports.sendWelcome = async (user) => {
-  const name = user.name || user.username || 'Usuario';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+exports.sendWelcome = async user => {
+  const name = user.name || user.username || 'Usuario'
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
   const html = `
     <!DOCTYPE html>
     <html>
@@ -171,16 +180,27 @@ exports.sendWelcome = async (user) => {
       </div>
     </body>
     </html>
-  `;
-  if (user.email) await sendEmail(user.email, 'Bienvenido a Artix Hub', html);
-};
+  `
+  if (user.email) await sendEmail(user.email, 'Bienvenido a Artix Hub', html)
+}
 
 exports.sendPaymentConfirmation = async (user, tier, renewalDate) => {
-  const name = user.name || user.username || 'Usuario';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const tierNames = { STUDENT: 'Estudiante', RESEARCHER: 'Investigador', VISIONARY: 'Visionario', TEAM: 'Equipo' };
-  const tierLabel = tierNames[tier] || tier;
-  const renewal = renewalDate ? new Date(renewalDate * 1000).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+  const name = user.name || user.username || 'Usuario'
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  const tierNames = {
+    STUDENT: 'Estudiante',
+    RESEARCHER: 'Investigador',
+    VISIONARY: 'Visionario',
+    TEAM: 'Equipo',
+  }
+  const tierLabel = tierNames[tier] || tier
+  const renewal = renewalDate
+    ? new Date(renewalDate * 1000).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : null
   const html = `
     <!DOCTYPE html>
     <html>
@@ -203,14 +223,15 @@ exports.sendPaymentConfirmation = async (user, tier, renewalDate) => {
       </div>
     </body>
     </html>
-  `;
-  if (user.email) await sendEmail(user.email, `Tu suscripción ${tierLabel} está activa — Artix Hub`, html);
-};
+  `
+  if (user.email)
+    await sendEmail(user.email, `Tu suscripción ${tierLabel} está activa — Artix Hub`, html)
+}
 
 exports.sendEmailVerification = async (user, rawToken) => {
-  const name = user.name || user.username || 'Usuario';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const verifyLink = `${frontendUrl}/verify-email?token=${rawToken}`;
+  const name = user.name || user.username || 'Usuario'
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  const verifyLink = `${frontendUrl}/verify-email?token=${rawToken}`
   const html = `
     <!DOCTYPE html>
     <html>
@@ -233,13 +254,13 @@ exports.sendEmailVerification = async (user, rawToken) => {
       </div>
     </body>
     </html>
-  `;
-  if (user.email) await sendEmail(user.email, 'Verifica tu correo — Artix Hub', html);
-};
+  `
+  if (user.email) await sendEmail(user.email, 'Verifica tu correo — Artix Hub', html)
+}
 
-exports.sendStudentApproved = async (user) => {
-  const name = user.name || user.username || 'Usuario';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+exports.sendStudentApproved = async user => {
+  const name = user.name || user.username || 'Usuario'
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
   const html = `
     <!DOCTYPE html>
     <html>
@@ -261,13 +282,13 @@ exports.sendStudentApproved = async (user) => {
       </div>
     </body>
     </html>
-  `;
-  if (user.email) await sendEmail(user.email, 'Tu plan Estudiante está activo — Artix Hub', html);
-};
+  `
+  if (user.email) await sendEmail(user.email, 'Tu plan Estudiante está activo — Artix Hub', html)
+}
 
 exports.sendStudentRejected = async (user, reason) => {
-  const name = user.name || user.username || 'Usuario';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const name = user.name || user.username || 'Usuario'
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
   const html = `
     <!DOCTYPE html>
     <html>
@@ -291,14 +312,15 @@ exports.sendStudentRejected = async (user, reason) => {
       </div>
     </body>
     </html>
-  `;
-  if (user.email) await sendEmail(user.email, 'Sobre tu solicitud de verificación — Artix Hub', html);
-};
+  `
+  if (user.email)
+    await sendEmail(user.email, 'Sobre tu solicitud de verificación — Artix Hub', html)
+}
 
 exports.sendPasswordReset = async (user, rawToken) => {
-  const name = user.name || user.username || 'Usuario';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const resetLink = `${frontendUrl}/reset-password?token=${rawToken}`;
+  const name = user.name || user.username || 'Usuario'
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  const resetLink = `${frontendUrl}/reset-password?token=${rawToken}`
   const html = `
     <!DOCTYPE html>
     <html>
@@ -321,17 +343,22 @@ exports.sendPasswordReset = async (user, rawToken) => {
       </div>
     </body>
     </html>
-  `;
-  if (user.email) await sendEmail(user.email, 'Restablecer contraseña — Artix Hub', html);
-};
+  `
+  if (user.email) await sendEmail(user.email, 'Restablecer contraseña — Artix Hub', html)
+}
 
 exports.sendEventRegistration = async (user, event) => {
-  const name = user.name || user.username || 'Usuario';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const name = user.name || user.username || 'Usuario'
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
   const eventDate = event.date
-    ? new Date(event.date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-    : null;
-  const eventUrl = `${frontendUrl}/events/${event.id}`;
+    ? new Date(event.date).toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : null
+  const eventUrl = `${frontendUrl}/events/${event.id}`
 
   const html = `
     <!DOCTYPE html>
@@ -364,21 +391,21 @@ exports.sendEventRegistration = async (user, event) => {
       </div>
     </body>
     </html>
-  `;
+  `
 
   if (user.email) {
-    await sendEmail(user.email, `Registro confirmado: ${event.title} — Artix Hub`, html);
+    await sendEmail(user.email, `Registro confirmado: ${event.title} — Artix Hub`, html)
   }
-};
+}
 
 // Cron job function to check and send reminders
 exports.checkAndSendReminders = async () => {
-  const { PrismaClient } = require('@prisma/client');
-  const prisma = new PrismaClient();
+  const { PrismaClient } = require('@prisma/client')
+  const prisma = new PrismaClient()
 
   try {
-    const now = new Date();
-    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+    const now = new Date()
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000)
 
     // Find reminders that should be sent
     const reminders = await prisma.eventReminder.findMany({
@@ -386,31 +413,31 @@ exports.checkAndSendReminders = async () => {
         sent: false,
         scheduledFor: {
           gte: now,
-          lte: oneHourFromNow
-        }
+          lte: oneHourFromNow,
+        },
       },
       include: {
         user: true,
-        event: true
-      }
-    });
+        event: true,
+      },
+    })
 
     for (const reminder of reminders) {
       try {
-        await exports.sendEventReminder(reminder.user, reminder.event, reminder.reminderType);
-        
+        await exports.sendEventReminder(reminder.user, reminder.event, reminder.reminderType)
+
         // Mark as sent
         await prisma.eventReminder.update({
           where: { id: reminder.id },
-          data: { sent: true }
-        });
+          data: { sent: true },
+        })
       } catch (error) {
-        logger.error({ err: error, reminderId: reminder.id }, 'Error sending reminder');
+        logger.error({ err: error, reminderId: reminder.id }, 'Error sending reminder')
       }
     }
   } catch (error) {
-    logger.error({ err: error }, 'Error checking reminders');
+    logger.error({ err: error }, 'Error checking reminders')
   } finally {
-    await prisma.$disconnect();
+    await prisma.$disconnect()
   }
-};
+}

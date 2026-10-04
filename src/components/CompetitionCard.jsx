@@ -1,4 +1,4 @@
-import { User } from 'lucide-react';
+import { User } from 'lucide-react'
 
 const CompetitionCard = ({ competition }) => {
   return (
@@ -24,8 +24,7 @@ const CompetitionCard = ({ competition }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CompetitionCard;
-
+export default CompetitionCard

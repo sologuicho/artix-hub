@@ -1,9 +1,18 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Loader2, CreditCard, Wallet, GraduationCap, CheckCircle, Clock } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Check,
+  X,
+  Loader2,
+  CreditCard,
+  Wallet,
+  GraduationCap,
+  CheckCircle,
+  Clock,
+} from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
 
 const PLANS = [
   {
@@ -17,10 +26,7 @@ const PLANS = [
       'Publicar en el blog (ilimitado)',
       'Suscribirse a eventos gratuitos',
     ],
-    limits: [
-      'Sin acceso a research completa',
-      'Sin artículos ni eventos premium',
-    ],
+    limits: ['Sin acceso a research completa', 'Sin artículos ni eventos premium'],
   },
   {
     name: 'Member',
@@ -34,10 +40,7 @@ const PLANS = [
       'Seguir autores y recibir notificaciones',
       'Eventos premium',
     ],
-    limits: [
-      'Sin publicar artículos académicos',
-      'Sin publicar investigaciones',
-    ],
+    limits: ['Sin publicar artículos académicos', 'Sin publicar investigaciones'],
   },
   {
     name: 'Student',
@@ -52,10 +55,7 @@ const PLANS = [
       'Colaborar en investigaciones',
       'Recursos académicos exclusivos',
     ],
-    limits: [
-      'Sin publicar research completa',
-      'Sin organizar eventos',
-    ],
+    limits: ['Sin publicar research completa', 'Sin organizar eventos'],
   },
   {
     name: 'Researcher',
@@ -88,52 +88,55 @@ const PLANS = [
     ],
     limits: [],
   },
-];
+]
 
 const getCsrfToken = () =>
-  document.cookie.split('; ').find(r => r.startsWith('csrf='))?.split('=')[1] || '';
+  document.cookie
+    .split('; ')
+    .find(r => r.startsWith('csrf='))
+    ?.split('=')[1] || ''
 
 const PricingModal = ({ isOpen, onClose }) => {
-  const { user, refreshUser } = useAuth();
-  const navigate = useNavigate();
+  const { user, refreshUser } = useAuth()
+  const navigate = useNavigate()
 
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [loadingProcessor, setLoadingProcessor] = useState(null);
-  const [error, setError] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(null)
+  const [loadingProcessor, setLoadingProcessor] = useState(null)
+  const [error, setError] = useState(null)
 
   // Student verification state
-  const [verificationEmail, setVerificationEmail] = useState('');
-  const [verificationStatus, setVerificationStatus] = useState('idle'); // idle | loading | approved | pending
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const [verificationStatus, setVerificationStatus] = useState('idle') // idle | loading | approved | pending
 
-  if (user?.role === 'ADMIN' || user?.role === 'admin') return null;
-  if (!isOpen) return null;
+  if (user?.role === 'ADMIN' || user?.role === 'admin') return null
+  if (!isOpen) return null
 
-  const handleSelectPlan = (plan) => {
-    setError(null);
-    setVerificationEmail('');
-    setVerificationStatus('idle');
+  const handleSelectPlan = plan => {
+    setError(null)
+    setVerificationEmail('')
+    setVerificationStatus('idle')
 
     if (!user) {
-      setError('Inicia sesión para suscribirte.');
-      return;
+      setError('Inicia sesión para suscribirte.')
+      return
     }
 
     if (plan.tier === 'OBSERVER') {
-      onClose();
-      navigate('/');
-      return;
+      onClose()
+      navigate('/')
+      return
     }
 
-    setSelectedPlan(plan);
-  };
+    setSelectedPlan(plan)
+  }
 
   const handleStudentApply = async () => {
     if (!verificationEmail.trim()) {
-      setError('Ingresa tu correo institucional.');
-      return;
+      setError('Ingresa tu correo institucional.')
+      return
     }
-    setError(null);
-    setVerificationStatus('loading');
+    setError(null)
+    setVerificationStatus('loading')
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/student/apply`, {
@@ -144,30 +147,33 @@ const PricingModal = ({ isOpen, onClose }) => {
         },
         body: JSON.stringify({ institutionalEmail: verificationEmail.trim() }),
         credentials: 'include',
-      });
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
       if (!res.ok) {
-        setVerificationStatus('idle');
-        setError(data.message || 'Error al verificar el correo.');
+        setVerificationStatus('idle')
+        setError(data.message || 'Error al verificar el correo.')
       } else if (data.autoApproved) {
-        setVerificationStatus('approved');
-        await refreshUser();
-        setTimeout(() => { onClose(); navigate('/'); }, 2500);
+        setVerificationStatus('approved')
+        await refreshUser()
+        setTimeout(() => {
+          onClose()
+          navigate('/')
+        }, 2500)
       } else {
-        setVerificationStatus('pending');
+        setVerificationStatus('pending')
       }
     } catch {
-      setVerificationStatus('idle');
-      setError('Error de conexión. Intenta de nuevo.');
+      setVerificationStatus('idle')
+      setError('Error de conexión. Intenta de nuevo.')
     }
-  };
+  }
 
   const handlePayWithStripe = async () => {
-    if (!selectedPlan) return;
-    setError(null);
-    setLoadingProcessor('stripe');
+    if (!selectedPlan) return
+    setError(null)
+    setLoadingProcessor('stripe')
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/payments/stripe/create-checkout`, {
@@ -178,26 +184,26 @@ const PricingModal = ({ isOpen, onClose }) => {
         },
         body: JSON.stringify({ tier: selectedPlan.tier }),
         credentials: 'include',
-      });
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
       if (res.ok && data.url) {
-        window.location.href = data.url;
+        window.location.href = data.url
       } else {
-        setError(data.message || 'Error al crear la sesión de pago con Stripe.');
+        setError(data.message || 'Error al crear la sesión de pago con Stripe.')
       }
     } catch {
-      setError('Error de conexión al iniciar pago con Stripe.');
+      setError('Error de conexión al iniciar pago con Stripe.')
     } finally {
-      setLoadingProcessor(null);
+      setLoadingProcessor(null)
     }
-  };
+  }
 
   const handlePayWithMercadoPago = async () => {
-    if (!selectedPlan) return;
-    setError(null);
-    setLoadingProcessor('mercadopago');
+    if (!selectedPlan) return
+    setError(null)
+    setLoadingProcessor('mercadopago')
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/payments/mercadopago/create-preference`, {
@@ -208,30 +214,30 @@ const PricingModal = ({ isOpen, onClose }) => {
         },
         body: JSON.stringify({ tier: selectedPlan.tier }),
         credentials: 'include',
-      });
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
       if (res.ok && data.init_point) {
-        window.location.href = data.init_point;
+        window.location.href = data.init_point
       } else {
-        setError(data.message || 'Error al crear la preferencia de pago en MercadoPago.');
+        setError(data.message || 'Error al crear la preferencia de pago en MercadoPago.')
       }
     } catch {
-      setError('Error de conexión al iniciar pago con MercadoPago.');
+      setError('Error de conexión al iniciar pago con MercadoPago.')
     } finally {
-      setLoadingProcessor(null);
+      setLoadingProcessor(null)
     }
-  };
+  }
 
   const handleBackToPlans = () => {
-    setSelectedPlan(null);
-    setError(null);
-    setVerificationEmail('');
-    setVerificationStatus('idle');
-  };
+    setSelectedPlan(null)
+    setError(null)
+    setVerificationEmail('')
+    setVerificationStatus('idle')
+  }
 
-  const isLoadingAny = loadingProcessor !== null || verificationStatus === 'loading';
+  const isLoadingAny = loadingProcessor !== null || verificationStatus === 'loading'
 
   const renderStudentVerification = () => {
     if (verificationStatus === 'approved') {
@@ -240,10 +246,12 @@ const PricingModal = ({ isOpen, onClose }) => {
           <CheckCircle className="w-16 h-16 text-green-500" />
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">¡Plan Student Activo!</h2>
-            <p className="text-gray-400 text-sm">Tu correo institucional fue verificado. Redirigiendo...</p>
+            <p className="text-gray-400 text-sm">
+              Tu correo institucional fue verificado. Redirigiendo...
+            </p>
           </div>
         </div>
-      );
+      )
     }
 
     if (verificationStatus === 'pending') {
@@ -263,7 +271,7 @@ const PricingModal = ({ isOpen, onClose }) => {
             Entendido
           </button>
         </div>
-      );
+      )
     }
 
     return (
@@ -274,8 +282,8 @@ const PricingModal = ({ isOpen, onClose }) => {
             <h2 className="text-3xl font-bold text-white">Verificación Estudiantil</h2>
           </div>
           <p className="text-gray-400 text-sm max-w-md">
-            Ingresa tu correo institucional. Si pertenece a una universidad reconocida,
-            el plan Student se activa <strong className="text-white">gratis</strong> al instante.
+            Ingresa tu correo institucional. Si pertenece a una universidad reconocida, el plan
+            Student se activa <strong className="text-white">gratis</strong> al instante.
           </p>
         </div>
 
@@ -306,8 +314,8 @@ const PricingModal = ({ isOpen, onClose }) => {
         </div>
 
         <p className="text-xs text-gray-600 max-w-sm text-center">
-          Dominios válidos: .edu, .edu.mx, .tec.mx, .unam.mx y otros dominios institucionales latinoamericanos.
-          Si tu institución no está listada, sube un documento de verificación.
+          Dominios válidos: .edu, .edu.mx, .tec.mx, .unam.mx y otros dominios institucionales
+          latinoamericanos. Si tu institución no está listada, sube un documento de verificación.
         </p>
 
         <button
@@ -318,15 +326,13 @@ const PricingModal = ({ isOpen, onClose }) => {
           ← Volver a los planes
         </button>
       </div>
-    );
-  };
+    )
+  }
 
   const renderPaymentProcessor = () => (
     <div className="flex flex-col items-center gap-8 py-8">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-white mb-2">
-          Plan {selectedPlan.name}
-        </h2>
+        <h2 className="text-3xl font-bold text-white mb-2">Plan {selectedPlan.name}</h2>
         <p className="text-gray-400">
           Elige cómo quieres pagar ${selectedPlan.price}/mes
           {selectedPlan.priceNote && (
@@ -347,10 +353,11 @@ const PricingModal = ({ isOpen, onClose }) => {
           disabled={isLoadingAny}
           className="flex-1 flex flex-col items-center gap-3 py-6 px-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 rounded-2xl transition-all group disabled:opacity-50 disabled:cursor-wait"
         >
-          {loadingProcessor === 'stripe'
-            ? <Loader2 className="w-7 h-7 text-blue-400 animate-spin" />
-            : <CreditCard className="w-7 h-7 text-gray-300 group-hover:text-blue-400 transition-colors" />
-          }
+          {loadingProcessor === 'stripe' ? (
+            <Loader2 className="w-7 h-7 text-blue-400 animate-spin" />
+          ) : (
+            <CreditCard className="w-7 h-7 text-gray-300 group-hover:text-blue-400 transition-colors" />
+          )}
           <div className="text-center">
             <p className="text-white font-semibold text-sm">Tarjeta Internacional</p>
             <p className="text-gray-500 text-xs mt-0.5">Visa, Mastercard, Amex</p>
@@ -362,10 +369,11 @@ const PricingModal = ({ isOpen, onClose }) => {
           disabled={isLoadingAny}
           className="flex-1 flex flex-col items-center gap-3 py-6 px-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 rounded-2xl transition-all group disabled:opacity-50 disabled:cursor-wait"
         >
-          {loadingProcessor === 'mercadopago'
-            ? <Loader2 className="w-7 h-7 text-blue-400 animate-spin" />
-            : <Wallet className="w-7 h-7 text-gray-300 group-hover:text-blue-400 transition-colors" />
-          }
+          {loadingProcessor === 'mercadopago' ? (
+            <Loader2 className="w-7 h-7 text-blue-400 animate-spin" />
+          ) : (
+            <Wallet className="w-7 h-7 text-gray-300 group-hover:text-blue-400 transition-colors" />
+          )}
           <div className="text-center">
             <p className="text-white font-semibold text-sm">MercadoPago</p>
             <p className="text-gray-500 text-xs mt-0.5">LATAM · Métodos locales</p>
@@ -381,7 +389,7 @@ const PricingModal = ({ isOpen, onClose }) => {
         ← Volver a los planes
       </button>
     </div>
-  );
+  )
 
   const renderPlanList = () => (
     <motion.div
@@ -393,25 +401,24 @@ const PricingModal = ({ isOpen, onClose }) => {
       <div className="text-center mb-10">
         <h2 className="text-4xl font-bold text-white mb-3">Invest in the Future</h2>
         <p className="text-gray-400 max-w-2xl mx-auto text-sm">
-          Las suscripciones financian becas de investigación, eventos de alta calidad
-          y el desarrollo de herramientas open-source para la comunidad.
+          Las suscripciones financian becas de investigación, eventos de alta calidad y el
+          desarrollo de herramientas open-source para la comunidad.
         </p>
-        {error && (
-          <p className="text-red-500 mt-4 text-sm font-semibold">{error}</p>
-        )}
+        {error && <p className="text-red-500 mt-4 text-sm font-semibold">{error}</p>}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {PLANS.map((plan) => {
-          const isCurrent = user?.subscriptionTier === plan.tier;
+        {PLANS.map(plan => {
+          const isCurrent = user?.subscriptionTier === plan.tier
           return (
             <div
               key={plan.tier}
               className={`
                 relative flex flex-col p-5 rounded-2xl border transition-all duration-300
-                ${isCurrent
-                  ? 'bg-white/10 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]'
-                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                ${
+                  isCurrent
+                    ? 'bg-white/10 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                 }
               `}
             >
@@ -439,13 +446,14 @@ const PricingModal = ({ isOpen, onClose }) => {
               <p className="text-xs text-gray-500 mb-3">{plan.description}</p>
 
               <div className="flex items-baseline gap-1 mb-4">
-                {plan.priceLabel
-                  ? <span className="text-2xl font-bold text-amber-400">{plan.priceLabel}</span>
-                  : <>
-                      <span className="text-2xl font-bold text-white">${plan.price}</span>
-                      <span className="text-gray-500 text-xs">/mes</span>
-                    </>
-                }
+                {plan.priceLabel ? (
+                  <span className="text-2xl font-bold text-amber-400">{plan.priceLabel}</span>
+                ) : (
+                  <>
+                    <span className="text-2xl font-bold text-white">${plan.price}</span>
+                    <span className="text-gray-500 text-xs">/mes</span>
+                  </>
+                )}
                 {plan.priceNote && (
                   <span className="text-gray-600 text-[10px] ml-0.5">{plan.priceNote}</span>
                 )}
@@ -471,13 +479,14 @@ const PricingModal = ({ isOpen, onClose }) => {
                 disabled={isCurrent}
                 className={`
                   w-full py-2.5 rounded-xl font-medium text-sm transition-all
-                  ${isCurrent
-                    ? 'bg-white/10 text-gray-400 cursor-default'
-                    : plan.tier === 'OBSERVER'
-                      ? 'bg-white/10 text-gray-300 hover:bg-white/15'
-                      : plan.tier === 'STUDENT'
-                        ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
-                        : 'bg-white text-black hover:bg-gray-200'
+                  ${
+                    isCurrent
+                      ? 'bg-white/10 text-gray-400 cursor-default'
+                      : plan.tier === 'OBSERVER'
+                        ? 'bg-white/10 text-gray-300 hover:bg-white/15'
+                        : plan.tier === 'STUDENT'
+                          ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
+                          : 'bg-white text-black hover:bg-gray-200'
                   }
                 `}
               >
@@ -487,11 +496,10 @@ const PricingModal = ({ isOpen, onClose }) => {
                     ? 'Continuar gratis'
                     : plan.tier === 'STUDENT'
                       ? 'Verificar con .edu'
-                      : 'Elegir plan'
-                }
+                      : 'Elegir plan'}
               </button>
             </div>
-          );
+          )
         })}
       </div>
 
@@ -499,7 +507,7 @@ const PricingModal = ({ isOpen, onClose }) => {
         El plan Student es gratuito con correo institucional verificado (.edu).
       </p>
     </motion.div>
-  );
+  )
 
   return (
     <AnimatePresence>
@@ -554,7 +562,7 @@ const PricingModal = ({ isOpen, onClose }) => {
         </motion.div>
       </div>
     </AnimatePresence>
-  );
-};
+  )
+}
 
-export default PricingModal;
+export default PricingModal

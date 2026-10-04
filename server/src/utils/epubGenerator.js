@@ -1,39 +1,52 @@
-const JSZip = require('jszip');
+const JSZip = require('jszip')
 
 function escapeXml(str) {
-  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 function toXhtml(html) {
-  return (html || '')
-    .replace(/<br\s*>/gi, '<br/>')
-    .replace(/<hr\s*>/gi, '<hr/>')
-    .replace(/<img([^>]*[^/])>/gi, '<img$1/>')
-    .replace(/<input([^>]*[^/])>/gi, '<input$1/>')
-    // eslint-disable-next-line no-control-regex
-    .replace(new RegExp('[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]', 'g'), '');
+  return (
+    (html || '')
+      .replace(/<br\s*>/gi, '<br/>')
+      .replace(/<hr\s*>/gi, '<hr/>')
+      .replace(/<img([^>]*[^/])>/gi, '<img$1/>')
+      .replace(/<input([^>]*[^/])>/gi, '<input$1/>')
+      // eslint-disable-next-line no-control-regex
+      .replace(new RegExp('[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]', 'g'), '')
+  )
 }
 
 async function generateEpub({ title, author, content, description, date }) {
-  const zip = new JSZip();
-  const uid = `artix-${Date.now()}`;
-  const pubDate = date ? new Date(date).toISOString() : new Date().toISOString();
+  const zip = new JSZip()
+  const uid = `artix-${Date.now()}`
+  const pubDate = date ? new Date(date).toISOString() : new Date().toISOString()
   const pubDateFormatted = new Date(pubDate).toLocaleDateString('es-ES', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  });
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 
-  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' })
 
-  zip.folder('META-INF').file('container.xml', `<?xml version="1.0" encoding="UTF-8"?>
+  zip.folder('META-INF').file(
+    'container.xml',
+    `<?xml version="1.0" encoding="UTF-8"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
     <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
-</container>`);
+</container>`
+  )
 
-  const oebps = zip.folder('OEBPS');
+  const oebps = zip.folder('OEBPS')
 
-  oebps.file('content.opf', `<?xml version="1.0" encoding="UTF-8"?>
+  oebps.file(
+    'content.opf',
+    `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="uid" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>${escapeXml(title)}</dc:title>
@@ -51,9 +64,12 @@ async function generateEpub({ title, author, content, description, date }) {
   <spine>
     <itemref idref="chapter"/>
   </spine>
-</package>`);
+</package>`
+  )
 
-  oebps.file('nav.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
+  oebps.file(
+    'nav.xhtml',
+    `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head><title>${escapeXml(title)}</title></head>
@@ -62,9 +78,12 @@ async function generateEpub({ title, author, content, description, date }) {
 <ol><li><a href="chapter.xhtml">${escapeXml(title)}</a></li></ol>
 </nav>
 </body>
-</html>`);
+</html>`
+  )
 
-  oebps.file('chapter.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
+  oebps.file(
+    'chapter.xhtml',
+    `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -83,9 +102,12 @@ async function generateEpub({ title, author, content, description, date }) {
     <p class="doc-footer">Artix Hub · artixhub.com</p>
   </div>
 </body>
-</html>`);
+</html>`
+  )
 
-  oebps.file('style.css', `
+  oebps.file(
+    'style.css',
+    `
 body {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1em;
@@ -153,9 +175,10 @@ body {
   text-align: center;
   margin-top: 2em;
 }
-`);
+`
+  )
 
-  return zip.generateAsync({ type: 'nodebuffer', mimeType: 'application/epub+zip' });
+  return zip.generateAsync({ type: 'nodebuffer', mimeType: 'application/epub+zip' })
 }
 
-module.exports = { generateEpub };
+module.exports = { generateEpub }

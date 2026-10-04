@@ -1,72 +1,74 @@
-const { signToken, signSocketToken } = require('../utils/jwt');
-const prisma = require('../prismaClient');
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const emailService = require('../services/emailService');
-const logger = require('../lib/logger');
+const { signToken, signSocketToken } = require('../utils/jwt')
+const prisma = require('../prismaClient')
+const bcrypt = require('bcryptjs')
+const crypto = require('crypto')
+const emailService = require('../services/emailService')
+const logger = require('../lib/logger')
 
 // Helper to set auth cookies
 const setAuthCookies = (res, user) => {
-  const token = signToken(user);
-  const csrfToken = require('crypto').randomBytes(24).toString('hex');
+  const token = signToken(user)
+  const csrfToken = require('crypto').randomBytes(24).toString('hex')
 
   // Set HttpOnly, Secure cookie for session
   res.cookie('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  })
 
   // Set csrf token cookie available to JS
   res.cookie('csrf', csrfToken, {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  })
 
-  return { token, csrfToken };
-};
+  return { token, csrfToken }
+}
 
 // Traditional Registration
 exports.register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password } = req.body
 
     if (!username || !email || !password) {
-      return res.status(400).json({ ok: false, message: 'Faltan campos obligatorios' });
+      return res.status(400).json({ ok: false, message: 'Faltan campos obligatorios' })
     }
 
     if (password.length < 8) {
-      return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres.' });
+      return res
+        .status(400)
+        .json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres.' })
     }
-    
+
     // Validate username format
-    const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/
     if (!usernameRegex.test(username)) {
-      return res.status(400).json({ 
-        ok: false, 
-        message: 'Username must be 3-20 characters and contain only letters, numbers, underscores, or hyphens' 
-      });
+      return res.status(400).json({
+        ok: false,
+        message:
+          'Username must be 3-20 characters and contain only letters, numbers, underscores, or hyphens',
+      })
     }
 
     // Check existing email or username
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [
-          { email: email.toLowerCase() },
-          { username: username.toLowerCase() }
-        ]
-      }
-    });
+        OR: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }],
+      },
+    })
 
     if (existingUser) {
-      return res.status(400).json({ ok: false, message: 'El correo o nombre de usuario ya está registrado' });
+      return res
+        .status(400)
+        .json({ ok: false, message: 'El correo o nombre de usuario ya está registrado' })
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
 
     const user = await prisma.user.create({
       data: {
@@ -74,326 +76,346 @@ exports.register = async (req, res) => {
         email: email.toLowerCase(),
         username: username.toLowerCase(),
         password: hashedPassword,
-        profileComplete: false
-      }
-    });
+        profileComplete: false,
+      },
+    })
 
-    setAuthCookies(res, user);
+    setAuthCookies(res, user)
 
     // Fire-and-forget: welcome email + verification token
-    (async () => {
+    ;(async () => {
       try {
-        emailService.sendWelcome(user).catch(err => logger.error({ err }, '[Email] Welcome email error'));
+        emailService
+          .sendWelcome(user)
+          .catch(err => logger.error({ err }, '[Email] Welcome email error'))
 
-        const rawToken = crypto.randomBytes(32).toString('hex');
-        const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+        const rawToken = crypto.randomBytes(32).toString('hex')
+        const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex')
         await prisma.emailVerificationToken.create({
           data: {
             token: hashedToken,
             userId: user.id,
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-          }
-        });
-        await emailService.sendEmailVerification(user, rawToken);
+          },
+        })
+        await emailService.sendEmailVerification(user, rawToken)
       } catch (err) {
-        logger.error({ err }, '[Email] Verification email error');
+        logger.error({ err }, '[Email] Verification email error')
       }
-    })();
+    })()
 
-    const { password: _, ...safeUser } = user;
-    res.status(201).json({ ok: true, user: safeUser });
+    const { password: _, ...safeUser } = user
+    res.status(201).json({ ok: true, user: safeUser })
   } catch (error) {
-    logger.error({ err: error }, 'Registration error');
-    res.status(500).json({ ok: false, message: 'Error en el servidor durante el registro' });
+    logger.error({ err: error }, 'Registration error')
+    res.status(500).json({ ok: false, message: 'Error en el servidor durante el registro' })
   }
-};
+}
 
 // Traditional Login
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body
 
     if (!email || !password) {
-      return res.status(400).json({ ok: false, message: 'Faltan campos obligatorios' });
+      return res.status(400).json({ ok: false, message: 'Faltan campos obligatorios' })
     }
 
     const user = await prisma.user.findFirst({
-      where: { email: email.toLowerCase() }
-    });
+      where: { email: email.toLowerCase() },
+    })
 
     if (!user || !user.password) {
-      return res.status(401).json({ ok: false, message: 'Credenciales inválidas' });
+      return res.status(401).json({ ok: false, message: 'Credenciales inválidas' })
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password)
     if (!isMatch) {
-      return res.status(401).json({ ok: false, message: 'Credenciales inválidas' });
+      return res.status(401).json({ ok: false, message: 'Credenciales inválidas' })
     }
 
-    setAuthCookies(res, user);
+    setAuthCookies(res, user)
 
-    const { password: _, ...safeUser } = user;
-    res.json({ ok: true, user: safeUser });
+    const { password: _, ...safeUser } = user
+    res.json({ ok: true, user: safeUser })
   } catch (error) {
-    logger.error({ err: error }, 'Login error');
-    res.status(500).json({ ok: false, message: 'Error en el servidor durante el inicio de sesión' });
+    logger.error({ err: error }, 'Login error')
+    res.status(500).json({ ok: false, message: 'Error en el servidor durante el inicio de sesión' })
   }
-};
+}
 
 // After successful OAuth, this callback will set a HttpOnly cookie with the session token
 exports.oauthCallback = async (req, res) => {
   try {
-    const user = req.user;
+    const user = req.user
     if (!user) {
-      logger.error('OAuth callback: No user found in request');
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth?error=oauth_no_user`);
+      logger.error('OAuth callback: No user found in request')
+      return res.redirect(
+        `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth?error=oauth_no_user`
+      )
     }
 
-    setAuthCookies(res, user);
+    setAuthCookies(res, user)
 
     // Redirect to frontend; frontend will read the csrf cookie and include it in headers for stateful requests
     // Only redirect to setup-username if user doesn't have a username
     if (!user.username) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/setup-username?from=oauth`);
+      return res.redirect(
+        `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/setup-username?from=oauth`
+      )
     }
-    
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?success=true`);
+
+    return res.redirect(
+      `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?success=true`
+    )
   } catch (err) {
-    logger.error({ err }, 'OAuth callback error');
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth?error=oauth_error`);
+    logger.error({ err }, 'OAuth callback error')
+    return res.redirect(
+      `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth?error=oauth_error`
+    )
   }
-};
+}
 
 exports.logout = async (req, res) => {
   try {
     // Revoke all existing tokens by incrementing tokenVersion
     // The session cookie tells us who is logging out
-    const token = req.cookies?.session;
+    const token = req.cookies?.session
     if (token) {
-      const { verifyToken } = require('../utils/jwt');
+      const { verifyToken } = require('../utils/jwt')
       try {
-        const decoded = verifyToken(token);
+        const decoded = verifyToken(token)
         await require('../prismaClient').user.update({
           where: { id: decoded.id },
-          data: { tokenVersion: { increment: 1 } }
-        });
-      } catch (_) { /* invalid token, still clear cookies */ }
+          data: { tokenVersion: { increment: 1 } },
+        })
+      } catch (_) {
+        /* invalid token, still clear cookies */
+      }
     }
   } catch (err) {
-    logger.error({ err }, 'Logout error');
+    logger.error({ err }, 'Logout error')
   }
-  res.clearCookie('session');
-  res.clearCookie('csrf');
-  res.json({ ok: true });
-};
+  res.clearCookie('session')
+  res.clearCookie('csrf')
+  res.json({ ok: true })
+}
 
 // Check if username is available
 exports.checkUsername = async (req, res) => {
   try {
-    const { username } = req.query;
-    
+    const { username } = req.query
+
     if (!username || username.trim().length === 0) {
-      return res.status(400).json({ ok: false, message: 'Username is required' });
+      return res.status(400).json({ ok: false, message: 'Username is required' })
     }
 
     // Validate username format (alphanumeric, underscore, hyphen, 3-20 chars)
-    const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/
     if (!usernameRegex.test(username)) {
-      return res.json({ 
-        ok: true, 
-        available: false, 
-        message: 'Username must be 3-20 characters and contain only letters, numbers, underscores, or hyphens' 
-      });
+      return res.json({
+        ok: true,
+        available: false,
+        message:
+          'Username must be 3-20 characters and contain only letters, numbers, underscores, or hyphens',
+      })
     }
 
-    const existing = await prisma.user.findUnique({ 
-      where: { username: username.trim().toLowerCase() } 
-    });
+    const existing = await prisma.user.findUnique({
+      where: { username: username.trim().toLowerCase() },
+    })
 
-    res.json({ 
-      ok: true, 
+    res.json({
+      ok: true,
       available: !existing,
-      message: existing ? 'Ese nombre de usuario no está disponible' : 'Username disponible'
-    });
+      message: existing ? 'Ese nombre de usuario no está disponible' : 'Username disponible',
+    })
   } catch (error) {
-    logger.error({ err: error }, 'Error checking username');
-    res.status(500).json({ ok: false, message: 'Error checking username' });
+    logger.error({ err: error }, 'Error checking username')
+    res.status(500).json({ ok: false, message: 'Error checking username' })
   }
-};
+}
 
 // Setup username after OAuth
 /** Issue a socket-only JWT (session cookie is HttpOnly — browser cannot use it for the handshake). Same TTL as session; revoked via tokenVersion. */
 exports.socketToken = async (req, res) => {
   try {
-    const token = signSocketToken(req.user);
-    res.json({ ok: true, token });
+    const token = signSocketToken(req.user)
+    res.json({ ok: true, token })
   } catch (err) {
-    logger.error({ err }, 'socketToken error');
-    res.status(500).json({ ok: false, message: 'Failed to issue socket token' });
+    logger.error({ err }, 'socketToken error')
+    res.status(500).json({ ok: false, message: 'Failed to issue socket token' })
   }
-};
+}
 
 exports.forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ ok: false, message: 'El correo es obligatorio' });
+    const { email } = req.body
+    if (!email) return res.status(400).json({ ok: false, message: 'El correo es obligatorio' })
 
     // Always respond 200 — never reveal if email exists
-    const user = await prisma.user.findFirst({ where: { email: email.toLowerCase(), provider: 'local' } });
-    if (!user) return res.json({ ok: true });
+    const user = await prisma.user.findFirst({
+      where: { email: email.toLowerCase(), provider: 'local' },
+    })
+    if (!user) return res.json({ ok: true })
 
     // Delete any existing tokens for this user
-    await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+    await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } })
 
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const rawToken = crypto.randomBytes(32).toString('hex')
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex')
 
     await prisma.passwordResetToken.create({
       data: {
         token: hashedToken,
         userId: user.id,
         expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
-      }
-    });
+      },
+    })
 
-    await emailService.sendPasswordReset(user, rawToken);
+    await emailService.sendPasswordReset(user, rawToken)
 
-    res.json({ ok: true });
+    res.json({ ok: true })
   } catch (error) {
-    logger.error({ err: error }, 'Forgot password error');
-    res.status(500).json({ ok: false, message: 'Error en el servidor' });
+    logger.error({ err: error }, 'Forgot password error')
+    res.status(500).json({ ok: false, message: 'Error en el servidor' })
   }
-};
+}
 
 exports.resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { token, newPassword } = req.body
     if (!token || !newPassword) {
-      return res.status(400).json({ ok: false, message: 'Token y nueva contraseña son obligatorios' });
+      return res
+        .status(400)
+        .json({ ok: false, message: 'Token y nueva contraseña son obligatorios' })
     }
 
     if (newPassword.length < 8) {
-      return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres' });
+      return res
+        .status(400)
+        .json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres' })
     }
 
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
     const record = await prisma.passwordResetToken.findFirst({
-      where: { token: hashedToken, used: false, expiresAt: { gt: new Date() } }
-    });
+      where: { token: hashedToken, used: false, expiresAt: { gt: new Date() } },
+    })
 
     if (!record) {
-      return res.status(400).json({ ok: false, message: 'El link es inválido o ha expirado' });
+      return res.status(400).json({ ok: false, message: 'El link es inválido o ha expirado' })
     }
 
-    const hashed = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(newPassword, 10)
     await prisma.user.update({
       where: { id: record.userId },
-      data: { password: hashed, tokenVersion: { increment: 1 } }
-    });
+      data: { password: hashed, tokenVersion: { increment: 1 } },
+    })
 
-    await prisma.passwordResetToken.delete({ where: { id: record.id } });
+    await prisma.passwordResetToken.delete({ where: { id: record.id } })
 
-    res.json({ ok: true });
+    res.json({ ok: true })
   } catch (error) {
-    logger.error({ err: error }, 'Reset password error');
-    res.status(500).json({ ok: false, message: 'Error en el servidor' });
+    logger.error({ err: error }, 'Reset password error')
+    res.status(500).json({ ok: false, message: 'Error en el servidor' })
   }
-};
+}
 
 exports.verifyEmail = async (req, res) => {
-  const { token } = req.query;
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const { token } = req.query
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
 
   if (!token) {
-    return res.redirect(`${frontendUrl}/verify-email?error=missing_token`);
+    return res.redirect(`${frontendUrl}/verify-email?error=missing_token`)
   }
 
   try {
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
     const record = await prisma.emailVerificationToken.findFirst({
-      where: { token: hashedToken, expiresAt: { gt: new Date() } }
-    });
+      where: { token: hashedToken, expiresAt: { gt: new Date() } },
+    })
 
     if (!record) {
-      return res.redirect(`${frontendUrl}/verify-email?error=invalid_token`);
+      return res.redirect(`${frontendUrl}/verify-email?error=invalid_token`)
     }
 
     await prisma.user.update({
       where: { id: record.userId },
-      data: { emailVerified: true }
-    });
+      data: { emailVerified: true },
+    })
 
-    await prisma.emailVerificationToken.delete({ where: { id: record.id } });
+    await prisma.emailVerificationToken.delete({ where: { id: record.id } })
 
-    return res.redirect(`${frontendUrl}/auth?verified=true`);
+    return res.redirect(`${frontendUrl}/auth?verified=true`)
   } catch (error) {
-    logger.error({ err: error }, 'Email verification error');
-    return res.redirect(`${frontendUrl}/verify-email?error=server_error`);
+    logger.error({ err: error }, 'Email verification error')
+    return res.redirect(`${frontendUrl}/verify-email?error=server_error`)
   }
-};
+}
 
 exports.resendVerification = async (req, res) => {
   if (!req.user) {
-    return res.status(401).json({ ok: false, message: 'No autenticado' });
+    return res.status(401).json({ ok: false, message: 'No autenticado' })
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } })
 
-    if (!user) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
-    if (user.emailVerified) return res.json({ ok: true, message: 'El correo ya está verificado' });
+    if (!user) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' })
+    if (user.emailVerified) return res.json({ ok: true, message: 'El correo ya está verificado' })
 
     // Delete existing tokens
-    await prisma.emailVerificationToken.deleteMany({ where: { userId: user.id } });
+    await prisma.emailVerificationToken.deleteMany({ where: { userId: user.id } })
 
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const rawToken = crypto.randomBytes(32).toString('hex')
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex')
 
     await prisma.emailVerificationToken.create({
       data: {
         token: hashedToken,
         userId: user.id,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      }
-    });
+      },
+    })
 
-    await emailService.sendEmailVerification(user, rawToken);
+    await emailService.sendEmailVerification(user, rawToken)
 
-    res.json({ ok: true, message: 'Email de verificación enviado' });
+    res.json({ ok: true, message: 'Email de verificación enviado' })
   } catch (error) {
-    logger.error({ err: error }, 'Resend verification error');
-    res.status(500).json({ ok: false, message: 'Error en el servidor' });
+    logger.error({ err: error }, 'Resend verification error')
+    res.status(500).json({ ok: false, message: 'Error en el servidor' })
   }
-};
+}
 
 exports.setupUsername = async (req, res) => {
   try {
-    const { username } = req.body;
-    const userId = req.user.id;
+    const { username } = req.body
+    const userId = req.user.id
 
     if (!username || username.trim().length === 0) {
-      return res.status(400).json({ ok: false, message: 'Username is required' });
+      return res.status(400).json({ ok: false, message: 'Username is required' })
     }
 
     // Validate username format
-    const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/
     if (!usernameRegex.test(username)) {
-      return res.status(400).json({ 
-        ok: false, 
-        message: 'Username must be 3-20 characters and contain only letters, numbers, underscores, or hyphens' 
-      });
+      return res.status(400).json({
+        ok: false,
+        message:
+          'Username must be 3-20 characters and contain only letters, numbers, underscores, or hyphens',
+      })
     }
 
     // Check if username is available
-    const existing = await prisma.user.findUnique({ 
-      where: { username: username.trim().toLowerCase() } 
-    });
+    const existing = await prisma.user.findUnique({
+      where: { username: username.trim().toLowerCase() },
+    })
 
     if (existing && existing.id !== userId) {
-      return res.status(400).json({ 
-        ok: false, 
-        message: 'Ese nombre de usuario no está disponible' 
-      });
+      return res.status(400).json({
+        ok: false,
+        message: 'Ese nombre de usuario no está disponible',
+      })
     }
 
     // Update user
@@ -401,13 +423,13 @@ exports.setupUsername = async (req, res) => {
       where: { id: userId },
       data: {
         username: username.trim().toLowerCase(),
-        profileComplete: true
-      }
-    });
+        profileComplete: true,
+      },
+    })
 
-    res.json({ ok: true, user });
+    res.json({ ok: true, user })
   } catch (error) {
-    logger.error({ err: error }, 'Error setting up username');
-    res.status(500).json({ ok: false, message: 'Error setting up username' });
+    logger.error({ err: error }, 'Error setting up username')
+    res.status(500).json({ ok: false, message: 'Error setting up username' })
   }
-};
+}

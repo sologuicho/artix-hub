@@ -1,61 +1,73 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Sun, Moon } from 'lucide-react';
-import UserMenu from './UserMenu';
-import NotificationBell from './NotificationBell';
-import GlobalSearch from './GlobalSearch';
-import PricingModal from './PricingModal';
-import { useLanguage } from '../context/LanguageContext';
-import { useAuth } from '../context/AuthContext';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useState, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Menu, X, Sun, Moon } from 'lucide-react'
+import UserMenu from './UserMenu'
+import NotificationBell from './NotificationBell'
+import GlobalSearch from './GlobalSearch'
+import PricingModal from './PricingModal'
+import { useLanguage } from '../context/LanguageContext'
+import { useAuth } from '../context/AuthContext'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 const Header = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { t } = useLanguage();
-  const { isAuthenticated } = useAuth();
-  const { isDark, toggle } = useDarkMode();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { t } = useLanguage()
+  const { isAuthenticated } = useAuth()
+  const { isDark, toggle } = useDarkMode()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [showPricing, setShowPricing] = useState(false)
 
   useEffect(() => {
     if (location.search.includes('pricing=true')) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShowPricing(true);
-      navigate(location.pathname, { replace: true });
+      setShowPricing(true)
+      navigate(location.pathname, { replace: true })
     }
-  }, [location.search, location.pathname, navigate]);
+  }, [location.search, location.pathname, navigate])
 
   const navLinks = [
     ...(isAuthenticated() ? [{ to: '/feed', label: 'Feed' }] : []),
-    { to: '/research',  label: t('nav.research')  || 'Investigaciones' },
-    { to: '/articles',  label: t('nav.articles')  || 'Artículos'       },
-    { to: '/events',    label: t('nav.events')    || 'Eventos'          },
-    { to: '/blog',      label: t('nav.blog')      || 'Blog'             },
-  ];
+    { to: '/research', label: t('nav.research') || 'Investigaciones' },
+    { to: '/articles', label: t('nav.articles') || 'Artículos' },
+    { to: '/events', label: t('nav.events') || 'Eventos' },
+    { to: '/blog', label: t('nav.blog') || 'Blog' },
+  ]
 
-  const isActive = (path) =>
-    location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = path => location.pathname === path || location.pathname.startsWith(path + '/')
 
   return (
     <>
       <header className="navbar sticky top-0 z-50">
         <div className="site-container h-full flex items-center justify-between">
-
           {/* Logo */}
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <span className="font-display tracking-widest uppercase"
-              style={{ fontSize: '0.9rem', color: 'var(--text)', letterSpacing: '0.2em' }}>
+          <Link
+            to="/"
+            style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 1 }}
+          >
+            <span
+              className="font-display tracking-widest uppercase"
+              style={{ fontSize: '0.9rem', color: 'var(--text)', letterSpacing: '0.2em' }}
+            >
               ARTIX
             </span>
-            <span style={{ fontFamily: 'monospace', fontSize: '0.55rem', letterSpacing: '0.08em', color: 'var(--muted)', textTransform: 'lowercase', lineHeight: 1 }}>
+            <span
+              style={{
+                fontFamily: 'monospace',
+                fontSize: '0.55rem',
+                letterSpacing: '0.08em',
+                color: 'var(--muted)',
+                textTransform: 'lowercase',
+                lineHeight: 1,
+              }}
+            >
               piensa incluso mientras mueres
             </span>
           </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
+            {navLinks.map(link => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -63,8 +75,12 @@ const Header = () => {
                 style={{
                   color: isActive(link.to) ? 'var(--accent)' : 'var(--muted)',
                 }}
-                onMouseEnter={e => { if (!isActive(link.to)) e.currentTarget.style.color = 'var(--text)'; }}
-                onMouseLeave={e => { if (!isActive(link.to)) e.currentTarget.style.color = 'var(--muted)'; }}
+                onMouseEnter={e => {
+                  if (!isActive(link.to)) e.currentTarget.style.color = 'var(--text)'
+                }}
+                onMouseLeave={e => {
+                  if (!isActive(link.to)) e.currentTarget.style.color = 'var(--muted)'
+                }}
               >
                 {link.label}
               </Link>
@@ -87,7 +103,12 @@ const Header = () => {
             <button
               onClick={() => setShowPricing(true)}
               className="hidden lg:block font-sans text-xs uppercase tracking-wider transition-colors duration-150"
-              style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{
+                color: 'var(--accent)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              }}
             >
               Planes
             </button>
@@ -106,10 +127,7 @@ const Header = () => {
                 alignItems: 'center',
               }}
             >
-              {isDark
-                ? <Sun  size={15} />
-                : <Moon size={15} />
-              }
+              {isDark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
 
             {/* Notifications + user menu */}
@@ -130,7 +148,13 @@ const Header = () => {
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="md:hidden"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '4px' }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--muted)',
+                padding: '4px',
+              }}
             >
               {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -151,7 +175,7 @@ const Header = () => {
               <GlobalSearch />
             </div>
             <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => (
+              {navLinks.map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -166,9 +190,17 @@ const Header = () => {
                 </Link>
               ))}
               <button
-                onClick={() => { setMobileOpen(false); setShowPricing(true); }}
+                onClick={() => {
+                  setMobileOpen(false)
+                  setShowPricing(true)
+                }}
                 className="font-sans text-xs uppercase tracking-wider py-3 text-left"
-                style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
+                style={{
+                  color: 'var(--accent)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
               >
                 Planes
               </button>
@@ -188,7 +220,7 @@ const Header = () => {
 
       <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
     </>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

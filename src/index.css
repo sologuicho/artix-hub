@@ -4,23 +4,23 @@
 
 /* ─── CSS Variables — Light theme default ─── */
 :root {
-  --bg: #FAFAF8;
-  --surface: #F2F0EC;
-  --border: #E2DED8;
-  --text: #1A1917;
-  --muted: #6B6760;
-  --accent: #C4451A;
-  --accent-hover: #A33814;
+  --bg: #fafaf8;
+  --surface: #f2f0ec;
+  --border: #e2ded8;
+  --text: #1a1917;
+  --muted: #6b6760;
+  --accent: #c4451a;
+  --accent-hover: #a33814;
 }
 
 .dark {
   --bg: #111110;
-  --surface: #1C1B1A;
-  --border: #2E2C2A;
-  --text: #F0EDE8;
-  --muted: #8C8A86;
-  --accent: #E8572A;
-  --accent-hover: #C4451A;
+  --surface: #1c1b1a;
+  --border: #2e2c2a;
+  --text: #f0ede8;
+  --muted: #8c8a86;
+  --accent: #e8572a;
+  --accent-hover: #c4451a;
 }
 
 /* ─── Base ─── */
@@ -37,15 +37,25 @@
     font-family: 'DM Sans', system-ui, sans-serif;
     line-height: 1.6;
     overflow-x: hidden;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'DM Serif Display', Georgia, serif;
     line-height: 1.2;
   }
 
-  code, pre, kbd, samp {
+  code,
+  pre,
+  kbd,
+  samp {
     font-family: 'JetBrains Mono', monospace;
   }
 
@@ -77,12 +87,24 @@
 /* ─── Utilities ─── */
 @layer utilities {
   /* Theme-aware color helpers */
-  .text-theme { color: var(--text); }
-  .text-muted  { color: var(--muted); }
-  .text-accent { color: var(--accent); }
-  .bg-theme    { background-color: var(--bg); }
-  .bg-surface  { background-color: var(--surface); }
-  .border-theme { border-color: var(--border); }
+  .text-theme {
+    color: var(--text);
+  }
+  .text-muted {
+    color: var(--muted);
+  }
+  .text-accent {
+    color: var(--accent);
+  }
+  .bg-theme {
+    background-color: var(--bg);
+  }
+  .bg-surface {
+    background-color: var(--surface);
+  }
+  .border-theme {
+    border-color: var(--border);
+  }
 
   /* Editorial prose width */
   .prose-width {
@@ -90,8 +112,12 @@
   }
 
   /* Scrollbar */
-  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
-  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: var(--border);
     border-radius: 0;
@@ -129,7 +155,10 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     padding: 0.75rem 1.75rem;
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
     cursor: pointer;
     border: none;
     text-decoration: none;
@@ -212,11 +241,26 @@
     border-radius: 0;
   }
 
-  .badge-observer  { background-color: var(--surface); color: var(--muted); }
-  .badge-student   { background-color: #1e2d4a; color: #93b4e0; }
-  .badge-researcher { background-color: #1a2e1a; color: #6dbf6d; }
-  .badge-visionary { background-color: var(--accent); color: #fff; }
-  .badge-team      { background-color: var(--accent); color: #fff; }
+  .badge-observer {
+    background-color: var(--surface);
+    color: var(--muted);
+  }
+  .badge-student {
+    background-color: #1e2d4a;
+    color: #93b4e0;
+  }
+  .badge-researcher {
+    background-color: #1a2e1a;
+    color: #6dbf6d;
+  }
+  .badge-visionary {
+    background-color: var(--accent);
+    color: #fff;
+  }
+  .badge-team {
+    background-color: var(--accent);
+    color: #fff;
+  }
 
   /* Category tag */
   .category-tag {

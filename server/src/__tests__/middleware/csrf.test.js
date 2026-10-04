@@ -56,7 +56,12 @@ describe('verifyCsrf', () => {
   })
 
   it('falls back to _csrf in body when header is absent', () => {
-    const req = { cookies: { csrf: 'tok' }, get: () => undefined, body: { _csrf: 'tok' }, query: {} }
+    const req = {
+      cookies: { csrf: 'tok' },
+      get: () => undefined,
+      body: { _csrf: 'tok' },
+      query: {},
+    }
     const res = mockRes()
     const next = vi.fn()
 

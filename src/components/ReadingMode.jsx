@@ -1,54 +1,88 @@
-import { useState, useEffect } from 'react';
-import { X, BookOpen } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { X, BookOpen } from 'lucide-react'
 
 const THEMES = {
-  day:     { label: 'Día',    bg: '#ffffff', text: '#1a1a1a', muted: '#6b7280', border: '#e5e7eb', swatch: '#ffffff' },
-  sepia:   { label: 'Sepia',  bg: '#f8f1e3', text: '#5c4527', muted: '#9a7d5a', border: '#e0cfa8', swatch: '#f8f1e3' },
-  evening: { label: 'Noche',  bg: '#1e1b2e', text: '#d4c5f9', muted: '#8b7fc7', border: '#352d54', swatch: '#1e1b2e' },
-  night:   { label: 'Oscuro', bg: '#111111', text: '#e0e0e0', muted: '#888888', border: '#2a2a2a', swatch: '#111111' },
-};
+  day: {
+    label: 'Día',
+    bg: '#ffffff',
+    text: '#1a1a1a',
+    muted: '#6b7280',
+    border: '#e5e7eb',
+    swatch: '#ffffff',
+  },
+  sepia: {
+    label: 'Sepia',
+    bg: '#f8f1e3',
+    text: '#5c4527',
+    muted: '#9a7d5a',
+    border: '#e0cfa8',
+    swatch: '#f8f1e3',
+  },
+  evening: {
+    label: 'Noche',
+    bg: '#1e1b2e',
+    text: '#d4c5f9',
+    muted: '#8b7fc7',
+    border: '#352d54',
+    swatch: '#1e1b2e',
+  },
+  night: {
+    label: 'Oscuro',
+    bg: '#111111',
+    text: '#e0e0e0',
+    muted: '#888888',
+    border: '#2a2a2a',
+    swatch: '#111111',
+  },
+}
 
 const FONTS = {
   serif: { label: 'Serif', css: "'Georgia', 'Times New Roman', serif" },
-  sans:  { label: 'Sans',  css: "'Inter', system-ui, sans-serif" },
-  mono:  { label: 'Mono',  css: "'JetBrains Mono', 'Courier New', monospace" },
-};
+  sans: { label: 'Sans', css: "'Inter', system-ui, sans-serif" },
+  mono: { label: 'Mono', css: "'JetBrains Mono', 'Courier New', monospace" },
+}
 
-const SIZES = ['0.9375rem', '1.0625rem', '1.1875rem', '1.3125rem'];
-const LEADING = [1.6, 1.85, 2.1];
-const LS_KEY = 'artix_reading_prefs';
+const SIZES = ['0.9375rem', '1.0625rem', '1.1875rem', '1.3125rem']
+const LEADING = [1.6, 1.85, 2.1]
+const LS_KEY = 'artix_reading_prefs'
 
 const loadPrefs = () => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
-};
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
 
 const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
-  const saved = loadPrefs();
-  const [theme, setTheme] = useState(saved.theme || 'day');
-  const [fontKey, setFontKey] = useState(saved.fontKey || 'serif');
-  const [sizeIdx, setSizeIdx] = useState(saved.sizeIdx ?? 1);
-  const [lhIdx, setLhIdx] = useState(saved.lhIdx ?? 1);
+  const saved = loadPrefs()
+  const [theme, setTheme] = useState(saved.theme || 'day')
+  const [fontKey, setFontKey] = useState(saved.fontKey || 'serif')
+  const [sizeIdx, setSizeIdx] = useState(saved.sizeIdx ?? 1)
+  const [lhIdx, setLhIdx] = useState(saved.lhIdx ?? 1)
 
   useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify({ theme, fontKey, sizeIdx, lhIdx }));
-  }, [theme, fontKey, sizeIdx, lhIdx]);
+    localStorage.setItem(LS_KEY, JSON.stringify({ theme, fontKey, sizeIdx, lhIdx }))
+  }, [theme, fontKey, sizeIdx, lhIdx])
 
   useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+    if (!isOpen) return
+    const onKey = e => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isOpen, onClose])
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
-  const t = THEMES[theme];
-  const font = FONTS[fontKey].css;
-  const fontSize = SIZES[sizeIdx];
-  const lineHeight = LEADING[lhIdx];
+  const t = THEMES[theme]
+  const font = FONTS[fontKey].css
+  const fontSize = SIZES[sizeIdx]
+  const lineHeight = LEADING[lhIdx]
   const formattedDate = date
     ? new Date(date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-    : null;
+    : null
 
   const Btn = ({ children, active, onClick, disabled, title: btnTitle, style: s }) => (
     <button
@@ -73,12 +107,14 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
     >
       {children}
     </button>
-  );
+  )
 
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, zIndex: 100,
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
         backgroundColor: t.bg,
         overflowY: 'auto',
         transition: 'background-color 0.2s',
@@ -87,7 +123,9 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
       {/* Toolbar */}
       <div
         style={{
-          position: 'sticky', top: 0, zIndex: 10,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
           backgroundColor: t.bg,
           borderBottom: `1px solid ${t.border}`,
           padding: '0.625rem 1.25rem',
@@ -101,13 +139,29 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
           <BookOpen size={14} style={{ color: t.muted }} />
-          <span style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: t.muted, whiteSpace: 'nowrap' }}>
+          <span
+            style={{
+              fontSize: '0.6875rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: t.muted,
+              whiteSpace: 'nowrap',
+            }}
+          >
             Modo lectura
           </span>
         </div>
 
         {/* Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+          }}
+        >
           {/* Theme swatches */}
           <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
             {Object.entries(THEMES).map(([key, th]) => (
@@ -116,7 +170,9 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
                 onClick={() => setTheme(key)}
                 title={th.label}
                 style={{
-                  width: 20, height: 20, borderRadius: '50%',
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
                   backgroundColor: th.swatch,
                   border: `2px solid ${theme === key ? '#C4451A' : t.border}`,
                   cursor: 'pointer',
@@ -157,7 +213,12 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
           {/* Font family */}
           <div style={{ display: 'flex', gap: '0.125rem' }}>
             {Object.entries(FONTS).map(([key, f]) => (
-              <Btn key={key} active={fontKey === key} onClick={() => setFontKey(key)} s={{ fontFamily: f.css }}>
+              <Btn
+                key={key}
+                active={fontKey === key}
+                onClick={() => setFontKey(key)}
+                s={{ fontFamily: f.css }}
+              >
                 {f.label}
               </Btn>
             ))}
@@ -187,9 +248,13 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
             onClick={onClose}
             title="Cerrar (Esc)"
             style={{
-              background: 'none', border: `1px solid ${t.border}`,
-              color: t.text, padding: '0.3rem', cursor: 'pointer',
-              display: 'flex', alignItems: 'center',
+              background: 'none',
+              border: `1px solid ${t.border}`,
+              color: t.text,
+              padding: '0.3rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
             <X size={14} />
@@ -277,7 +342,7 @@ const ReadingMode = ({ isOpen, onClose, content, title, author, date }) => {
         .reading-body td, .reading-body th { border: 1px solid rgba(127,127,127,0.25); padding: 0.5em 0.75em; }
       `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default ReadingMode;
+export default ReadingMode

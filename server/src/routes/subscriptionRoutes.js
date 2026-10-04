@@ -1,12 +1,12 @@
-'use strict';
+'use strict'
 
-const express = require('express');
-const router = express.Router();
-const prisma = require('../prismaClient');
-const { protect } = require('../middleware/authMiddleware');
-const { verifyCsrf } = require('../middleware/csrfMiddleware');
-const { stripe } = require('../config/payments');
-const logger = require('../lib/logger');
+const express = require('express')
+const router = express.Router()
+const prisma = require('../prismaClient')
+const { protect } = require('../middleware/authMiddleware')
+const { verifyCsrf } = require('../middleware/csrfMiddleware')
+const { stripe } = require('../config/payments')
+const logger = require('../lib/logger')
 
 // DESHABILITADO POR SEGURIDAD — este endpoint permitía que cualquier usuario autenticado
 // cambiara su subscriptionTier a cualquier nivel sin verificar pago.
@@ -14,9 +14,10 @@ const logger = require('../lib/logger');
 // o MercadoPago (paymentRoutes.js), ambos con verificación de firma criptográfica.
 router.post('/upgrade', protect, verifyCsrf, (req, res) => {
   return res.status(403).json({
-    error: 'Los cambios de tier solo se procesan mediante pago. Usa /api/payments/stripe o /api/payments/mercadopago.'
-  });
-});
+    error:
+      'Los cambios de tier solo se procesan mediante pago. Usa /api/payments/stripe o /api/payments/mercadopago.',
+  })
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/subscription/status
@@ -29,12 +30,12 @@ router.get('/status', protect, async (req, res) => {
       select: {
         subscriptionTier: true,
         stripeCustomerId: true,
-        stripeSubscriptionId: true
-      }
-    });
+        stripeSubscriptionId: true,
+      },
+    })
 
     if (!user) {
-      return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+      return res.status(404).json({ ok: false, message: 'Usuario no encontrado' })
     }
 
     // Sin suscripción gestionada por Stripe
@@ -42,18 +43,18 @@ router.get('/status', protect, async (req, res) => {
       return res.json({
         ok: true,
         managed: false,
-        tier: user.subscriptionTier
-      });
+        tier: user.subscriptionTier,
+      })
     }
 
     // Consultar estado real en Stripe
     const subscriptions = await stripe.subscriptions.list({
       customer: user.stripeCustomerId,
       limit: 1,
-      status: 'all'
-    });
+      status: 'all',
+    })
 
-    const subscription = subscriptions.data[0];
+    const subscription = subscriptions.data[0]
 
     if (!subscription) {
       return res.json({
@@ -62,8 +63,8 @@ router.get('/status', protect, async (req, res) => {
         tier: user.subscriptionTier,
         status: 'no_subscription',
         currentPeriodEnd: null,
-        cancelAtPeriodEnd: false
-      });
+        cancelAtPeriodEnd: false,
+      })
     }
 
     res.json({
@@ -72,13 +73,15 @@ router.get('/status', protect, async (req, res) => {
       tier: user.subscriptionTier,
       status: subscription.status,
       currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end
-    });
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    })
   } catch (err) {
-    logger.error({ err }, '[Subscription] Error obteniendo status');
-    res.status(500).json({ ok: false, message: err.message || 'Error al obtener estado de suscripción' });
+    logger.error({ err }, '[Subscription] Error obteniendo status')
+    res
+      .status(500)
+      .json({ ok: false, message: err.message || 'Error al obtener estado de suscripción' })
   }
-});
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/subscription/cancel
@@ -88,29 +91,29 @@ router.post('/cancel', protect, verifyCsrf, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { stripeSubscriptionId: true }
-    });
+      select: { stripeSubscriptionId: true },
+    })
 
     if (!user?.stripeSubscriptionId) {
-      return res.status(400).json({ ok: false, message: 'No hay suscripción activa' });
+      return res.status(400).json({ ok: false, message: 'No hay suscripción activa' })
     }
 
     // Marcar para cancelar al final del período — el tier baja cuando
     // el webhook customer.subscription.deleted llegue de Stripe
     await stripe.subscriptions.update(user.stripeSubscriptionId, {
-      cancel_at_period_end: true
-    });
+      cancel_at_period_end: true,
+    })
 
     res.json({
       ok: true,
       message: 'Suscripción cancelada al final del período',
-      cancelAtPeriodEnd: true
-    });
+      cancelAtPeriodEnd: true,
+    })
   } catch (err) {
-    logger.error({ err }, '[Subscription] Error cancelando suscripción');
-    res.status(500).json({ ok: false, message: err.message || 'Error al cancelar suscripción' });
+    logger.error({ err }, '[Subscription] Error cancelando suscripción')
+    res.status(500).json({ ok: false, message: err.message || 'Error al cancelar suscripción' })
   }
-});
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/subscription/reactivate
@@ -120,26 +123,28 @@ router.post('/reactivate', protect, verifyCsrf, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { stripeSubscriptionId: true }
-    });
+      select: { stripeSubscriptionId: true },
+    })
 
     if (!user?.stripeSubscriptionId) {
-      return res.status(400).json({ ok: false, message: 'No hay suscripción activa para reactivar' });
+      return res
+        .status(400)
+        .json({ ok: false, message: 'No hay suscripción activa para reactivar' })
     }
 
     await stripe.subscriptions.update(user.stripeSubscriptionId, {
-      cancel_at_period_end: false
-    });
+      cancel_at_period_end: false,
+    })
 
     res.json({
       ok: true,
-      message: 'Suscripción reactivada'
-    });
+      message: 'Suscripción reactivada',
+    })
   } catch (err) {
-    logger.error({ err }, '[Subscription] Error reactivando suscripción');
-    res.status(500).json({ ok: false, message: err.message || 'Error al reactivar suscripción' });
+    logger.error({ err }, '[Subscription] Error reactivando suscripción')
+    res.status(500).json({ ok: false, message: err.message || 'Error al reactivar suscripción' })
   }
-});
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/subscription/invoices
@@ -150,16 +155,16 @@ router.get('/invoices', protect, async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: { stripeCustomerId: true },
-    });
+    })
 
     if (!user?.stripeCustomerId || !stripe) {
-      return res.json({ ok: true, invoices: [] });
+      return res.json({ ok: true, invoices: [] })
     }
 
     const list = await stripe.invoices.list({
       customer: user.stripeCustomerId,
       limit: 10,
-    });
+    })
 
     const invoices = list.data.map(inv => ({
       id: inv.id,
@@ -169,13 +174,13 @@ router.get('/invoices', protect, async (req, res) => {
       currency: inv.currency.toUpperCase(),
       status: inv.status,
       pdfUrl: inv.invoice_pdf || null,
-    }));
+    }))
 
-    res.json({ ok: true, invoices });
+    res.json({ ok: true, invoices })
   } catch (err) {
-    logger.error({ err }, '[Subscription] Error fetching invoices');
-    res.status(500).json({ ok: false, message: err.message || 'Error al obtener facturas' });
+    logger.error({ err }, '[Subscription] Error fetching invoices')
+    res.status(500).json({ ok: false, message: err.message || 'Error al obtener facturas' })
   }
-});
+})
 
-module.exports = router;
+module.exports = router

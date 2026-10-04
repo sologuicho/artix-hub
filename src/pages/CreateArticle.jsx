@@ -1,17 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { X, Sparkles, ToggleLeft, ToggleRight, ArrowLeft, SlidersHorizontal, Upload } from 'lucide-react';
-import useAIValidation from '../hooks/useAIValidation';
-import AIValidationPanel from '../components/AIValidationPanel';
-import AIAssistantOverlay from '../components/AIAssistantOverlay';
-import RichTextEditorWithMentions from '../components/RichTextEditorWithMentions';
-import TagSelector from '../components/TagSelector';
-import CategorySelector from '../components/CategorySelector';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import {
+  X,
+  Sparkles,
+  ToggleLeft,
+  ToggleRight,
+  ArrowLeft,
+  SlidersHorizontal,
+  Upload,
+} from 'lucide-react'
+import useAIValidation from '../hooks/useAIValidation'
+import AIValidationPanel from '../components/AIValidationPanel'
+import AIAssistantOverlay from '../components/AIAssistantOverlay'
+import RichTextEditorWithMentions from '../components/RichTextEditorWithMentions'
+import TagSelector from '../components/TagSelector'
+import CategorySelector from '../components/CategorySelector'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
 
-const MONO = "'IBM Plex Mono', monospace";
-const SANS = "'IBM Plex Sans', sans-serif";
+const MONO = "'IBM Plex Mono', monospace"
+const SANS = "'IBM Plex Sans', sans-serif"
 
 const PAGE_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;700&display=swap');
@@ -53,25 +61,25 @@ const PAGE_STYLES = `
   @keyframes artixDrawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
   .artix-settings-drawer { animation: artixDrawerIn 0.2s ease; }
   .artix-create-input::placeholder { color: var(--muted); opacity: 1; }
-`;
+`
 
 const CreateArticle = () => {
-  const { id } = useParams();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const isEditMode = !!id;
-  const isAdmin = user?.role === 'ADMIN';
+  const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const isEditMode = !!id
+  const isAdmin = user?.role === 'ADMIN'
   const [publishAsArtixResearch, setPublishAsArtixResearch] = useState(
     searchParams.get('asArtixResearch') === 'true'
-  );
-  const articleValidation = useAIValidation('article');
-  const [validationMessage, setValidationMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [selectedText, setSelectedText] = useState('');
-  const [hoverCover, setHoverCover] = useState(false);
+  )
+  const articleValidation = useAIValidation('article')
+  const [validationMessage, setValidationMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [selectedText, setSelectedText] = useState('')
+  const [hoverCover, setHoverCover] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -82,16 +90,18 @@ const CreateArticle = () => {
     coverUrl: '',
     status: 'draft',
     isCollaborative: false,
-  });
+  })
 
   useEffect(() => {
     if (isEditMode && id) {
       const fetchArticle = async () => {
         try {
-          const response = await fetch(`${BACKEND_URL}/api/articles/${id}`, { credentials: 'include' });
-          const data = await response.json();
+          const response = await fetch(`${BACKEND_URL}/api/articles/${id}`, {
+            credentials: 'include',
+          })
+          const data = await response.json()
           if (data.ok && data.article) {
-            const a = data.article;
+            const a = data.article
             setFormData({
               title: a.title || '',
               content: a.content || '',
@@ -102,73 +112,83 @@ const CreateArticle = () => {
               coverUrl: a.coverUrl || '',
               status: a.status || 'draft',
               isCollaborative: a.isCollaborative || false,
-            });
+            })
           }
-        // eslint-disable-next-line no-console
-        } catch (err) { console.error(err); }
-      };
-      fetchArticle();
+          // eslint-disable-next-line no-console
+        } catch (err) {
+          console.error(err)
+        }
+      }
+      fetchArticle()
     }
-  }, [isEditMode, id]);
+  }, [isEditMode, id])
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const handleInputChange = e => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
 
-  const handleCoverChange = (e) => {
-    const file = e.target.files[0];
+  const handleCoverChange = e => {
+    const file = e.target.files[0]
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setFormData(prev => ({ ...prev, coverUrl: reader.result }));
-      reader.readAsDataURL(file);
+      const reader = new FileReader()
+      reader.onloadend = () => setFormData(prev => ({ ...prev, coverUrl: reader.result }))
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
-  const handleInsertText = (text) => {
-    setFormData(prev => ({ ...prev, content: prev.content + '\n\n' + text }));
-    setSelectedText('');
-  };
+  const handleInsertText = text => {
+    setFormData(prev => ({ ...prev, content: prev.content + '\n\n' + text }))
+    setSelectedText('')
+  }
 
-  const handleSubmit = async (e) => {
-    e?.preventDefault();
-    setIsSubmitting(true);
-    setValidationMessage('');
+  const handleSubmit = async e => {
+    e?.preventDefault()
+    setIsSubmitting(true)
+    setValidationMessage('')
     try {
       const getCsrfToken = () => {
         for (const cookie of document.cookie.split(';')) {
-          const [name, value] = cookie.trim().split('=');
-          if (name === 'csrf') return value;
+          const [name, value] = cookie.trim().split('=')
+          if (name === 'csrf') return value
         }
-        return null;
-      };
-      const url = isEditMode ? `${BACKEND_URL}/api/articles/${id}` : `${BACKEND_URL}/api/articles`;
+        return null
+      }
+      const url = isEditMode ? `${BACKEND_URL}/api/articles/${id}` : `${BACKEND_URL}/api/articles`
       const response = await fetch(url, {
         method: isEditMode ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
-        body: JSON.stringify({ ...formData, publishAsArtixResearch, status: isEditMode ? formData.status : 'published' }),
-      });
-      const data = await response.json();
+        body: JSON.stringify({
+          ...formData,
+          publishAsArtixResearch,
+          status: isEditMode ? formData.status : 'published',
+        }),
+      })
+      const data = await response.json()
       if (data.ok) {
-        navigate(`/articles/${data.article?.id || id}`);
+        navigate(`/articles/${data.article?.id || id}`)
       } else {
-        setValidationMessage(data.message || 'Error al guardar el artículo');
+        setValidationMessage(data.message || 'Error al guardar el artículo')
       }
     } catch (err) {
-      setValidationMessage(err.message);
+      setValidationMessage(err.message)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const wordCount = formData.content.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(w => w.length > 0).length;
+  const wordCount = formData.content
+    .replace(/<[^>]*>/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(w => w.length > 0).length
   const progress = {
     title: formData.title.trim().length > 0,
     cover: !!formData.coverUrl,
     category: !!formData.category,
     content: wordCount >= 50,
-  };
+  }
 
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
@@ -184,65 +204,141 @@ const CreateArticle = () => {
           <div
             className="artix-settings-drawer"
             style={{
-              position: 'fixed', top: 0, right: 0, bottom: 0, width: '340px',
-              backgroundColor: 'var(--bg)', borderLeft: '1px solid var(--border)',
-              zIndex: 50, overflowY: 'auto', padding: '1.5rem',
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: '340px',
+              backgroundColor: 'var(--bg)',
+              borderLeft: '1px solid var(--border)',
+              zIndex: 50,
+              overflowY: 'auto',
+              padding: '1.5rem',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-              <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '2rem',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: MONO,
+                  fontSize: '0.5625rem',
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                }}
+              >
                 Configuración
               </span>
-              <button onClick={() => setSettingsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'flex' }}>
+              <button
+                onClick={() => setSettingsOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--muted)',
+                  display: 'flex',
+                }}
+              >
                 <X size={16} />
               </button>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontFamily: MONO,
+                  fontSize: '0.5rem',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                  marginBottom: '0.5rem',
+                }}
+              >
                 Categoría
               </label>
               <CategorySelector
                 category={formData.category}
-                onChange={(cat) => setFormData(prev => ({ ...prev, category: cat }))}
+                onChange={cat => setFormData(prev => ({ ...prev, category: cat }))}
                 contentType="article"
                 placeholder="Seleccionar categoría…"
               />
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontFamily: MONO,
+                  fontSize: '0.5rem',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                  marginBottom: '0.5rem',
+                }}
+              >
                 Etiquetas
               </label>
               <TagSelector
                 tags={formData.tags}
-                onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+                onChange={tags => setFormData(prev => ({ ...prev, tags }))}
                 context="articles"
                 placeholder="Agregar etiquetas…"
               />
             </div>
 
             {isAdmin && !isEditMode && (
-              <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)', marginBottom: '1.5rem' }}>
+              <div
+                style={{
+                  paddingTop: '1.5rem',
+                  borderTop: '1px solid var(--border)',
+                  marginBottom: '1.5rem',
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setPublishAsArtixResearch(v => !v)}
                   style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
-                    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0,
-                    fontFamily: SANS, fontSize: '0.875rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--muted)',
+                    padding: 0,
+                    fontFamily: SANS,
+                    fontSize: '0.875rem',
                   }}
                 >
                   {publishAsArtixResearch ? 'Publicando como Artix' : 'Publicando como tú'}
-                  {publishAsArtixResearch
-                    ? <ToggleRight size={18} style={{ color: '#C4451A' }} />
-                    : <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />}
+                  {publishAsArtixResearch ? (
+                    <ToggleRight size={18} style={{ color: '#C4451A' }} />
+                  ) : (
+                    <ToggleLeft size={18} style={{ color: 'var(--muted)' }} />
+                  )}
                 </button>
               </div>
             )}
 
             <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-              <p style={{ fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '0.75rem' }}>
+              <p
+                style={{
+                  fontFamily: MONO,
+                  fontSize: '0.5rem',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                  marginBottom: '0.75rem',
+                }}
+              >
                 Verificación de calidad
               </p>
               <AIValidationPanel
@@ -253,32 +349,66 @@ const CreateArticle = () => {
             </div>
 
             {validationMessage && (
-              <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: '#C4451A', marginTop: '1rem' }}>{validationMessage}</p>
+              <p
+                style={{
+                  fontFamily: SANS,
+                  fontSize: '0.875rem',
+                  color: '#C4451A',
+                  marginTop: '1rem',
+                }}
+              >
+                {validationMessage}
+              </p>
             )}
           </div>
         </>
       )}
 
       {/* Slim nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 30,
-        height: '44px', display: 'flex', alignItems: 'center',
-        padding: '0 1.5rem', gap: '0.75rem',
-        backgroundColor: 'var(--bg)', borderBottom: '1px solid var(--border)',
-      }}>
+      <nav
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 30,
+          height: '44px',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 1.5rem',
+          gap: '0.75rem',
+          backgroundColor: 'var(--bg)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
         <button
           onClick={() => navigate('/articles')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0.25rem', display: 'flex' }}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--muted)',
+            padding: '0.25rem',
+            display: 'flex',
+          }}
         >
           <ArrowLeft size={16} />
         </button>
 
-        <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+        <span
+          style={{
+            fontFamily: MONO,
+            fontSize: '0.5625rem',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: 'var(--muted)',
+          }}
+        >
           {isEditMode ? 'Editar artículo' : 'Nuevo artículo'}
         </span>
 
         {wordCount > 0 && (
-          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', color: 'var(--border)' }}>· {wordCount} palabras</span>
+          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', color: 'var(--border)' }}>
+            · {wordCount} palabras
+          </span>
         )}
 
         <div style={{ flex: 1 }} />
@@ -295,7 +425,9 @@ const CreateArticle = () => {
               key={label}
               title={label}
               style={{
-                width: 6, height: 6, borderRadius: '50%',
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
                 backgroundColor: done ? '#C4451A' : 'var(--border)',
                 transition: 'background-color 0.2s',
               }}
@@ -308,7 +440,15 @@ const CreateArticle = () => {
         <button
           onClick={() => setSettingsOpen(v => !v)}
           title="Configuración"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: settingsOpen ? '#C4451A' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: settingsOpen ? '#C4451A' : 'var(--muted)',
+            padding: '0.25rem',
+            display: 'flex',
+            transition: 'color 0.15s',
+          }}
         >
           <SlidersHorizontal size={15} />
         </button>
@@ -316,7 +456,15 @@ const CreateArticle = () => {
         <button
           onClick={() => setIsAIPanelOpen(v => !v)}
           title="Asistente IA"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isAIPanelOpen ? '#C4451A' : 'var(--muted)', padding: '0.25rem', display: 'flex', transition: 'color 0.15s' }}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: isAIPanelOpen ? '#C4451A' : 'var(--muted)',
+            padding: '0.25rem',
+            display: 'flex',
+            transition: 'color 0.15s',
+          }}
         >
           <Sparkles size={15} />
         </button>
@@ -325,9 +473,16 @@ const CreateArticle = () => {
           onClick={handleSubmit}
           disabled={isSubmitting}
           style={{
-            backgroundColor: '#C4451A', color: '#fff', border: 'none',
-            fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase',
-            padding: '0.5rem 1.25rem', cursor: 'pointer', opacity: isSubmitting ? 0.5 : 1,
+            backgroundColor: '#C4451A',
+            color: '#fff',
+            border: 'none',
+            fontFamily: MONO,
+            fontSize: '0.5625rem',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            padding: '0.5rem 1.25rem',
+            cursor: 'pointer',
+            opacity: isSubmitting ? 0.5 : 1,
           }}
         >
           {isSubmitting ? 'Publicando…' : 'Publicar'}
@@ -337,10 +492,24 @@ const CreateArticle = () => {
       {/* Cover zone */}
       {formData.coverUrl ? (
         <div style={{ width: '100%', aspectRatio: '16/5', position: 'relative' }}>
-          <img src={formData.coverUrl} alt="Portada" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={formData.coverUrl}
+            alt="Portada"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
           <button
             onClick={() => setFormData(prev => ({ ...prev, coverUrl: '' }))}
-            style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', padding: '0.375rem', color: 'var(--muted)', display: 'flex' }}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              padding: '0.375rem',
+              color: 'var(--muted)',
+              display: 'flex',
+            }}
           >
             <X size={14} />
           </button>
@@ -350,17 +519,34 @@ const CreateArticle = () => {
           onMouseEnter={() => setHoverCover(true)}
           onMouseLeave={() => setHoverCover(false)}
           style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            width: '100%', padding: '0.625rem 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            width: '100%',
+            padding: '0.625rem 1.5rem',
             borderBottom: `1px solid ${hoverCover ? '#C4451A' : 'var(--border)'}`,
-            cursor: 'pointer', transition: 'border-color 0.15s',
+            cursor: 'pointer',
+            transition: 'border-color 0.15s',
           }}
         >
           <Upload size={12} style={{ color: 'var(--muted)' }} />
-          <span style={{ fontFamily: MONO, fontSize: '0.5625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+          <span
+            style={{
+              fontFamily: MONO,
+              fontSize: '0.5625rem',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+            }}
+          >
             Subir portada
           </span>
-          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleCoverChange}
+          />
         </label>
       )}
 
@@ -374,11 +560,17 @@ const CreateArticle = () => {
           placeholder="Título del artículo…"
           className="artix-create-input"
           style={{
-            display: 'block', width: '100%',
-            background: 'transparent', border: 'none', outline: 'none',
-            fontSize: 'clamp(1.875rem, 4vw, 2.625rem)', lineHeight: 1.2,
-            fontFamily: SANS, fontWeight: 700,
-            color: 'var(--text)', marginBottom: '1rem',
+            display: 'block',
+            width: '100%',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            fontSize: 'clamp(1.875rem, 4vw, 2.625rem)',
+            lineHeight: 1.2,
+            fontFamily: SANS,
+            fontWeight: 700,
+            color: 'var(--text)',
+            marginBottom: '1rem',
           }}
         />
         <textarea
@@ -389,17 +581,25 @@ const CreateArticle = () => {
           rows={2}
           className="artix-create-input"
           style={{
-            display: 'block', width: '100%',
-            background: 'transparent', border: 'none', outline: 'none', resize: 'none',
-            borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem', marginBottom: '2rem',
-            fontSize: '1.125rem', fontFamily: SANS,
-            color: 'var(--muted)', lineHeight: 1.6,
+            display: 'block',
+            width: '100%',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            resize: 'none',
+            borderBottom: '1px solid var(--border)',
+            paddingBottom: '1.5rem',
+            marginBottom: '2rem',
+            fontSize: '1.125rem',
+            fontFamily: SANS,
+            color: 'var(--muted)',
+            lineHeight: 1.6,
           }}
         />
         <div className="artix-editor">
           <RichTextEditorWithMentions
             value={formData.content}
-            onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+            onChange={val => setFormData(prev => ({ ...prev, content: val }))}
             placeholder="Escribe tu artículo…"
           />
         </div>
@@ -412,7 +612,7 @@ const CreateArticle = () => {
         contextData={{ selectedText, category: formData.category, contentType: 'article' }}
       />
     </div>
-  );
-};
+  )
+}
 
-export default CreateArticle;
+export default CreateArticle

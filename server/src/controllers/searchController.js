@@ -1,27 +1,27 @@
-const prisma = require('../prismaClient');
-const logger = require('../lib/logger');
+const prisma = require('../prismaClient')
+const logger = require('../lib/logger')
 
 // Global search across all content types
 exports.globalSearch = async (req, res) => {
   try {
-    const { q } = req.query;
-    
+    const { q } = req.query
+
     if (!q || q.trim().length < 2) {
-      return res.json({ 
-        ok: true, 
+      return res.json({
+        ok: true,
         results: {
           users: [],
           articles: [],
           research: [],
           events: [],
           posts: [],
-          categories: []
-        }
-      });
+          categories: [],
+        },
+      })
     }
 
-    const query = q.trim();
-    const searchMode = { contains: query, mode: 'insensitive' };
+    const query = q.trim()
+    const searchMode = { contains: query, mode: 'insensitive' }
 
     // Search in parallel for better performance
     const [users, articles, research, events, posts] = await Promise.all([
@@ -33,8 +33,8 @@ exports.globalSearch = async (req, res) => {
             { name: searchMode },
             { occupation: searchMode },
             { country: searchMode },
-            { bio: searchMode }
-          ]
+            { bio: searchMode },
+          ],
         },
         select: {
           id: true,
@@ -43,9 +43,9 @@ exports.globalSearch = async (req, res) => {
           avatar: true,
           occupation: true,
           country: true,
-          bio: true
+          bio: true,
         },
-        take: 10
+        take: 10,
       }),
 
       // Search Articles (schema uses status, not archived)
@@ -59,10 +59,10 @@ exports.globalSearch = async (req, res) => {
                 { description: searchMode },
                 { content: searchMode },
                 { category: searchMode },
-                { tags: { has: query } }
-              ]
-            }
-          ]
+                { tags: { has: query } },
+              ],
+            },
+          ],
         },
         include: {
           author: {
@@ -70,12 +70,12 @@ exports.globalSearch = async (req, res) => {
               id: true,
               name: true,
               username: true,
-              avatar: true
-            }
-          }
+              avatar: true,
+            },
+          },
         },
         take: 10,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       }),
 
       // Search Research (schema uses status, not archived)
@@ -89,10 +89,10 @@ exports.globalSearch = async (req, res) => {
                 { description: searchMode },
                 { content: searchMode },
                 { category: searchMode },
-                { tags: { has: query } }
-              ]
-            }
-          ]
+                { tags: { has: query } },
+              ],
+            },
+          ],
         },
         include: {
           author: {
@@ -100,12 +100,12 @@ exports.globalSearch = async (req, res) => {
               id: true,
               name: true,
               username: true,
-              avatar: true
-            }
-          }
+              avatar: true,
+            },
+          },
         },
         take: 10,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       }),
 
       // Search Events
@@ -119,10 +119,10 @@ exports.globalSearch = async (req, res) => {
                 { description: searchMode },
                 { location: searchMode },
                 { type: searchMode },
-                { tags: { has: query } }
-              ]
-            }
-          ]
+                { tags: { has: query } },
+              ],
+            },
+          ],
         },
         include: {
           creator: {
@@ -130,12 +130,12 @@ exports.globalSearch = async (req, res) => {
               id: true,
               name: true,
               username: true,
-              avatar: true
-            }
-          }
+              avatar: true,
+            },
+          },
         },
         take: 10,
-        orderBy: { date: 'asc' }
+        orderBy: { date: 'asc' },
       }),
 
       // Search Blog Posts
@@ -148,10 +148,10 @@ exports.globalSearch = async (req, res) => {
                 { title: searchMode },
                 { content: searchMode },
                 { category: searchMode },
-                { tags: { has: query } }
-              ]
-            }
-          ]
+                { tags: { has: query } },
+              ],
+            },
+          ],
         },
         include: {
           author: {
@@ -159,14 +159,14 @@ exports.globalSearch = async (req, res) => {
               id: true,
               name: true,
               username: true,
-              avatar: true
-            }
-          }
+              avatar: true,
+            },
+          },
         },
         take: 10,
-        orderBy: { createdAt: 'desc' }
-      })
-    ]);
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
 
     // Get unique categories from all content types
     const [articleCategories, researchCategories, eventTypes, postCategories] = await Promise.all([
@@ -174,34 +174,34 @@ exports.globalSearch = async (req, res) => {
         where: { category: searchMode, status: { not: 'archived' } },
         select: { category: true },
         distinct: ['category'],
-        take: 5
+        take: 5,
       }),
       prisma.research.findMany({
         where: { category: searchMode, status: { not: 'archived' } },
         select: { category: true },
         distinct: ['category'],
-        take: 5
+        take: 5,
       }),
       prisma.event.findMany({
         where: { type: searchMode, archived: false },
         select: { type: true },
         distinct: ['type'],
-        take: 5
+        take: 5,
       }),
       prisma.blogPost.findMany({
         where: { category: searchMode, archived: false },
         select: { category: true },
         distinct: ['category'],
-        take: 5
-      })
-    ]);
+        take: 5,
+      }),
+    ])
 
     const categories = [
       ...articleCategories.map(a => ({ type: 'article', name: a.category })),
       ...researchCategories.map(r => ({ type: 'research', name: r.category })),
       ...eventTypes.map(e => ({ type: 'event', name: e.type })),
-      ...postCategories.map(p => ({ type: 'post', name: p.category }))
-    ];
+      ...postCategories.map(p => ({ type: 'post', name: p.category })),
+    ]
 
     res.json({
       ok: true,
@@ -211,15 +211,11 @@ exports.globalSearch = async (req, res) => {
         research,
         events,
         posts,
-        categories
-      }
-    });
+        categories,
+      },
+    })
   } catch (error) {
-    logger.error({ err: error }, '[searchController] Error in global search');
-    res.status(500).json({ ok: false, message: 'Failed to perform search' });
+    logger.error({ err: error }, '[searchController] Error in global search')
+    res.status(500).json({ ok: false, message: 'Failed to perform search' })
   }
-};
-
-
-
-
+}

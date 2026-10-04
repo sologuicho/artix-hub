@@ -1,259 +1,286 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
 
-import { BACKEND_URL } from '../config/client';
+import { BACKEND_URL } from '../config/client'
 
 const RichTextEditorWithMentions = ({
   value = '',
   onChange,
   placeholder = 'Escribe aquí...',
   className = '',
-  onMentionsChange
+  onMentionsChange,
 }) => {
-  const quillRef = useRef(null);
-  const [users, setUsers] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedUserIndex, setSelectedUserIndex] = useState(0);
-  const dropdownRef = useRef(null);
-  const [mounted, setMounted] = useState(false);
+  const quillRef = useRef(null)
+  const [users, setUsers] = useState([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [selectedUserIndex, setSelectedUserIndex] = useState(0)
+  const dropdownRef = useRef(null)
+  const [mounted, setMounted] = useState(false)
 
   // Ensure component is mounted before rendering Quill
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
-  const fetchUsers = useCallback(async (query) => {
+  const fetchUsers = useCallback(async query => {
     if (!query || query.trim().length === 0) {
-      setUsers([]);
-      setShowDropdown(false);
-      return;
+      setUsers([])
+      setShowDropdown(false)
+      return
     }
     try {
-      const response = await fetch(`${BACKEND_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const response = await fetch(
+        `${BACKEND_URL}/api/users/search?q=${encodeURIComponent(query)}`,
+        {
+          credentials: 'include',
+        }
+      )
+      const data = await response.json()
       if (data.ok && data.users) {
-        setUsers(data.users);
-        setShowDropdown(data.users.length > 0);
-        setSelectedUserIndex(0);
+        setUsers(data.users)
+        setShowDropdown(data.users.length > 0)
+        setSelectedUserIndex(0)
       } else {
-        setUsers([]);
-        setShowDropdown(false);
+        setUsers([])
+        setShowDropdown(false)
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error fetching users:', error);
-      setUsers([]);
-      setShowDropdown(false);
+      console.error('Error fetching users:', error)
+      setUsers([])
+      setShowDropdown(false)
     }
-  }, []);
+  }, [])
 
-  const insertMention = useCallback((user) => {
-    if (!quillRef.current) return;
+  const insertMention = useCallback(
+    user => {
+      if (!quillRef.current) return
 
-    const quill = quillRef.current.getEditor();
-    if (!quill) return;
+      const quill = quillRef.current.getEditor()
+      if (!quill) return
 
-    const selection = quill.getSelection(true);
-    if (!selection) return;
+      const selection = quill.getSelection(true)
+      if (!selection) return
 
-    const text = quill.getText();
-    const textBeforeCursor = text.substring(0, selection.index);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+      const text = quill.getText()
+      const textBeforeCursor = text.substring(0, selection.index)
+      const lastAtIndex = textBeforeCursor.lastIndexOf('@')
 
-    if (lastAtIndex === -1) return;
+      if (lastAtIndex === -1) return
 
-    const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
-    const spaceIndex = textAfterAt.indexOf(' ');
-    const newlineIndex = textAfterAt.indexOf('\n');
-    const endIndex = spaceIndex !== -1 && newlineIndex !== -1
-      ? Math.min(spaceIndex, newlineIndex)
-      : spaceIndex !== -1
-        ? spaceIndex
-        : newlineIndex !== -1
-          ? newlineIndex
-          : textAfterAt.length;
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1)
+      const spaceIndex = textAfterAt.indexOf(' ')
+      const newlineIndex = textAfterAt.indexOf('\n')
+      const endIndex =
+        spaceIndex !== -1 && newlineIndex !== -1
+          ? Math.min(spaceIndex, newlineIndex)
+          : spaceIndex !== -1
+            ? spaceIndex
+            : newlineIndex !== -1
+              ? newlineIndex
+              : textAfterAt.length
 
-    const mentionText = `@${user.username || user.name}`;
-    const startPos = lastAtIndex;
-    const endPos = lastAtIndex + 1 + endIndex;
+      const mentionText = `@${user.username || user.name}`
+      const startPos = lastAtIndex
+      const endPos = lastAtIndex + 1 + endIndex
 
-    quill.deleteText(startPos, endPos - startPos);
-    quill.insertText(startPos, mentionText);
-    quill.insertText(startPos + mentionText.length, ' ');
-    quill.setSelection(startPos + mentionText.length + 1);
+      quill.deleteText(startPos, endPos - startPos)
+      quill.insertText(startPos, mentionText)
+      quill.insertText(startPos + mentionText.length, ' ')
+      quill.setSelection(startPos + mentionText.length + 1)
 
-    // Update parent state
-    const newContent = quill.root.innerHTML;
-    if (onChange) {
-      onChange(newContent);
-    }
+      // Update parent state
+      const newContent = quill.root.innerHTML
+      if (onChange) {
+        onChange(newContent)
+      }
 
-    // Extract mentions
-    if (onMentionsChange) {
-      const allText = quill.getText();
-      const mentionRegex = /@(\w+)/g;
-      const matches = allText.match(mentionRegex);
-      const mentions = matches ? matches.map(m => m.substring(1)) : [];
-      onMentionsChange(mentions);
-    }
+      // Extract mentions
+      if (onMentionsChange) {
+        const allText = quill.getText()
+        const mentionRegex = /@(\w+)/g
+        const matches = allText.match(mentionRegex)
+        const mentions = matches ? matches.map(m => m.substring(1)) : []
+        onMentionsChange(mentions)
+      }
 
-    setShowDropdown(false);
-  }, [onChange, onMentionsChange]);
+      setShowDropdown(false)
+    },
+    [onChange, onMentionsChange]
+  )
 
   // Set up mention detection
   useEffect(() => {
-    if (!mounted || !quillRef.current) return;
+    if (!mounted || !quillRef.current) return
 
-    const quill = quillRef.current.getEditor();
-    if (!quill) return;
+    const quill = quillRef.current.getEditor()
+    if (!quill) return
 
     const handleTextChange = () => {
-      const selection = quill.getSelection(true);
+      const selection = quill.getSelection(true)
       if (!selection) {
-        setShowDropdown(false);
-        return;
+        setShowDropdown(false)
+        return
       }
 
-      const text = quill.getText();
-      const textBeforeCursor = text.substring(0, selection.index);
-      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+      const text = quill.getText()
+      const textBeforeCursor = text.substring(0, selection.index)
+      const lastAtIndex = textBeforeCursor.lastIndexOf('@')
 
       if (lastAtIndex === -1) {
-        setShowDropdown(false);
-        return;
+        setShowDropdown(false)
+        return
       }
 
-      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
-      const spaceIndex = textAfterAt.indexOf(' ');
-      const newlineIndex = textAfterAt.indexOf('\n');
-      const endIndex = spaceIndex !== -1 && newlineIndex !== -1
-        ? Math.min(spaceIndex, newlineIndex)
-        : spaceIndex !== -1
-          ? spaceIndex
-          : newlineIndex !== -1
-            ? newlineIndex
-            : textAfterAt.length;
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1)
+      const spaceIndex = textAfterAt.indexOf(' ')
+      const newlineIndex = textAfterAt.indexOf('\n')
+      const endIndex =
+        spaceIndex !== -1 && newlineIndex !== -1
+          ? Math.min(spaceIndex, newlineIndex)
+          : spaceIndex !== -1
+            ? spaceIndex
+            : newlineIndex !== -1
+              ? newlineIndex
+              : textAfterAt.length
 
-      const query = textAfterAt.substring(0, endIndex);
+      const query = textAfterAt.substring(0, endIndex)
 
       if (query.length >= 0 && !query.includes(' ') && !query.includes('\n')) {
-        fetchUsers(query);
+        fetchUsers(query)
       } else {
-        setShowDropdown(false);
+        setShowDropdown(false)
       }
-    };
+    }
 
-    quill.on('text-change', handleTextChange);
-    quill.on('selection-change', handleTextChange);
+    quill.on('text-change', handleTextChange)
+    quill.on('selection-change', handleTextChange)
 
     return () => {
-      quill.off('text-change', handleTextChange);
-      quill.off('selection-change', handleTextChange);
-    };
-  }, [mounted, fetchUsers]);
+      quill.off('text-change', handleTextChange)
+      quill.off('selection-change', handleTextChange)
+    }
+  }, [mounted, fetchUsers])
 
   // Handle click outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target) &&
         quillRef.current &&
         !quillRef.current.getEditor().root.contains(event.target)
       ) {
-        setShowDropdown(false);
+        setShowDropdown(false)
       }
-    };
+    }
 
     if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showDropdown]);
+  }, [showDropdown])
 
+  const modules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, 4, 5, 6, false] }],
+          [{ font: [] }],
+          [{ size: ['small', false, 'large', 'huge'] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ color: [] }, { background: [] }],
+          [{ script: 'sub' }, { script: 'super' }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          [{ indent: '-1' }, { indent: '+1' }],
+          [{ align: [] }],
+          ['blockquote', 'code-block'],
+          ['link', 'image', 'video'],
+          ['clean'],
+        ],
+      },
+      clipboard: {
+        matchVisual: false,
+      },
+    }),
+    []
+  )
 
-  const modules = useMemo(() => ({
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        [{ 'font': [] }],
-        [{ 'size': ['small', false, 'large', 'huge'] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'script': 'sub' }, { 'script': 'super' }],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        [{ 'indent': '-1' }, { 'indent': '+1' }],
-        [{ 'align': [] }],
-        ['blockquote', 'code-block'],
-        ['link', 'image', 'video'],
-        ['clean']
-      ],
+  const formats = useMemo(
+    () => [
+      'header',
+      'font',
+      'size',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'color',
+      'background',
+      'script',
+      'list',
+      'bullet',
+      'indent',
+      'align',
+      'blockquote',
+      'code-block',
+      'link',
+      'image',
+      'video',
+    ],
+    []
+  )
+
+  const handleChange = useCallback(
+    content => {
+      if (onChange) {
+        onChange(content)
+      }
     },
-    clipboard: {
-      matchVisual: false,
-    }
-  }), []);
-
-  const formats = useMemo(() => [
-    'header', 'font', 'size',
-    'bold', 'italic', 'underline', 'strike',
-    'color', 'background',
-    'script',
-    'list', 'bullet', 'indent',
-    'align',
-    'blockquote', 'code-block',
-    'link', 'image', 'video'
-  ], []);
-
-  const handleChange = useCallback((content) => {
-    if (onChange) {
-      onChange(content);
-    }
-  }, [onChange]);
+    [onChange]
+  )
 
   // Set up keyboard handler on the editor container
   useEffect(() => {
-    if (!mounted || !quillRef.current) return;
+    if (!mounted || !quillRef.current) return
 
-    const quill = quillRef.current.getEditor();
-    if (!quill) return;
+    const quill = quillRef.current.getEditor()
+    if (!quill) return
 
-    const editorElement = quill.root;
+    const editorElement = quill.root
 
-    const handleEditorKeyDown = (e) => {
-      if (!showDropdown || users.length === 0) return;
+    const handleEditorKeyDown = e => {
+      if (!showDropdown || users.length === 0) return
 
       if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedUserIndex(prev => (prev + 1) % users.length);
+        e.preventDefault()
+        e.stopPropagation()
+        setSelectedUserIndex(prev => (prev + 1) % users.length)
       } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedUserIndex(prev => (prev - 1 + users.length) % users.length);
+        e.preventDefault()
+        e.stopPropagation()
+        setSelectedUserIndex(prev => (prev - 1 + users.length) % users.length)
       } else if (e.key === 'Enter') {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault()
+        e.stopPropagation()
         if (users[selectedUserIndex]) {
-          insertMention(users[selectedUserIndex]);
+          insertMention(users[selectedUserIndex])
         }
       } else if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowDropdown(false);
+        e.preventDefault()
+        e.stopPropagation()
+        setShowDropdown(false)
       }
-    };
+    }
 
-    editorElement.addEventListener('keydown', handleEditorKeyDown);
+    editorElement.addEventListener('keydown', handleEditorKeyDown)
 
     return () => {
-      editorElement.removeEventListener('keydown', handleEditorKeyDown);
-    };
-  }, [mounted, showDropdown, users, selectedUserIndex, insertMention]);
+      editorElement.removeEventListener('keydown', handleEditorKeyDown)
+    }
+  }, [mounted, showDropdown, users, selectedUserIndex, insertMention])
 
   // Render loading state if not mounted
   if (!mounted) {
@@ -263,7 +290,7 @@ const RichTextEditorWithMentions = ({
           <div className="text-gray-500 dark:text-gray-400">Cargando editor...</div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -293,11 +320,16 @@ const RichTextEditorWithMentions = ({
               key={user.id}
               type="button"
               onClick={() => insertMention(user)}
-              className={`w-full p-3 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-3 text-left transition-colors ${index === selectedUserIndex ? 'bg-gray-100 dark:bg-gray-800' : ''
-                }`}
+              className={`w-full p-3 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-3 text-left transition-colors ${
+                index === selectedUserIndex ? 'bg-gray-100 dark:bg-gray-800' : ''
+              }`}
             >
               {user.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
                   {user.name?.charAt(0) || 'U'}
@@ -414,7 +446,7 @@ const RichTextEditorWithMentions = ({
         }
       `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default RichTextEditorWithMentions;
+export default RichTextEditorWithMentions

@@ -1,118 +1,121 @@
+import React, { useState, useEffect, useMemo } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import CircularProgress from './CircularProgress'
+import { useAuth } from '../../context/AuthContext'
+import { BACKEND_URL } from '../../config/client'
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import CircularProgress from './CircularProgress';
-import { useAuth } from '../../context/AuthContext';
-import { BACKEND_URL } from '../../config/client';
-
-const WORDS_PER_PAGE = 270;
+const WORDS_PER_PAGE = 270
 
 function wordCount(text) {
-  return (text || '').trim().split(/\s+/).filter(Boolean).length;
+  return (text || '').trim().split(/\s+/).filter(Boolean).length
 }
 
 function buildPages(html) {
-  if (!html) return [['<p></p>']];
+  if (!html) return [['<p></p>']]
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  const children = Array.from(doc.body.children);
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  const children = Array.from(doc.body.children)
 
   if (children.length === 0) {
-    return [[html]];
+    return [[html]]
   }
 
   const blocks = children.map(el => ({
     html: el.outerHTML,
     words: wordCount(el.textContent || ''),
     isHeading: /^H[1-6]$/.test(el.tagName),
-  }));
+  }))
 
-  const pages = [];
-  let page = [];
-  let pageWords = 0;
+  const pages = []
+  let page = []
+  let pageWords = 0
 
   for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
+    const block = blocks[i]
 
     if (page.length > 0 && pageWords + block.words > WORDS_PER_PAGE) {
-      pages.push(page);
-      page = [];
-      pageWords = 0;
+      pages.push(page)
+      page = []
+      pageWords = 0
     }
 
-    page.push(block.html);
-    pageWords += block.words;
+    page.push(block.html)
+    pageWords += block.words
   }
 
-  if (page.length > 0) pages.push(page);
+  if (page.length > 0) pages.push(page)
 
   // Anti-orphan: if last block of a page is a heading, move it to next page
   for (let i = 0; i < pages.length - 1; i++) {
-    const last = pages[i][pages[i].length - 1];
+    const last = pages[i][pages[i].length - 1]
     if (/^<h[1-6][\s>]/i.test(last) && pages[i].length > 1) {
-      pages[i].pop();
-      pages[i + 1].unshift(last);
+      pages[i].pop()
+      pages[i + 1].unshift(last)
     }
   }
 
-  return pages.length > 0 ? pages : [[html]];
+  return pages.length > 0 ? pages : [[html]]
 }
 
 const PaginatedReader = ({ content, title, contentId, contentType, initialProgress }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [fading, setFading] = useState(false);
-  const { user } = useAuth();
+  const [currentPage, setCurrentPage] = useState(1)
+  const [fading, setFading] = useState(false)
+  const { user } = useAuth()
 
-  const pages = useMemo(() => buildPages(content), [content]);
-  const totalPages = pages.length;
+  const pages = useMemo(() => buildPages(content), [content])
+  const totalPages = pages.length
 
   useEffect(() => {
     if (initialProgress?.lastPage) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCurrentPage(Math.min(initialProgress.lastPage, totalPages));
+      setCurrentPage(Math.min(initialProgress.lastPage, totalPages))
     }
-  }, [initialProgress, totalPages]);
+  }, [initialProgress, totalPages])
 
   // Sync reading progress
   useEffect(() => {
-    if (!user || !contentId) return;
+    if (!user || !contentId) return
     const timer = setTimeout(async () => {
       try {
-        const percentage = Math.min(100, Math.round((currentPage / totalPages) * 100));
+        const percentage = Math.min(100, Math.round((currentPage / totalPages) * 100))
         const getCsrfToken = () => {
           for (const c of document.cookie.split(';')) {
-            const [n, v] = c.trim().split('=');
-            if (n === 'csrf') return v;
+            const [n, v] = c.trim().split('=')
+            if (n === 'csrf') return v
           }
-          return null;
-        };
-        const key = contentType === 'article' ? 'articleId'
-          : contentType === 'research' ? 'researchId'
-          : 'postId';
+          return null
+        }
+        const key =
+          contentType === 'article'
+            ? 'articleId'
+            : contentType === 'research'
+              ? 'researchId'
+              : 'postId'
         await fetch(`${BACKEND_URL}/api/reading-progress`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
           credentials: 'include',
           body: JSON.stringify({ [key]: contentId, percentage, lastPage: currentPage, totalPages }),
-        });
-      } catch (_) { // intentional
+        })
+      } catch (_) {
+        // intentional
       }
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [currentPage, totalPages, contentId, contentType, user]);
+    }, 1200)
+    return () => clearTimeout(timer)
+  }, [currentPage, totalPages, contentId, contentType, user])
 
-  const changePage = (next) => {
-    if (next < 1 || next > totalPages || fading) return;
-    setFading(true);
+  const changePage = next => {
+    if (next < 1 || next > totalPages || fading) return
+    setFading(true)
     setTimeout(() => {
-      setCurrentPage(next);
-      setFading(false);
-    }, 180);
-  };
+      setCurrentPage(next)
+      setFading(false)
+    }, 180)
+  }
 
-  const percentage = Math.min(100, Math.round((currentPage / totalPages) * 100));
-  const pageHtml = (pages[currentPage - 1] || []).join('');
+  const percentage = Math.min(100, Math.round((currentPage / totalPages) * 100))
+  const pageHtml = (pages[currentPage - 1] || []).join('')
 
   return (
     <div
@@ -151,7 +154,10 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
             >
               Progreso de lectura
             </p>
-            <p className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text)', margin: 0 }}>
+            <p
+              className="font-mono"
+              style={{ fontSize: '0.75rem', color: 'var(--text)', margin: 0 }}
+            >
               Página {currentPage} de {totalPages}
             </p>
           </div>
@@ -212,7 +218,11 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
 
         <div
           className="prose prose-base dark:prose-invert max-w-none"
-          style={{ color: 'var(--text)', fontSize: 'clamp(0.9375rem, 2vw, 1.0625rem)', lineHeight: 1.85 }}
+          style={{
+            color: 'var(--text)',
+            fontSize: 'clamp(0.9375rem, 2vw, 1.0625rem)',
+            lineHeight: 1.85,
+          }}
           dangerouslySetInnerHTML={{ __html: pageHtml }}
         />
       </div>
@@ -272,7 +282,7 @@ const PaginatedReader = ({ content, title, contentId, contentType, initialProgre
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default PaginatedReader;
+export default PaginatedReader

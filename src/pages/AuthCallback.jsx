@@ -1,41 +1,41 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
 
-const MONO = "'IBM Plex Mono', monospace";
+const MONO = "'IBM Plex Mono', monospace"
 
 const AuthCallback = () => {
-  const navigate = useNavigate();
-  const { checkAuth } = useAuth();
+  const navigate = useNavigate()
+  const { checkAuth } = useAuth()
 
   useEffect(() => {
     const handleCallback = async () => {
-      const success = new URLSearchParams(window.location.search).get('success');
+      const success = new URLSearchParams(window.location.search).get('success')
 
       if (success !== 'true') {
-        navigate('/auth?error=oauth_cancelled');
-        return;
+        navigate('/auth?error=oauth_cancelled')
+        return
       }
 
       try {
-        const res = await fetch(`${BACKEND_URL}/me`, { credentials: 'include' });
-        const data = await res.json();
+        const res = await fetch(`${BACKEND_URL}/me`, { credentials: 'include' })
+        const data = await res.json()
 
         if (res.ok && data.ok && data.user) {
-          await checkAuth();
-          navigate(data.user.profileComplete ? '/' : '/profile/setup');
+          await checkAuth()
+          navigate(data.user.profileComplete ? '/' : '/profile/setup')
         } else {
-          navigate('/auth?error=authentication_failed');
+          navigate('/auth?error=authentication_failed')
         }
       } catch {
-        navigate('/auth?error=authentication_failed');
+        navigate('/auth?error=authentication_failed')
       }
-    };
+    }
 
-    handleCallback();
+    handleCallback()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
+  }, [navigate])
 
   return (
     <div
@@ -55,31 +55,35 @@ const AuthCallback = () => {
       />
 
       {/* Wordmark */}
-      <p style={{
-        fontFamily: MONO,
-        fontSize: '0.625rem',
-        letterSpacing: '0.25em',
-        textTransform: 'uppercase',
-        color: 'var(--muted)',
-        marginTop: '0.25rem',
-      }}>
+      <p
+        style={{
+          fontFamily: MONO,
+          fontSize: '0.625rem',
+          letterSpacing: '0.25em',
+          textTransform: 'uppercase',
+          color: 'var(--muted)',
+          marginTop: '0.25rem',
+        }}
+      >
         ARTIX
       </p>
 
       {/* Status */}
-      <p style={{
-        fontFamily: MONO,
-        fontSize: '0.5625rem',
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        color: 'var(--muted)',
-      }}>
+      <p
+        style={{
+          fontFamily: MONO,
+          fontSize: '0.5625rem',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: 'var(--muted)',
+        }}
+      >
         Verificando sesión…
       </p>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
-  );
-};
+  )
+}
 
-export default AuthCallback;
+export default AuthCallback

@@ -1,14 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
-import PricingModal from '../components/PricingModal';
-import CommentSection from '../components/CommentSection';
-import ContentActions from '../components/ContentActions';
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
+import PricingModal from '../components/PricingModal'
+import CommentSection from '../components/CommentSection'
+import ContentActions from '../components/ContentActions'
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 const readTime = (content = '') =>
-  Math.max(1, Math.round(content.replace(/<[^>]+>/g, '').split(/\s+/).length / 200));
+  Math.max(1, Math.round(content.replace(/<[^>]+>/g, '').split(/\s+/).length / 200))
 
 const initials = (name = '') =>
   name
@@ -16,137 +16,147 @@ const initials = (name = '') =>
     .slice(0, 2)
     .map(w => w[0] || '')
     .join('')
-    .toUpperCase();
+    .toUpperCase()
 
 const getCsrfToken = () => {
   for (const c of document.cookie.split(';')) {
-    const [n, v] = c.trim().split('=');
-    if (n === 'csrf') return decodeURIComponent(v || '');
+    const [n, v] = c.trim().split('=')
+    if (n === 'csrf') return decodeURIComponent(v || '')
   }
-  return '';
-};
+  return ''
+}
 
 const fmtDate = d =>
   new Date(d).toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  });
+  })
 
 /* ─── Font size steps ── */
-const FONT_STEPS = [15, 17, 19, 21];
-const DEFAULT_STEP = 1; // 17px
+const FONT_STEPS = [15, 17, 19, 21]
+const DEFAULT_STEP = 1 // 17px
 
 /* ─── Extract H2 sections from HTML content ─────────────────────────────── */
 const extractToc = (html = '') => {
-  const matches = [...html.matchAll(/<h2[^>]*id="([^"]*)"[^>]*>(.*?)<\/h2>/gi)];
+  const matches = [...html.matchAll(/<h2[^>]*id="([^"]*)"[^>]*>(.*?)<\/h2>/gi)]
   if (matches.length > 0) {
     return matches.map(m => ({
       id: m[1],
       label: m[2].replace(/<[^>]+>/g, ''),
-    }));
+    }))
   }
   // Try without ids
-  const noId = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi)];
+  const noId = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi)]
   return noId.map((m, i) => ({
     id: `section-${i}`,
     label: m[1].replace(/<[^>]+>/g, ''),
-  }));
-};
+  }))
+}
 
 /* ─── ArticleView ────────────────────────────────────────────────────────── */
 const ArticleView = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { user, isAuthenticated } = useAuth()
 
   /* article data */
-  const [article, setArticle] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [limitReached, setLimitReached] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
+  const [article, setArticle] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [limitReached, setLimitReached] = useState(false)
+  const [showPricing, setShowPricing] = useState(false)
 
   /* reading UX */
-  const [fontStep, setFontStep] = useState(DEFAULT_STEP);
-  const [focusMode, setFocusMode] = useState(false);
-  const [bookmarked, setBookmarked] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [fontStep, setFontStep] = useState(DEFAULT_STEP)
+  const [focusMode, setFocusMode] = useState(false)
+  const [bookmarked, setBookmarked] = useState(false)
+  const [progress, setProgress] = useState(0)
 
   /* author follow */
-  const [following, setFollowing] = useState(false);
+  const [following, setFollowing] = useState(false)
 
   /* TOC scroll-spy */
-  const [toc, setToc] = useState([]);
-  const [activeSection, setActiveSection] = useState('');
-  const articleRef = useRef(null);
-
+  const [toc, setToc] = useState([])
+  const [activeSection, setActiveSection] = useState('')
+  const articleRef = useRef(null)
 
   /* ── Fetch article ── */
   const fetchArticle = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/articles/${id}`, { credentials: 'include' });
-      const data = await res.json();
+      const res = await fetch(`${BACKEND_URL}/api/articles/${id}`, { credentials: 'include' })
+      const data = await res.json()
       if (res.status === 403 && data.error === 'limit_reached') {
-        setLimitReached(true);
-        return;
+        setLimitReached(true)
+        return
       }
       if (data.ok && data.article) {
-        setArticle(data.article);
-        const sections = extractToc(data.article.content || '');
-        setToc(sections);
-        if (sections.length > 0) setActiveSection(sections[0].id);
+        setArticle(data.article)
+        const sections = extractToc(data.article.content || '')
+        setToc(sections)
+        if (sections.length > 0) setActiveSection(sections[0].id)
       }
-    } catch (_) { // intentional
+    } catch (_) {
+      // intentional
+    } finally {
+      setLoading(false)
     }
-    finally { setLoading(false); }
-  }, [id]);
+  }, [id])
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { fetchArticle(); }, [fetchArticle]);
+  useEffect(() => {
+    fetchArticle()
+  }, [fetchArticle])
 
   /* ── Check bookmark ── */
   useEffect(() => {
-    if (!isAuthenticated()) return;
+    if (!isAuthenticated()) return
     fetch(`${BACKEND_URL}/api/saved/check?type=article&itemId=${id}`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.ok) setBookmarked(d.saved); })
-      .catch(() => {});
-  }, [id, isAuthenticated]);
+      .then(d => {
+        if (d.ok) setBookmarked(d.saved)
+      })
+      .catch(() => {})
+  }, [id, isAuthenticated])
 
   /* ── Check follow ── */
   useEffect(() => {
-    if (!article?.author?.id || !isAuthenticated()) return;
-    if (user?.id === article.author.id) return;
+    if (!article?.author?.id || !isAuthenticated()) return
+    if (user?.id === article.author.id) return
     fetch(`${BACKEND_URL}/api/follow/${article.author.id}/check`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.ok) setFollowing(d.following); })
-      .catch(() => {});
-  }, [article, isAuthenticated, user]);
+      .then(d => {
+        if (d.ok) setFollowing(d.following)
+      })
+      .catch(() => {})
+  }, [article, isAuthenticated, user])
 
   /* ── Scroll progress + scroll-spy ── */
   useEffect(() => {
     const onScroll = () => {
-      const doc = document.documentElement;
-      const max = doc.scrollHeight - doc.clientHeight;
-      setProgress(max > 0 ? Math.min(1, doc.scrollTop / max) : 0);
+      const doc = document.documentElement
+      const max = doc.scrollHeight - doc.clientHeight
+      setProgress(max > 0 ? Math.min(1, doc.scrollTop / max) : 0)
 
-      if (toc.length === 0) return;
-      let current = toc[0]?.id || '';
+      if (toc.length === 0) return
+      let current = toc[0]?.id || ''
       for (const sec of toc) {
-        const el = document.getElementById(sec.id);
-        if (el && el.getBoundingClientRect().top < 140) current = sec.id;
+        const el = document.getElementById(sec.id)
+        if (el && el.getBoundingClientRect().top < 140) current = sec.id
       }
-      setActiveSection(current);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [toc]);
+      setActiveSection(current)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [toc])
 
   /* ── Bookmark toggle ── */
   const handleBookmark = async () => {
-    if (!isAuthenticated()) { navigate('/auth'); return; }
-    const next = !bookmarked;
-    setBookmarked(next);
+    if (!isAuthenticated()) {
+      navigate('/auth')
+      return
+    }
+    const next = !bookmarked
+    setBookmarked(next)
     try {
       await fetch(`${BACKEND_URL}/api/saved`, {
         method: 'POST',
@@ -156,29 +166,36 @@ const ArticleView = () => {
           'x-csrf-token': getCsrfToken(),
         },
         body: JSON.stringify({ type: 'article', itemId: id }),
-      });
-    } catch (_) { setBookmarked(!next); }
-  };
+      })
+    } catch (_) {
+      setBookmarked(!next)
+    }
+  }
 
   /* ── Follow toggle ── */
   const handleFollow = async () => {
-    if (!isAuthenticated()) { navigate('/auth'); return; }
-    const next = !following;
-    setFollowing(next);
+    if (!isAuthenticated()) {
+      navigate('/auth')
+      return
+    }
+    const next = !following
+    setFollowing(next)
     try {
       await fetch(`${BACKEND_URL}/api/follow/${article.author.id}`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'x-csrf-token': getCsrfToken() },
-      });
-    } catch (_) { setFollowing(!next); }
-  };
+      })
+    } catch (_) {
+      setFollowing(!next)
+    }
+  }
 
   /* ── Typography ── */
-  const bodyPx = FONT_STEPS[fontStep];
-  const titlePx = 35 + (fontStep - DEFAULT_STEP) * 2;
-  const deckPx = 18 + (fontStep - DEFAULT_STEP);
-  const h2Px = 21 + (fontStep - DEFAULT_STEP);
+  const bodyPx = FONT_STEPS[fontStep]
+  const titlePx = 35 + (fontStep - DEFAULT_STEP) * 2
+  const deckPx = 18 + (fontStep - DEFAULT_STEP)
+  const h2Px = 21 + (fontStep - DEFAULT_STEP)
 
   /* ── Loading ── */
   if (loading) {
@@ -204,7 +221,7 @@ const ArticleView = () => {
         />
         <style>{`@keyframes av-spin { to { transform: rotate(360deg); } }`}</style>
       </div>
-    );
+    )
   }
 
   /* ── Limit reached ── */
@@ -296,7 +313,7 @@ const ArticleView = () => {
         </div>
         <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
       </div>
-    );
+    )
   }
 
   /* ── Not found ── */
@@ -339,11 +356,11 @@ const ArticleView = () => {
           VOLVER A ARTÍCULOS
         </button>
       </div>
-    );
+    )
   }
 
-  const rt = readTime(article.content);
-  const authorInitials = initials(article.author?.name || 'A');
+  const rt = readTime(article.content)
+  const authorInitials = initials(article.author?.name || 'A')
 
   /* ─── Render ─── */
   return (
@@ -647,7 +664,7 @@ const ArticleView = () => {
                   }}
                 >
                   {toc.map(sec => {
-                    const on = sec.id === activeSection;
+                    const on = sec.id === activeSection
                     return (
                       <a
                         key={sec.id}
@@ -667,7 +684,7 @@ const ArticleView = () => {
                       >
                         {sec.label}
                       </a>
-                    );
+                    )
                   })}
                 </nav>
               ) : (
@@ -697,8 +714,8 @@ const ArticleView = () => {
               >
                 <button
                   onClick={() => {
-                    const el = document.getElementById('comments-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    const el = document.getElementById('comments-section')
+                    if (el) el.scrollIntoView({ behavior: 'smooth' })
                   }}
                   style={{
                     appearance: 'none',
@@ -720,7 +737,7 @@ const ArticleView = () => {
                 </button>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(window.location.href).catch(() => {});
+                    navigator.clipboard.writeText(window.location.href).catch(() => {})
                   }}
                   style={{
                     appearance: 'none',
@@ -746,10 +763,7 @@ const ArticleView = () => {
         )}
 
         {/* ── Article column ── */}
-        <main
-          ref={articleRef}
-          style={{ maxWidth: focusMode ? '100%' : 720 }}
-        >
+        <main ref={articleRef} style={{ maxWidth: focusMode ? '100%' : 720 }}>
           {/* Article header */}
           <div style={{ marginBottom: 30 }}>
             <div
@@ -979,12 +993,12 @@ const ArticleView = () => {
                     transition: 'border-color 0.15s, color 0.15s',
                   }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'rgba(196,69,26,0.5)';
-                    e.currentTarget.style.color = '#e0815e';
+                    e.currentTarget.style.borderColor = 'rgba(196,69,26,0.5)'
+                    e.currentTarget.style.color = '#e0815e'
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)';
-                    e.currentTarget.style.color = '#86847f';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+                    e.currentTarget.style.color = '#86847f'
                   }}
                 >
                   {tag}
@@ -1089,10 +1103,7 @@ const ArticleView = () => {
           </div>
 
           {/* Comments */}
-          <div
-            id="comments-section"
-            style={{ marginTop: 42 }}
-          >
+          <div id="comments-section" style={{ marginTop: 42 }}>
             <div
               style={{
                 display: 'flex',
@@ -1144,11 +1155,9 @@ const ArticleView = () => {
       </div>
 
       {/* Pricing modal */}
-      {showPricing && (
-        <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
-      )}
+      {showPricing && <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />}
     </div>
-  );
-};
+  )
+}
 
-export default ArticleView;
+export default ArticleView

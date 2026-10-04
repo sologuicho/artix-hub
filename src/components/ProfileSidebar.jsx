@@ -1,12 +1,20 @@
-import { Link } from 'react-router-dom';
-import { MapPin, Briefcase, GraduationCap, TrendingUp, Bookmark, Archive, Sparkles } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom'
+import {
+  MapPin,
+  Briefcase,
+  GraduationCap,
+  TrendingUp,
+  Bookmark,
+  Archive,
+  Sparkles,
+} from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 const ProfileSidebar = ({ user: profileUser, stats }) => {
-  const { user: currentUser } = useAuth();
-  const user = profileUser || currentUser;
+  const { user: currentUser } = useAuth()
+  const user = profileUser || currentUser
 
-  if (!user) return null;
+  if (!user) return null
 
   return (
     <aside className="w-72 space-y-6">
@@ -36,9 +44,7 @@ const ProfileSidebar = ({ user: profileUser, stats }) => {
             {user.name || 'Usuario'}
           </h3>
           {user.occupation && (
-            <p className="text-sm text-gray-400 text-center font-medium">
-              {user.occupation}
-            </p>
+            <p className="text-sm text-gray-400 text-center font-medium">{user.occupation}</p>
           )}
           {user.country && (
             <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-2 py-1 px-3 bg-white/5 rounded-full">
@@ -51,7 +57,9 @@ const ProfileSidebar = ({ user: profileUser, stats }) => {
         {/* Interests - Modern Pills */}
         {user.interests && user.interests.length > 0 && (
           <div className="mb-6">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 ml-1">Interests</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 ml-1">
+              Interests
+            </p>
             <div className="flex flex-wrap gap-2">
               {user.interests.slice(0, 4).map((interest, idx) => (
                 <span
@@ -73,7 +81,9 @@ const ProfileSidebar = ({ user: profileUser, stats }) => {
               <span className="text-[10px] text-gray-400 uppercase tracking-wider">Views</span>
             </div>
             <div className="text-center p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
-              <span className="block text-lg font-bold text-white">{stats.postImpressions || 0}</span>
+              <span className="block text-lg font-bold text-white">
+                {stats.postImpressions || 0}
+              </span>
               <span className="text-[10px] text-gray-400 uppercase tracking-wider">Reach</span>
             </div>
           </div>
@@ -145,9 +155,7 @@ const ProfileSidebar = ({ user: profileUser, stats }) => {
         </div>
       )}
     </aside>
-  );
-};
+  )
+}
 
-export default ProfileSidebar;
-
-
+export default ProfileSidebar

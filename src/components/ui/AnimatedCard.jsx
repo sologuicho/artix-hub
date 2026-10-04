@@ -1,21 +1,16 @@
-import React from 'react';
-import { useInView } from 'react-intersection-observer';
+import React from 'react'
+import { useInView } from 'react-intersection-observer'
 
 /**
  * AnimatedCard Component
  * Wraps content in a glassmorphism card with entry animations and hover effects
  * Uses Tailwind CSS and standard CSS transitions
  */
-const AnimatedCard = ({ 
-  children, 
-  className = '', 
-  delay = 0,
-  onClick
-}) => {
+const AnimatedCard = ({ children, className = '', delay = 0, onClick }) => {
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
-  });
+  })
 
   return (
     <div
@@ -32,7 +27,7 @@ const AnimatedCard = ({
     >
       {children}
     </div>
-  );
-};
+  )
+}
 
-export default AnimatedCard;
+export default AnimatedCard

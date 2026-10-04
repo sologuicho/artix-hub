@@ -1,30 +1,30 @@
-import { useState, useEffect } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { ArrowUp } from 'lucide-react'
 
 const ScrollToTop = ({ showAfter = 300 }) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     const toggleVisibility = () => {
       if (window.pageYOffset > showAfter) {
-        setIsVisible(true);
+        setIsVisible(true)
       } else {
-        setIsVisible(false);
+        setIsVisible(false)
       }
-    };
+    }
 
-    window.addEventListener('scroll', toggleVisibility);
-    return () => window.removeEventListener('scroll', toggleVisibility);
-  }, [showAfter]);
+    window.addEventListener('scroll', toggleVisibility)
+    return () => window.removeEventListener('scroll', toggleVisibility)
+  }, [showAfter])
 
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
-    });
-  };
+      behavior: 'smooth',
+    })
+  }
 
-  if (!isVisible) return null;
+  if (!isVisible) return null
 
   return (
     <div className="sticky top-24 float-right ml-4 mb-4 z-40">
@@ -36,8 +36,7 @@ const ScrollToTop = ({ showAfter = 300 }) => {
         <ArrowUp className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
       </button>
     </div>
-  );
-};
+  )
+}
 
-export default ScrollToTop;
-
+export default ScrollToTop

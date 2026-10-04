@@ -12,9 +12,9 @@
  *   await jobQueue.enqueue('article:validate', { articleId });
  */
 
-const logger = require('../../lib/logger');
+const logger = require('../../lib/logger')
 
-const handlers = {};
+const handlers = {}
 
 /**
  * Register a job handler.
@@ -22,8 +22,8 @@ const handlers = {};
  * @param {(data: any) => Promise<void>} handler
  */
 const register = (jobName, handler) => {
-  handlers[jobName] = handler;
-};
+  handlers[jobName] = handler
+}
 
 /**
  * Enqueue a job to run asynchronously after the current event-loop tick.
@@ -32,17 +32,17 @@ const register = (jobName, handler) => {
  */
 const enqueue = (jobName, data) => {
   setImmediate(async () => {
-    const handler = handlers[jobName];
+    const handler = handlers[jobName]
     if (!handler) {
-      logger.warn({ jobName }, '[JobQueue] No handler registered for job');
-      return;
+      logger.warn({ jobName }, '[JobQueue] No handler registered for job')
+      return
     }
     try {
-      await handler(data);
+      await handler(data)
     } catch (err) {
-      logger.error({ err, jobName }, '[JobQueue] Job failed');
+      logger.error({ err, jobName }, '[JobQueue] Job failed')
     }
-  });
-};
+  })
+}
 
-module.exports = { register, enqueue };
+module.exports = { register, enqueue }

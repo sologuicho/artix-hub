@@ -1,92 +1,92 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 const getCsrfToken = () => {
   for (const cookie of document.cookie.split(';')) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === 'csrf') return value;
+    const [name, value] = cookie.trim().split('=')
+    if (name === 'csrf') return value
   }
-  return null;
-};
+  return null
+}
 
-const fmtDate = (iso) =>
+const fmtDate = iso =>
   new Date(iso).toLocaleDateString('es-MX', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-  });
+  })
 
-const fmtCount = (n) => {
-  if (!n) return '0';
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
-  return String(n);
-};
+const fmtCount = n => {
+  if (!n) return '0'
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
+}
 
-const statusBadgeStyle = (status) => {
-  if (!status) return {};
-  const s = status.toLowerCase();
+const statusBadgeStyle = status => {
+  if (!status) return {}
+  const s = status.toLowerCase()
   if (s === 'published' || s === 'peer-reviewed' || s === 'publicado') {
     return {
       border: '1px solid rgba(196,69,26,0.45)',
       color: '#e0815e',
       background: 'rgba(196,69,26,0.09)',
-    };
+    }
   }
   if (s === 'under_review' || s === 'en revisión') {
     return {
       border: '1px solid rgba(255,255,255,0.14)',
       color: '#9a9a95',
       background: 'transparent',
-    };
+    }
   }
   return {
     border: '1px solid rgba(255,255,255,0.14)',
     color: '#b6b4af',
     background: 'transparent',
-  };
-};
+  }
+}
 
-const statusLabel = (status) => {
-  if (!status) return '';
-  const s = status.toLowerCase();
-  if (s === 'published') return 'Publicado';
-  if (s === 'peer-reviewed') return 'Peer-reviewed';
-  if (s === 'under_review') return 'En revisión';
-  if (s === 'draft') return 'Preprint';
-  return status;
-};
+const statusLabel = status => {
+  if (!status) return ''
+  const s = status.toLowerCase()
+  if (s === 'published') return 'Publicado'
+  if (s === 'peer-reviewed') return 'Peer-reviewed'
+  if (s === 'under_review') return 'En revisión'
+  if (s === 'draft') return 'Preprint'
+  return status
+}
 
-const getInitials = (name) => {
-  if (!name) return '??';
+const getInitials = name => {
+  if (!name) return '??'
   return name
     .split(' ')
     .slice(0, 2)
-    .map((w) => w[0])
+    .map(w => w[0])
     .join('')
-    .toUpperCase();
-};
+    .toUpperCase()
+}
 
 // Extract h2 headings from HTML content to build a TOC
-const extractToc = (html) => {
-  if (!html) return [];
-  const matches = [...html.matchAll(/<h2[^>]*id="([^"]*)"[^>]*>(.*?)<\/h2>/gi)];
+const extractToc = html => {
+  if (!html) return []
+  const matches = [...html.matchAll(/<h2[^>]*id="([^"]*)"[^>]*>(.*?)<\/h2>/gi)]
   if (matches.length > 0) {
-    return matches.map((m) => ({
+    return matches.map(m => ({
       id: m[1],
       label: m[2].replace(/<[^>]+>/g, '').trim(),
-    }));
+    }))
   }
   // fallback: extract h2 text without ids and generate ids
-  const fallback = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi)];
+  const fallback = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi)]
   return fallback.map((m, i) => ({
     id: `section-${i}`,
     label: m[1].replace(/<[^>]+>/g, '').trim(),
-  }));
-};
+  }))
+}
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 const Spinner = () => (
@@ -111,112 +111,119 @@ const Spinner = () => (
       }}
     />
   </div>
-);
+)
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const ResearchView = () => {
-  const { id }       = useParams();
-  const navigate     = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { user, isAuthenticated } = useAuth()
 
-  const [research, setResearch]     = useState(null);
-  const [loading, setLoading]       = useState(true);
-  const [saved, setSaved]           = useState(false);
-  const [saveLoading, setSaveLoading] = useState(false);
-  const [following, setFollowing]   = useState(false);
-  const [toast, setToast]           = useState(null); // { msg, type }
-  const [progress, setProgress]     = useState(0);
-  const [activeToc, setActiveToc]   = useState(null);
-  const [savedCount, setSavedCount] = useState(0);
-  const scrollRef = useRef(null);
+  const [research, setResearch] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saved, setSaved] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
+  const [following, setFollowing] = useState(false)
+  const [toast, setToast] = useState(null) // { msg, type }
+  const [progress, setProgress] = useState(0)
+  const [activeToc, setActiveToc] = useState(null)
+  const [savedCount, setSavedCount] = useState(0)
+  const scrollRef = useRef(null)
 
   // ── Fetch research ──────────────────────────────────────────────────────────
   const fetchResearch = useCallback(async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const res  = await fetch(`${BACKEND_URL}/api/research/${id}`, { credentials: 'include' });
-      const data = await res.json();
+      const res = await fetch(`${BACKEND_URL}/api/research/${id}`, { credentials: 'include' })
+      const data = await res.json()
       if (data.ok && data.research) {
-        setResearch(data.research);
+        setResearch(data.research)
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('Error fetching research:', err);
+      console.error('Error fetching research:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [id]);
+  }, [id])
 
   // ── Check saved ─────────────────────────────────────────────────────────────
   const checkSaved = useCallback(async () => {
-    if (!isAuthenticated()) return;
+    if (!isAuthenticated()) return
     try {
-      const res  = await fetch(
-        `${BACKEND_URL}/api/saved/check?type=research&itemId=${id}`,
-        { credentials: 'include' }
-      );
-      const data = await res.json();
-      if (data.ok) setSaved(data.saved);
-    } catch (_) { // intentional
+      const res = await fetch(`${BACKEND_URL}/api/saved/check?type=research&itemId=${id}`, {
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (data.ok) setSaved(data.saved)
+    } catch (_) {
+      // intentional
     }
-  }, [id, isAuthenticated]);
+  }, [id, isAuthenticated])
 
   // ── Check follow ────────────────────────────────────────────────────────────
-  const checkFollow = useCallback(async (authorId) => {
-    if (!isAuthenticated() || !authorId || user?.id === authorId) return;
-    try {
-      const res  = await fetch(`${BACKEND_URL}/api/follow/${authorId}/check`, {
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.ok) setFollowing(data.following);
-    } catch (_) { // intentional
-    }
-  }, [isAuthenticated, user?.id]);
+  const checkFollow = useCallback(
+    async authorId => {
+      if (!isAuthenticated() || !authorId || user?.id === authorId) return
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/follow/${authorId}/check`, {
+          credentials: 'include',
+        })
+        const data = await res.json()
+        if (data.ok) setFollowing(data.following)
+      } catch (_) {
+        // intentional
+      }
+    },
+    [isAuthenticated, user?.id]
+  )
 
   // ── Mount effects ────────────────────────────────────────────────────────────
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchResearch();
-  }, [fetchResearch]);
+    fetchResearch()
+  }, [fetchResearch])
 
   useEffect(() => {
-    if (!research) return;
+    if (!research) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    checkSaved();
-    checkFollow(research.author?.id);
-  }, [research, checkSaved, checkFollow]);
+    checkSaved()
+    checkFollow(research.author?.id)
+  }, [research, checkSaved, checkFollow])
 
   // ── Reading progress bar ─────────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => {
-      const doc = document.documentElement;
-      const max = doc.scrollHeight - doc.clientHeight;
-      const p   = max > 0 ? Math.min(1, doc.scrollTop / max) : 0;
-      setProgress(p);
+      const doc = document.documentElement
+      const max = doc.scrollHeight - doc.clientHeight
+      const p = max > 0 ? Math.min(1, doc.scrollTop / max) : 0
+      setProgress(p)
 
       // TOC highlight
       if (research?.content) {
-        const toc = extractToc(research.content);
-        let found = null;
+        const toc = extractToc(research.content)
+        let found = null
         for (const entry of toc) {
-          const el = document.getElementById(entry.id);
-          if (el && el.getBoundingClientRect().top < 140) found = entry.id;
+          const el = document.getElementById(entry.id)
+          if (el && el.getBoundingClientRect().top < 140) found = entry.id
         }
-        if (found !== null) setActiveToc(found);
+        if (found !== null) setActiveToc(found)
       }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [research]);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [research])
 
   // ── Save / unsave ────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!isAuthenticated()) { navigate('/auth'); return; }
-    setSaveLoading(true);
+    if (!isAuthenticated()) {
+      navigate('/auth')
+      return
+    }
+    setSaveLoading(true)
     try {
-      const res  = await fetch(`${BACKEND_URL}/api/saved`, {
+      const res = await fetch(`${BACKEND_URL}/api/saved`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -224,66 +231,70 @@ const ResearchView = () => {
         },
         credentials: 'include',
         body: JSON.stringify({ type: 'research', itemId: id }),
-      });
-      const data = await res.json();
+      })
+      const data = await res.json()
       if (data.ok) {
-        const nowSaved = !saved;
-        setSaved(nowSaved);
-        setSavedCount((c) => (nowSaved ? c + 1 : Math.max(0, c - 1)));
-        showToast(nowSaved ? 'Guardado en tu colección' : 'Eliminado de tu colección', 'ok');
+        const nowSaved = !saved
+        setSaved(nowSaved)
+        setSavedCount(c => (nowSaved ? c + 1 : Math.max(0, c - 1)))
+        showToast(nowSaved ? 'Guardado en tu colección' : 'Eliminado de tu colección', 'ok')
       }
     } catch (_) {
-      showToast('Error al guardar', 'err');
+      showToast('Error al guardar', 'err')
     } finally {
-      setSaveLoading(false);
+      setSaveLoading(false)
     }
-  };
+  }
 
   // ── Follow ───────────────────────────────────────────────────────────────────
   const handleFollow = async () => {
-    if (!isAuthenticated()) { navigate('/auth'); return; }
-    const authorId = research?.author?.id;
-    if (!authorId) return;
+    if (!isAuthenticated()) {
+      navigate('/auth')
+      return
+    }
+    const authorId = research?.author?.id
+    if (!authorId) return
     try {
-      const res  = await fetch(`${BACKEND_URL}/api/follow/${authorId}`, {
+      const res = await fetch(`${BACKEND_URL}/api/follow/${authorId}`, {
         method: 'POST',
         headers: { 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
-      });
-      const data = await res.json();
+      })
+      const data = await res.json()
       if (data.ok) {
-        setFollowing(data.following);
-        showToast(data.following ? 'Siguiendo al autor' : 'Dejaste de seguir', 'ok');
+        setFollowing(data.following)
+        showToast(data.following ? 'Siguiendo al autor' : 'Dejaste de seguir', 'ok')
       }
-    } catch (_) { // intentional
+    } catch (_) {
+      // intentional
     }
-  };
+  }
 
   // ── EPUB download ─────────────────────────────────────────────────────────────
   const handleDownload = () => {
-    if (!research) return;
-    window.open(`${BACKEND_URL}/api/research/${research.id}/epub`, '_blank');
-  };
+    if (!research) return
+    window.open(`${BACKEND_URL}/api/research/${research.id}/epub`, '_blank')
+  }
 
   // ── Toast ─────────────────────────────────────────────────────────────────────
   const showToast = (msg, type = 'ok') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 2500);
-  };
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 2500)
+  }
 
   // ── Share ─────────────────────────────────────────────────────────────────────
   const handleShare = () => {
-    const url = window.location.href;
+    const url = window.location.href
     if (navigator.share) {
-      navigator.share({ title: research?.title, url }).catch(() => {});
+      navigator.share({ title: research?.title, url }).catch(() => {})
     } else {
-      navigator.clipboard.writeText(url).then(() => showToast('Enlace copiado', 'ok'));
+      navigator.clipboard.writeText(url).then(() => showToast('Enlace copiado', 'ok'))
     }
-  };
+  }
 
   // ─────────────────────────────────────────────────────────────────────────────
 
-  if (loading) return <Spinner />;
+  if (loading) return <Spinner />
 
   if (!research) {
     return (
@@ -324,17 +335,20 @@ const ResearchView = () => {
           ← Investigaciones
         </button>
       </div>
-    );
+    )
   }
 
   const tags = Array.isArray(research.tags)
     ? research.tags
     : typeof research.tags === 'string'
-    ? research.tags.split(',').map((t) => t.trim()).filter(Boolean)
-    : [];
+      ? research.tags
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+      : []
 
-  const toc = extractToc(research.content || '');
-  const authorInitials = getInitials(research.author?.name);
+  const toc = extractToc(research.content || '')
+  const authorInitials = getInitials(research.author?.name)
 
   return (
     <div
@@ -424,8 +438,8 @@ const ResearchView = () => {
               alignItems: 'center',
               gap: 7,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#e9e7e3')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#76746f')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#e9e7e3')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#76746f')}
           >
             <span>←</span>
             <span>Investigaciones</span>
@@ -446,8 +460,8 @@ const ResearchView = () => {
               alignItems: 'center',
               gap: 6,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#d4582a')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#C4451A')}
+            onMouseEnter={e => (e.currentTarget.style.background = '#d4582a')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#C4451A')}
           >
             ↓ Descargar EPUB
           </button>
@@ -470,17 +484,17 @@ const ResearchView = () => {
               alignItems: 'center',
               gap: 6,
             }}
-            onMouseEnter={(e) => {
+            onMouseEnter={e => {
               if (!saveLoading) {
                 e.currentTarget.style.borderColor = saved
                   ? 'rgba(196,69,26,0.8)'
-                  : 'rgba(255,255,255,0.26)';
+                  : 'rgba(255,255,255,0.26)'
               }
             }}
-            onMouseLeave={(e) => {
+            onMouseLeave={e => {
               e.currentTarget.style.borderColor = saved
                 ? 'rgba(196,69,26,0.5)'
-                : 'rgba(255,255,255,0.1)';
+                : 'rgba(255,255,255,0.1)'
             }}
           >
             {saved ? '★ Guardado' : '☆ Guardar'}
@@ -501,7 +515,6 @@ const ResearchView = () => {
         >
           {/* ── Main content ── */}
           <main style={{ maxWidth: 720 }}>
-
             {/* Meta line */}
             <div
               style={{
@@ -618,8 +631,8 @@ const ResearchView = () => {
                           fontWeight: 500,
                           fontFamily: "'IBM Plex Sans', sans-serif",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#e0815e')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = '#d8d6d1')}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#e0815e')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#d8d6d1')}
                       >
                         {research.author.name}
                       </div>
@@ -656,15 +669,15 @@ const ResearchView = () => {
                       : '1px solid rgba(196,69,26,0.5)',
                     color: following ? '#76746f' : '#e0815e',
                   }}
-                  onMouseEnter={(e) => {
+                  onMouseEnter={e => {
                     e.currentTarget.style.borderColor = following
                       ? 'rgba(255,255,255,0.28)'
-                      : 'rgba(196,69,26,0.8)';
+                      : 'rgba(196,69,26,0.8)'
                   }}
-                  onMouseLeave={(e) => {
+                  onMouseLeave={e => {
                     e.currentTarget.style.borderColor = following
                       ? 'rgba(255,255,255,0.14)'
-                      : 'rgba(196,69,26,0.5)';
+                      : 'rgba(196,69,26,0.5)'
                   }}
                 >
                   {following ? 'Siguiendo' : '+ Seguir'}
@@ -757,7 +770,7 @@ const ResearchView = () => {
                   gap: 8,
                 }}
               >
-                {tags.map((tag) => (
+                {tags.map(tag => (
                   <span
                     key={tag}
                     style={{
@@ -768,13 +781,13 @@ const ResearchView = () => {
                       padding: '3px 10px',
                       cursor: 'default',
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(196,69,26,0.5)';
-                      e.currentTarget.style.color = '#e0815e';
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = 'rgba(196,69,26,0.5)'
+                      e.currentTarget.style.color = '#e0815e'
                     }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)';
-                      e.currentTarget.style.color = '#86847f';
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+                      e.currentTarget.style.color = '#86847f'
                     }}
                   >
                     {tag}
@@ -850,11 +863,16 @@ const ResearchView = () => {
                   gap: 9,
                   alignItems: 'center',
                 }}
-                onMouseEnter={(e) => {
-                  if (!saveLoading) e.currentTarget.style.borderColor = saved ? 'rgba(196,69,26,0.7)' : 'rgba(255,255,255,0.26)';
+                onMouseEnter={e => {
+                  if (!saveLoading)
+                    e.currentTarget.style.borderColor = saved
+                      ? 'rgba(196,69,26,0.7)'
+                      : 'rgba(255,255,255,0.26)'
                 }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = saved ? 'rgba(196,69,26,0.4)' : 'rgba(255,255,255,0.1)';
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = saved
+                    ? 'rgba(196,69,26,0.4)'
+                    : 'rgba(255,255,255,0.1)'
                 }}
               >
                 <span style={{ color: '#e0815e' }}>{saved ? '★' : '☆'}</span>
@@ -875,13 +893,13 @@ const ResearchView = () => {
                   gap: 9,
                   alignItems: 'center',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)';
-                  e.currentTarget.style.color = '#e9e7e3';
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)'
+                  e.currentTarget.style.color = '#e9e7e3'
                 }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                  e.currentTarget.style.color = '#9a9a95';
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+                  e.currentTarget.style.color = '#9a9a95'
                 }}
               >
                 <span style={{ color: '#76746f' }}>↗</span>
@@ -1022,19 +1040,19 @@ const ResearchView = () => {
                 color: saved ? '#e0815e' : '#b6b4af',
                 opacity: saveLoading ? 0.6 : 1,
               }}
-              onMouseEnter={(e) => {
+              onMouseEnter={e => {
                 if (!saveLoading) {
                   e.currentTarget.style.borderColor = saved
                     ? 'rgba(196,69,26,0.9)'
-                    : 'rgba(255,255,255,0.3)';
-                  e.currentTarget.style.color = saved ? '#f2a07d' : '#e9e7e3';
+                    : 'rgba(255,255,255,0.3)'
+                  e.currentTarget.style.color = saved ? '#f2a07d' : '#e9e7e3'
                 }
               }}
-              onMouseLeave={(e) => {
+              onMouseLeave={e => {
                 e.currentTarget.style.borderColor = saved
                   ? 'rgba(196,69,26,0.6)'
-                  : 'rgba(255,255,255,0.14)';
-                e.currentTarget.style.color = saved ? '#e0815e' : '#b6b4af';
+                  : 'rgba(255,255,255,0.14)'
+                e.currentTarget.style.color = saved ? '#e0815e' : '#b6b4af'
               }}
             >
               {saved ? '★ GUARDADO' : '☆ GUARDAR PAPER'}
@@ -1056,8 +1074,8 @@ const ResearchView = () => {
                   CONTENIDO
                 </div>
                 <nav style={{ display: 'flex', flexDirection: 'column' }}>
-                  {toc.map((entry) => {
-                    const on = activeToc === entry.id;
+                  {toc.map(entry => {
+                    const on = activeToc === entry.id
                     return (
                       <a
                         key={entry.id}
@@ -1073,16 +1091,16 @@ const ResearchView = () => {
                           fontFamily: "'IBM Plex Sans', sans-serif",
                           lineHeight: 1.4,
                         }}
-                        onMouseEnter={(e) => {
-                          if (!on) e.currentTarget.style.color = '#b6b4af';
+                        onMouseEnter={e => {
+                          if (!on) e.currentTarget.style.color = '#b6b4af'
                         }}
-                        onMouseLeave={(e) => {
-                          if (!on) e.currentTarget.style.color = '#7a7a75';
+                        onMouseLeave={e => {
+                          if (!on) e.currentTarget.style.color = '#7a7a75'
                         }}
                       >
                         {entry.label}
                       </a>
-                    );
+                    )
                   })}
                 </nav>
               </section>
@@ -1145,8 +1163,8 @@ const ResearchView = () => {
                         fontFamily: "'IBM Plex Sans', sans-serif",
                         display: 'block',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = '#e0815e')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#d8d6d1')}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#e0815e')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#d8d6d1')}
                     >
                       {research.author.name}
                     </Link>
@@ -1181,15 +1199,15 @@ const ResearchView = () => {
                       background: 'none',
                       color: following ? '#76746f' : '#e0815e',
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={e => {
                       e.currentTarget.style.borderColor = following
                         ? 'rgba(255,255,255,0.28)'
-                        : 'rgba(196,69,26,0.8)';
+                        : 'rgba(196,69,26,0.8)'
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={e => {
                       e.currentTarget.style.borderColor = following
                         ? 'rgba(255,255,255,0.14)'
-                        : 'rgba(196,69,26,0.5)';
+                        : 'rgba(196,69,26,0.5)'
                     }}
                   >
                     {following ? 'SIGUIENDO' : '+ SEGUIR'}
@@ -1253,7 +1271,7 @@ const ResearchView = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ResearchView;
+export default ResearchView

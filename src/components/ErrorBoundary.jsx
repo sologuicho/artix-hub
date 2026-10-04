@@ -1,18 +1,18 @@
-import { Component } from 'react';
-import * as Sentry from '@sentry/react';
+import { Component } from 'react'
+import * as Sentry from '@sentry/react'
 
 class ErrorBoundary extends Component {
   constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
+    super(props)
+    this.state = { hasError: false, error: null }
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    return { hasError: true, error }
   }
 
   componentDidCatch(error, errorInfo) {
-    Sentry.captureException(error, { extra: errorInfo });
+    Sentry.captureException(error, { extra: errorInfo })
   }
 
   render() {
@@ -44,18 +44,15 @@ class ErrorBoundary extends Component {
             {this.state.error?.message || 'Ocurrió un error inesperado en la aplicación.'}
           </p>
 
-          <button
-            onClick={() => window.location.reload()}
-            className="btn btn-primary"
-          >
+          <button onClick={() => window.location.reload()} className="btn btn-primary">
             Recargar página
           </button>
         </div>
-      );
+      )
     }
 
-    return this.props.children;
+    return this.props.children
   }
 }
 
-export default ErrorBoundary;
+export default ErrorBoundary

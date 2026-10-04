@@ -1,14 +1,14 @@
-const prisma = require('../prismaClient');
-const logger = require('../lib/logger');
+const prisma = require('../prismaClient')
+const logger = require('../lib/logger')
 
 // Helper function to check if user can edit/delete content (including Artix Research content for luisflores01)
 const canManageContent = async (authorId, userId, userUsername, userRole) => {
   // If user is the author, allow
-  if (authorId === userId) return true;
-  
+  if (authorId === userId) return true
+
   // If user is admin, allow
-  if (userRole === 'ADMIN') return true;
-  
+  if (userRole === 'ADMIN') return true
+
   // If user is luisflores01 and content was published by Artix Research, allow
   if (userUsername === 'luisflores01') {
     const artixUser = await prisma.user.findFirst({
@@ -16,17 +16,17 @@ const canManageContent = async (authorId, userId, userUsername, userRole) => {
         OR: [
           { username: 'artixresearch' },
           { username: 'artix-research' },
-          { name: 'Artix Research' }
-        ]
-      }
-    });
+          { name: 'Artix Research' },
+        ],
+      },
+    })
     if (artixUser && authorId === artixUser.id) {
-      return true;
+      return true
     }
   }
-  
-  return false;
-};
+
+  return false
+}
 
 // Get unique categories
 exports.getCategories = async (req, res) => {
@@ -34,36 +34,36 @@ exports.getCategories = async (req, res) => {
     const categories = await prisma.research.findMany({
       where: {
         category: { not: null },
-        status: { not: 'archived' }
+        status: { not: 'archived' },
       },
       select: { category: true },
       distinct: ['category'],
-      orderBy: { category: 'asc' }
-    });
+      orderBy: { category: 'asc' },
+    })
 
     const categoryList = categories
       .map(c => c.category)
       .filter(c => c && c.trim() !== '')
-      .sort();
+      .sort()
 
-    res.json({ ok: true, categories: categoryList });
+    res.json({ ok: true, categories: categoryList })
   } catch (error) {
-    logger.error({ err: error }, '[researchController] Error fetching categories');
-    res.status(500).json({ ok: false, message: 'Failed to fetch categories' });
+    logger.error({ err: error }, '[researchController] Error fetching categories')
+    res.status(500).json({ ok: false, message: 'Failed to fetch categories' })
   }
-};
+}
 
 // Get all research
 exports.getAllResearch = async (req, res) => {
   try {
-    const { search, category, author, status } = req.query;
-    
-    const where = {};
+    const { search, category, author, status } = req.query
+
+    const where = {}
     // By default, exclude archived research unless explicitly requested
     if (status !== 'archived' && !req.query.includeArchived) {
-      where.status = { not: 'archived' };
+      where.status = { not: 'archived' }
     } else {
-      where.status = status || 'published';
+      where.status = status || 'published'
     }
 
     if (search) {
@@ -71,16 +71,16 @@ exports.getAllResearch = async (req, res) => {
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
         { content: { contains: search, mode: 'insensitive' } },
-        { tags: { has: search } }
-      ];
+        { tags: { has: search } },
+      ]
     }
 
     if (category) {
-      where.category = category;
+      where.category = category
     }
 
     if (author) {
-      where.authorId = author;
+      where.authorId = author
     }
 
     const research = await prisma.research.findMany({
@@ -92,30 +92,30 @@ exports.getAllResearch = async (req, res) => {
             name: true,
             username: true,
             avatar: true,
-            bio: true
-          }
+            bio: true,
+          },
         },
         _count: {
           select: {
             reactions: true,
-            comments: true
-          }
-        }
+            comments: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
-    });
+      orderBy: { createdAt: 'desc' },
+    })
 
-    res.json({ ok: true, research });
+    res.json({ ok: true, research })
   } catch (error) {
-    logger.error({ err: error }, '[researchController] Error fetching research');
-    res.status(500).json({ ok: false, message: 'Failed to fetch research' });
+    logger.error({ err: error }, '[researchController] Error fetching research')
+    res.status(500).json({ ok: false, message: 'Failed to fetch research' })
   }
-};
+}
 
 // Get single research
 exports.getResearch = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
     const research = await prisma.research.findUnique({
       where: { id },
       include: {
@@ -125,8 +125,8 @@ exports.getResearch = async (req, res) => {
             name: true,
             username: true,
             avatar: true,
-            bio: true
-          }
+            bio: true,
+          },
         },
         comments: {
           include: {
@@ -135,8 +135,8 @@ exports.getResearch = async (req, res) => {
                 id: true,
                 name: true,
                 username: true,
-                avatar: true
-              }
+                avatar: true,
+              },
             },
             replies: {
               include: {
@@ -145,33 +145,33 @@ exports.getResearch = async (req, res) => {
                     id: true,
                     name: true,
                     username: true,
-                    avatar: true
-                  }
-                }
-              }
-            }
+                    avatar: true,
+                  },
+                },
+              },
+            },
           },
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    });
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    })
 
     if (!research) {
-      return res.status(404).json({ ok: false, message: 'Research not found' });
+      return res.status(404).json({ ok: false, message: 'Research not found' })
     }
 
-    res.json({ ok: true, research });
+    res.json({ ok: true, research })
   } catch (error) {
-    logger.error({ err: error }, '[researchController] Error fetching research');
-    res.status(500).json({ ok: false, message: 'Failed to fetch research' });
+    logger.error({ err: error }, '[researchController] Error fetching research')
+    res.status(500).json({ ok: false, message: 'Failed to fetch research' })
   }
-};
+}
 
 // Get research preview
 exports.getResearchPreview = async (req, res) => {
   try {
-    const { id } = req.params;
-    
+    const { id } = req.params
+
     const research = await prisma.research.findUnique({
       where: { id },
       include: {
@@ -179,20 +179,20 @@ exports.getResearchPreview = async (req, res) => {
           select: {
             name: true,
             username: true,
-            avatar: true
-          }
-        }
-      }
-    });
+            avatar: true,
+          },
+        },
+      },
+    })
 
     if (!research) {
-      return res.status(404).json({ ok: false, message: 'Research not found' });
+      return res.status(404).json({ ok: false, message: 'Research not found' })
     }
 
     // Generate content preview: strip HTML tags and get first 200 words
-    const strippedContent = research.content ? research.content.replace(/<[^>]*>?/gm, '') : '';
-    const words = strippedContent.split(/\s+/).filter(word => word.length > 0);
-    const contentPreview = words.slice(0, 200).join(' ') + (words.length > 200 ? '...' : '');
+    const strippedContent = research.content ? research.content.replace(/<[^>]*>?/gm, '') : ''
+    const words = strippedContent.split(/\s+/).filter(word => word.length > 0)
+    const contentPreview = words.slice(0, 200).join(' ') + (words.length > 200 ? '...' : '')
 
     res.json({
       ok: true,
@@ -207,23 +207,35 @@ exports.getResearchPreview = async (req, res) => {
         createdAt: research.createdAt,
         readTime: research.readTime,
         contentPreview,
-        isPreview: true
-      }
-    });
+        isPreview: true,
+      },
+    })
   } catch (error) {
-    logger.error({ err: error }, '[researchController] Error fetching research preview');
-    res.status(500).json({ ok: false, message: 'Failed to fetch research preview' });
+    logger.error({ err: error }, '[researchController] Error fetching research preview')
+    res.status(500).json({ ok: false, message: 'Failed to fetch research preview' })
   }
-};
+}
 
 // Create research
 exports.createResearch = async (req, res) => {
   try {
-    const { title, content, description, category, tags, coverUrl, pdfUrl, documents, references, isCollaborative, publishAsArtixResearch } = req.body;
-    const userId = req.user.id;
-    
+    const {
+      title,
+      content,
+      description,
+      category,
+      tags,
+      coverUrl,
+      pdfUrl,
+      documents,
+      references,
+      isCollaborative,
+      publishAsArtixResearch,
+    } = req.body
+    const userId = req.user.id
+
     // Si el usuario es luisflores01 y quiere publicar como Artix Research
-    let authorId = userId;
+    let authorId = userId
     if (publishAsArtixResearch && req.user.username === 'luisflores01') {
       // Buscar o crear el usuario Artix Research
       let artixUser = await prisma.user.findFirst({
@@ -231,11 +243,11 @@ exports.createResearch = async (req, res) => {
           OR: [
             { username: 'artixresearch' },
             { username: 'artix-research' },
-            { name: 'Artix Research' }
-          ]
-        }
-      });
-      
+            { name: 'Artix Research' },
+          ],
+        },
+      })
+
       if (!artixUser) {
         // Crear el usuario Artix Research si no existe
         artixUser = await prisma.user.create({
@@ -250,12 +262,18 @@ exports.createResearch = async (req, res) => {
             bio: 'Cuenta oficial de investigación de Artix Hub. Publicamos artículos científicos, investigaciones avanzadas y contenido académico de alta calidad sobre física cuántica, inteligencia artificial, química computacional y más.',
             occupation: 'Organización de Investigación',
             country: 'Global',
-            interests: ['Quantum Physics', 'AI Research', 'Chemistry', 'Machine Learning', 'Data Science']
-          }
-        });
+            interests: [
+              'Quantum Physics',
+              'AI Research',
+              'Chemistry',
+              'Machine Learning',
+              'Data Science',
+            ],
+          },
+        })
       }
-      
-      authorId = artixUser.id;
+
+      authorId = artixUser.id
     }
 
     const research = await prisma.research.create({
@@ -271,7 +289,7 @@ exports.createResearch = async (req, res) => {
         references: references || [],
         isCollaborative: isCollaborative || false,
         status: 'reviewing', // Start in reviewing status
-        authorId: authorId
+        authorId: authorId,
       },
       include: {
         author: {
@@ -279,11 +297,11 @@ exports.createResearch = async (req, res) => {
             id: true,
             name: true,
             username: true,
-            avatar: true
-          }
-        }
-      }
-    });
+            avatar: true,
+          },
+        },
+      },
+    })
 
     // Schedule AI validation (similar to articles)
     setTimeout(async () => {
@@ -292,33 +310,34 @@ exports.createResearch = async (req, res) => {
         // For now, auto-publish after 1 minute
         await prisma.research.update({
           where: { id: research.id },
-          data: { status: 'published' }
-        });
+          data: { status: 'published' },
+        })
       } catch (error) {
-        logger.error({ err: error }, '[researchController] Error in research validation');
+        logger.error({ err: error }, '[researchController] Error in research validation')
       }
-    }, 60000); // 1 minute
+    }, 60000) // 1 minute
 
-    res.status(201).json({ ok: true, research });
+    res.status(201).json({ ok: true, research })
   } catch (error) {
-    logger.error({ err: error }, '[researchController] Error creating research');
-    res.status(500).json({ ok: false, message: 'Failed to create research' });
+    logger.error({ err: error }, '[researchController] Error creating research')
+    res.status(500).json({ ok: false, message: 'Failed to create research' })
   }
-};
+}
 
 // Update research
 exports.updateResearch = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { title, content, description, category, tags, coverUrl, pdfUrl, documents, references } = req.body;
-    const userId = req.user.id;
+    const { id } = req.params
+    const { title, content, description, category, tags, coverUrl, pdfUrl, documents, references } =
+      req.body
+    const userId = req.user.id
 
-    const existing = await prisma.research.findUnique({ where: { id } });
+    const existing = await prisma.research.findUnique({ where: { id } })
     if (!existing) {
-      return res.status(404).json({ ok: false, message: 'Research not found' });
+      return res.status(404).json({ ok: false, message: 'Research not found' })
     }
     if (existing.authorId !== userId && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ ok: false, message: 'Not authorized' });
+      return res.status(403).json({ ok: false, message: 'Not authorized' })
     }
 
     const research = await prisma.research.update({
@@ -332,41 +351,48 @@ exports.updateResearch = async (req, res) => {
         ...(coverUrl !== undefined && { coverUrl }),
         ...(pdfUrl !== undefined && { pdfUrl }),
         ...(documents !== undefined && { documents: Array.isArray(documents) ? documents : [] }),
-        ...(references !== undefined && { references: Array.isArray(references) ? references : [] })
+        ...(references !== undefined && {
+          references: Array.isArray(references) ? references : [],
+        }),
       },
       include: {
         author: {
           select: {
             id: true,
             name: true,
-            avatar: true
-          }
-        }
-      }
-    });
+            avatar: true,
+          },
+        },
+      },
+    })
 
-    res.json({ ok: true, research });
+    res.json({ ok: true, research })
   } catch (error) {
-    logger.error({ err: error }, '[researchController] Error updating research');
-    res.status(500).json({ ok: false, message: 'Failed to update research' });
+    logger.error({ err: error }, '[researchController] Error updating research')
+    res.status(500).json({ ok: false, message: 'Failed to update research' })
   }
-};
+}
 
 // Archive/Unarchive research
 exports.archiveResearch = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { archived } = req.body;
-    const userId = req.user.id;
+    const { id } = req.params
+    const { archived } = req.body
+    const userId = req.user.id
 
-    const existing = await prisma.research.findUnique({ where: { id } });
+    const existing = await prisma.research.findUnique({ where: { id } })
     if (!existing) {
-      return res.status(404).json({ ok: false, message: 'Research not found' });
+      return res.status(404).json({ ok: false, message: 'Research not found' })
     }
-    
-    const canArchive = await canManageContent(existing.authorId, userId, req.user.username, req.user.role);
+
+    const canArchive = await canManageContent(
+      existing.authorId,
+      userId,
+      req.user.username,
+      req.user.role
+    )
     if (!canArchive) {
-      return res.status(403).json({ ok: false, message: 'Not authorized' });
+      return res.status(403).json({ ok: false, message: 'Not authorized' })
     }
 
     const research = await prisma.research.update({
@@ -377,40 +403,48 @@ exports.archiveResearch = async (req, res) => {
           select: {
             id: true,
             name: true,
-            avatar: true
-          }
-        }
-      }
-    });
+            avatar: true,
+          },
+        },
+      },
+    })
 
-    res.json({ ok: true, research, message: archived ? 'Research archived' : 'Research unarchived' });
+    res.json({
+      ok: true,
+      research,
+      message: archived ? 'Research archived' : 'Research unarchived',
+    })
   } catch (error) {
-    logger.error({ err: error }, '[researchController] Error archiving research');
-    res.status(500).json({ ok: false, message: 'Failed to archive research' });
+    logger.error({ err: error }, '[researchController] Error archiving research')
+    res.status(500).json({ ok: false, message: 'Failed to archive research' })
   }
-};
+}
 
 // Delete research
 exports.deleteResearch = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const { id } = req.params
+    const userId = req.user.id
 
-    const existing = await prisma.research.findUnique({ where: { id } });
+    const existing = await prisma.research.findUnique({ where: { id } })
     if (!existing) {
-      return res.status(404).json({ ok: false, message: 'Research not found' });
+      return res.status(404).json({ ok: false, message: 'Research not found' })
     }
-    
-    const canDelete = await canManageContent(existing.authorId, userId, req.user.username, req.user.role);
+
+    const canDelete = await canManageContent(
+      existing.authorId,
+      userId,
+      req.user.username,
+      req.user.role
+    )
     if (!canDelete) {
-      return res.status(403).json({ ok: false, message: 'Not authorized' });
+      return res.status(403).json({ ok: false, message: 'Not authorized' })
     }
 
-    await prisma.research.delete({ where: { id } });
-    res.json({ ok: true, message: 'Research deleted' });
+    await prisma.research.delete({ where: { id } })
+    res.json({ ok: true, message: 'Research deleted' })
   } catch (error) {
-    logger.error({ err: error }, '[researchController] Error deleting research');
-    res.status(500).json({ ok: false, message: 'Failed to delete research' });
+    logger.error({ err: error }, '[researchController] Error deleting research')
+    res.status(500).json({ ok: false, message: 'Failed to delete research' })
   }
-};
-
+}

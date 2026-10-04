@@ -3,7 +3,7 @@
  * Uses the Chat Completions API to request structured validation feedback.
  */
 
-const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions'
 
 export const callOpenAI = async ({ prompt, model = 'gpt-4o-mini' }) => {
   /**
@@ -13,12 +13,12 @@ export const callOpenAI = async ({ prompt, model = 'gpt-4o-mini' }) => {
    *
    * The server will load this value via process.env.OPENAI_API_KEY.
    */
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
 
   if (!apiKey) {
     throw new Error(
       'Missing OPENAI_API_KEY. Create .env.local and set OPENAI_API_KEY="YOUR_KEY_HERE".'
-    );
+    )
   }
 
   const response = await fetch(OPENAI_ENDPOINT, {
@@ -42,14 +42,13 @@ export const callOpenAI = async ({ prompt, model = 'gpt-4o-mini' }) => {
         },
       ],
     }),
-  });
+  })
 
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`OpenAI API error: ${errText}`);
+    const errText = await response.text()
+    throw new Error(`OpenAI API error: ${errText}`)
   }
 
-  const data = await response.json();
-  return data?.choices?.[0]?.message?.content?.trim() ?? '{}';
-};
-
+  const data = await response.json()
+  return data?.choices?.[0]?.message?.content?.trim() ?? '{}'
+}

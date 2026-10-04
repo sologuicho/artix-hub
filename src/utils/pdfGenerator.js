@@ -1,18 +1,22 @@
 export const generatePDF = (content, type = 'article') => {
-  const title = content.title || 'Documento';
-  const author = content.author || '';
+  const title = content.title || 'Documento'
+  const author = content.author || ''
   const date = content.date
-    ? new Date(content.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-    : '';
-  const tags = (content.tags || []).map(t => `#${t}`).join('  ');
-  const body = content.content || '';
-  const description = content.description || '';
-  const typeLabel = type === 'research' ? 'Investigación' : 'Artículo';
+    ? new Date(content.date).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : ''
+  const tags = (content.tags || []).map(t => `#${t}`).join('  ')
+  const body = content.content || ''
+  const description = content.description || ''
+  const typeLabel = type === 'research' ? 'Investigación' : 'Artículo'
 
-  const win = window.open('', '_blank', 'width=900,height=700');
+  const win = window.open('', '_blank', 'width=900,height=700')
   if (!win) {
-    alert('Permite las ventanas emergentes para descargar el PDF.');
-    return;
+    alert('Permite las ventanas emergentes para descargar el PDF.')
+    return
   }
 
   win.document.write(`<!DOCTYPE html>
@@ -169,12 +173,16 @@ export const generatePDF = (content, type = 'article') => {
     <div class="doc-footer">Generado con Artix Hub &nbsp;·&nbsp; ${new Date().getFullYear()}</div>
   </div>
 </body>
-</html>`);
+</html>`)
 
-  win.document.close();
-  win.focus();
-};
+  win.document.close()
+  win.focus()
+}
 
 function escHtml(str) {
-  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }

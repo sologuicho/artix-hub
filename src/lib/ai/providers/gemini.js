@@ -4,7 +4,7 @@
  */
 
 const GEMINI_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
 
 export const callGemini = async ({ prompt }) => {
   /**
@@ -12,12 +12,12 @@ export const callGemini = async ({ prompt }) => {
    *
    * GOOGLE_API_KEY="YOUR_KEY_HERE" // INSERT YOUR API KEY HERE
    */
-  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
 
   if (!apiKey) {
     throw new Error(
       'Missing GOOGLE_API_KEY. Create .env.local and set GOOGLE_API_KEY="YOUR_KEY_HERE".'
-    );
+    )
   }
 
   const response = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
@@ -36,17 +36,16 @@ export const callGemini = async ({ prompt }) => {
         temperature: 0.2,
       },
     }),
-  });
+  })
 
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Gemini API error: ${errText}`);
+    const errText = await response.text()
+    throw new Error(`Gemini API error: ${errText}`)
   }
 
-  const data = await response.json();
+  const data = await response.json()
   return (
-    (data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ??
-      data?.candidates?.[0]?.output) || '{}'
-  );
-};
-
+    (data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? data?.candidates?.[0]?.output) ||
+    '{}'
+  )
+}

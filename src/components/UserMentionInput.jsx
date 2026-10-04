@@ -1,81 +1,84 @@
-import { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
 
-import { BACKEND_URL } from '../config/client';
+import { BACKEND_URL } from '../config/client'
 
 const UserMentionInput = ({ value, onChange, placeholder = 'Mencionar a alguien...' }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [users, setUsers] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [mentionStart, setMentionStart] = useState(-1);
-  const inputRef = useRef(null);
-  const dropdownRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('')
+  const [users, setUsers] = useState([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [selectedUsers, setSelectedUsers] = useState([])
+  const [mentionStart, setMentionStart] = useState(-1)
+  const inputRef = useRef(null)
+  const dropdownRef = useRef(null)
 
-  const fetchUsers = async (query) => {
+  const fetchUsers = async query => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const response = await fetch(
+        `${BACKEND_URL}/api/users/search?q=${encodeURIComponent(query)}`,
+        {
+          credentials: 'include',
+        }
+      )
+      const data = await response.json()
       if (data.ok) {
-        setUsers(data.users || []);
+        setUsers(data.users || [])
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error fetching users:', error);
+      console.error('Error fetching users:', error)
     }
-  };
+  }
 
   useEffect(() => {
     if (searchQuery.startsWith('@') && searchQuery.length > 1) {
-      const query = searchQuery.substring(1);
+      const query = searchQuery.substring(1)
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchUsers(query);
-      setShowDropdown(true);
-      setMentionStart(value.lastIndexOf('@'));
+      fetchUsers(query)
+      setShowDropdown(true)
+      setMentionStart(value.lastIndexOf('@'))
     } else {
-      setShowDropdown(false);
+      setShowDropdown(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]);
+  }, [searchQuery])
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
+        setShowDropdown(false)
       }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
-  const handleMention = (user) => {
-    const beforeMention = value.substring(0, mentionStart);
-    const afterMention = value.substring(value.length);
-    const newValue = `${beforeMention}@${user.username || user.name} ${afterMention}`;
-    onChange(newValue);
-    setSelectedUsers(prev => [...prev, user.id]);
-    setShowDropdown(false);
-    setSearchQuery('');
-  };
+  const handleMention = user => {
+    const beforeMention = value.substring(0, mentionStart)
+    const afterMention = value.substring(value.length)
+    const newValue = `${beforeMention}@${user.username || user.name} ${afterMention}`
+    onChange(newValue)
+    setSelectedUsers(prev => [...prev, user.id])
+    setShowDropdown(false)
+    setSearchQuery('')
+  }
 
-  const removeMention = (userId) => {
-    setSelectedUsers(prev => prev.filter(id => id !== userId));
+  const removeMention = userId => {
+    setSelectedUsers(prev => prev.filter(id => id !== userId))
     // Remove mention from text
-    const newValue = value.replace(new RegExp(`@[^\\s]+`, 'g'), (_match) => {
+    const newValue = value.replace(new RegExp(`@[^\\s]+`, 'g'), _match => {
       // This is a simplified version - you might want to track mentions better
-      return '';
-    });
-    onChange(newValue.trim());
-  };
+      return ''
+    })
+    onChange(newValue.trim())
+  }
 
   return (
     <div className="relative">
       <div className="flex flex-wrap gap-2 mb-2">
-        {selectedUsers.map((userId) => {
-          const user = users.find(u => u.id === userId);
-          if (!user) return null;
+        {selectedUsers.map(userId => {
+          const user = users.find(u => u.id === userId)
+          if (!user) return null
           return (
             <span
               key={userId}
@@ -89,19 +92,19 @@ const UserMentionInput = ({ value, onChange, placeholder = 'Mencionar a alguien.
                 <X className="w-3 h-3" />
               </button>
             </span>
-          );
+          )
         })}
       </div>
       <textarea
         ref={inputRef}
         value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setSearchQuery(e.target.value);
+        onChange={e => {
+          onChange(e.target.value)
+          setSearchQuery(e.target.value)
         }}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === '@') {
-            setMentionStart(e.target.selectionStart);
+            setMentionStart(e.target.selectionStart)
           }
         }}
         placeholder={placeholder}
@@ -113,14 +116,18 @@ const UserMentionInput = ({ value, onChange, placeholder = 'Mencionar a alguien.
           ref={dropdownRef}
           className="absolute z-50 mt-1 w-full glass-card shadow-xl max-h-60 overflow-y-auto"
         >
-          {users.map((user) => (
+          {users.map(user => (
             <button
               key={user.id}
               onClick={() => handleMention(user)}
               className="w-full p-3 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-3 text-left"
             >
               {user.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
                   {user.name?.charAt(0) || 'U'}
@@ -139,12 +146,7 @@ const UserMentionInput = ({ value, onChange, placeholder = 'Mencionar a alguien.
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default UserMentionInput;
-
-
-
-
-
+export default UserMentionInput

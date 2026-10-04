@@ -1,52 +1,49 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
+import { useLanguage } from '../context/LanguageContext'
 
 const HeroVideo = ({ onScroll }) => {
-  const { t } = useLanguage();
-  const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const heroRef = useRef(null);
-  const contentRef = useRef(null);
-  const [, setScrollY] = useState(0);
+  const { t } = useLanguage()
+  const navigate = useNavigate()
+  const videoRef = useRef(null)
+  const heroRef = useRef(null)
+  const contentRef = useRef(null)
+  const [, setScrollY] = useState(0)
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScroll = window.scrollY;
-      setScrollY(currentScroll);
+      const currentScroll = window.scrollY
+      setScrollY(currentScroll)
 
       if (heroRef.current) {
-        const heroHeight = heroRef.current.offsetHeight;
-        const scrollProgress = currentScroll / heroHeight;
-        const opacity = Math.max(0, 1 - scrollProgress * 1.2);
-        const translateY = -currentScroll * 0.3;
+        const heroHeight = heroRef.current.offsetHeight
+        const scrollProgress = currentScroll / heroHeight
+        const opacity = Math.max(0, 1 - scrollProgress * 1.2)
+        const translateY = -currentScroll * 0.3
 
         if (videoRef.current) {
-          videoRef.current.style.opacity = opacity;
-          videoRef.current.style.transform = `translateY(${translateY}px) scale(1.1)`;
+          videoRef.current.style.opacity = opacity
+          videoRef.current.style.transform = `translateY(${translateY}px) scale(1.1)`
         }
 
         if (contentRef.current) {
-          contentRef.current.style.opacity = opacity;
-          contentRef.current.style.transform = `translateY(${currentScroll * 0.2}px)`;
+          contentRef.current.style.opacity = opacity
+          contentRef.current.style.transform = `translateY(${currentScroll * 0.2}px)`
         }
       }
 
       if (onScroll) {
-        onScroll(currentScroll);
+        onScroll(currentScroll)
       }
-    };
+    }
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [onScroll]);
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [onScroll])
 
   return (
-    <div
-      ref={heroRef}
-      className="relative h-screen w-full overflow-hidden"
-    >
+    <div ref={heroRef} className="relative h-screen w-full overflow-hidden">
       {/* Video Background */}
       <div
         ref={videoRef}
@@ -70,7 +67,10 @@ const HeroVideo = ({ onScroll }) => {
       </div>
 
       {/* Contenido del Hero */}
-      <div ref={contentRef} className="relative z-10 h-full flex items-center transition-opacity duration-500">
+      <div
+        ref={contentRef}
+        className="relative z-10 h-full flex items-center transition-opacity duration-500"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="max-w-2xl">
             {/* Badge/Tag */}
@@ -82,12 +82,14 @@ const HeroVideo = ({ onScroll }) => {
 
             {/* Título Principal */}
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight">
-              {t('home.hero.title').split('\n').map((line, i, arr) => (
-                <span key={i}>
-                  {line}
-                  {i < arr.length - 1 && <br />}
-                </span>
-              ))}
+              {t('home.hero.title')
+                .split('\n')
+                .map((line, i, arr) => (
+                  <span key={i}>
+                    {line}
+                    {i < arr.length - 1 && <br />}
+                  </span>
+                ))}
             </h1>
 
             {/* CTA Button */}
@@ -100,16 +102,13 @@ const HeroVideo = ({ onScroll }) => {
             </button>
           </div>
         </div>
-
-
       </div>
 
       {/* Elementos decorativos naranjas (opcionales) */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute top-0 right-0 w-96 h-96 bg-orange-400/20 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
     </div>
-  );
-};
+  )
+}
 
-export default HeroVideo;
-
+export default HeroVideo

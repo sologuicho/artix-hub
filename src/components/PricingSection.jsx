@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
-import TeamPricingCalculator from './TeamPricingCalculator';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
+import TeamPricingCalculator from './TeamPricingCalculator'
 
 const PLANS = [
   {
@@ -55,11 +55,7 @@ const PLANS = [
     label: '— MÁS POPULAR —',
     labelMuted: true,
     highlight: false,
-    features: [
-      'Todo lo del plan Estudiante',
-      'Sin necesidad de verificación',
-      'Soporte por email',
-    ],
+    features: ['Todo lo del plan Estudiante', 'Sin necesidad de verificación', 'Soporte por email'],
     cta: 'Comenzar con Miembro',
     ctaAction: 'pay',
   },
@@ -82,17 +78,47 @@ const PLANS = [
     cta: 'Comenzar con Researcher',
     ctaAction: 'pay',
   },
-];
+]
 
 const COMPARISON = [
   { feature: 'Leer contenido', lector: true, estudiante: true, miembro: true, researcher: true },
-  { feature: 'Publicar artículos', lector: false, estudiante: true, miembro: true, researcher: true },
-  { feature: 'Acceso investigaciones', lector: false, estudiante: true, miembro: true, researcher: true },
-  { feature: 'IA para escritura', lector: false, estudiante: true, miembro: true, researcher: true },
-  { feature: 'Colaborar en research', lector: false, estudiante: false, miembro: false, researcher: true },
-  { feature: 'Publicar eventos', lector: false, estudiante: false, miembro: false, researcher: true },
+  {
+    feature: 'Publicar artículos',
+    lector: false,
+    estudiante: true,
+    miembro: true,
+    researcher: true,
+  },
+  {
+    feature: 'Acceso investigaciones',
+    lector: false,
+    estudiante: true,
+    miembro: true,
+    researcher: true,
+  },
+  {
+    feature: 'IA para escritura',
+    lector: false,
+    estudiante: true,
+    miembro: true,
+    researcher: true,
+  },
+  {
+    feature: 'Colaborar en research',
+    lector: false,
+    estudiante: false,
+    miembro: false,
+    researcher: true,
+  },
+  {
+    feature: 'Publicar eventos',
+    lector: false,
+    estudiante: false,
+    miembro: false,
+    researcher: true,
+  },
   { feature: 'Estadísticas', lector: false, estudiante: false, miembro: false, researcher: true },
-];
+]
 
 const FAQS = [
   {
@@ -107,100 +133,116 @@ const FAQS = [
     q: '¿Aceptan MercadoPago?',
     a: 'Sí, aceptamos MercadoPago para usuarios en México, Argentina, Colombia, Chile, Perú y otros países de Latinoamérica, además de tarjetas de crédito y débito vía Stripe.',
   },
-];
+]
 
 const getCsrfToken = () => {
   for (const c of document.cookie.split(';')) {
-    const [k, v] = c.trim().split('=');
-    if (k === 'csrf') return v;
+    const [k, v] = c.trim().split('=')
+    if (k === 'csrf') return v
   }
-  return null;
-};
+  return null
+}
 
 const PricingSection = () => {
-  const { user, refreshUser } = useAuth();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [annual, setAnnual] = useState(false);
-  const [planType, setPlanType] = useState('individual');
-  const [openFaq, setOpenFaq] = useState(null);
-  const [studentMsg, setStudentMsg] = useState('');
+  const { user, refreshUser } = useAuth()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [annual, setAnnual] = useState(false)
+  const [planType, setPlanType] = useState('individual')
+  const [openFaq, setOpenFaq] = useState(null)
+  const [studentMsg, setStudentMsg] = useState('')
 
-  const isStudent = user?.subscriptionTier === 'STUDENT';
-  const isResearcher = user?.subscriptionTier === 'RESEARCHER';
+  const isStudent = user?.subscriptionTier === 'STUDENT'
+  const isResearcher = user?.subscriptionTier === 'RESEARCHER'
 
-  const handleSelectPlan = async (plan) => {
+  const handleSelectPlan = async plan => {
     if (plan.ctaAction === 'verify') {
       if (!user) {
-        navigate('/auth?intent=student');
-        return;
+        navigate('/auth?intent=student')
+        return
       }
       if (user.subscriptionTier === 'STUDENT') {
-        setStudentMsg('Ya tienes el plan Estudiante activo.');
-        return;
+        setStudentMsg('Ya tienes el plan Estudiante activo.')
+        return
       }
       if (['RESEARCHER', 'VISIONARY', 'TEAM'].includes(user.subscriptionTier)) {
-        setStudentMsg('Ya tienes un plan superior al Estudiante.');
-        return;
+        setStudentMsg('Ya tienes un plan superior al Estudiante.')
+        return
       }
-      navigate('/student-verification');
-      return;
+      navigate('/student-verification')
+      return
     }
 
-    if (!user) { navigate('/auth'); return; }
+    if (!user) {
+      navigate('/auth')
+      return
+    }
 
-    if (plan.ctaAction === 'free') return;
+    if (plan.ctaAction === 'free') return
 
-    const price = annual ? plan.yearly : plan.monthly;
-    const period = annual ? 'año' : 'mes';
-    if (!confirm(`¿Confirmar cambio al plan ${plan.name} ($${price}/${period})?`)) return;
+    const price = annual ? plan.yearly : plan.monthly
+    const period = annual ? 'año' : 'mes'
+    if (!confirm(`¿Confirmar cambio al plan ${plan.name} ($${price}/${period})?`)) return
 
-    setLoading(true);
+    setLoading(true)
     try {
       const res = await fetch(`${BACKEND_URL}/api/subscription/upgrade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() || '' },
         credentials: 'include',
         body: JSON.stringify({ tier: plan.tier }),
-      });
-      const data = await res.json();
-      if (res.ok) { await refreshUser?.(); alert('¡Plan actualizado correctamente!'); }
-      else alert(data.message || 'Error al actualizar la suscripción');
-    } catch { alert('Error de conexión al actualizar la suscripción'); }
-    finally { setLoading(false); }
-  };
+      })
+      const data = await res.json()
+      if (res.ok) {
+        await refreshUser?.()
+        alert('¡Plan actualizado correctamente!')
+      } else alert(data.message || 'Error al actualizar la suscripción')
+    } catch {
+      alert('Error de conexión al actualizar la suscripción')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const isCurrent = (plan) => {
-    if (!user) return false;
-    if (plan.id === 'lector') return user.subscriptionTier === 'OBSERVER';
-    if (plan.id === 'estudiante' || plan.id === 'miembro') return isStudent;
-    if (plan.id === 'researcher') return isResearcher;
-    return false;
-  };
+  const isCurrent = plan => {
+    if (!user) return false
+    if (plan.id === 'lector') return user.subscriptionTier === 'OBSERVER'
+    if (plan.id === 'estudiante' || plan.id === 'miembro') return isStudent
+    if (plan.id === 'researcher') return isResearcher
+    return false
+  }
 
-  const displayPrice = (plan) => {
-    if (plan.free) return null;
-    return annual ? (plan.yearly / 12).toFixed(1).replace('.0', '') : plan.monthly;
-  };
+  const displayPrice = plan => {
+    if (plan.free) return null
+    return annual ? (plan.yearly / 12).toFixed(1).replace('.0', '') : plan.monthly
+  }
 
   return (
     <section id="pricing" className="py-24" style={{ backgroundColor: 'var(--bg)' }}>
       <div className="site-container">
-
         {/* Header */}
         <div className="mb-14">
           <span className="category-tag">Planes</span>
-          <h2 className="font-display mt-2" style={{ fontSize: '2.25rem', color: 'var(--text)', lineHeight: 1.15 }}>
+          <h2
+            className="font-display mt-2"
+            style={{ fontSize: '2.25rem', color: 'var(--text)', lineHeight: 1.15 }}
+          >
             Elige tu nivel de acceso
           </h2>
-          <p className="font-sans mt-3" style={{ color: 'var(--muted)', fontSize: '1rem', maxWidth: '480px' }}>
+          <p
+            className="font-sans mt-3"
+            style={{ color: 'var(--muted)', fontSize: '1rem', maxWidth: '480px' }}
+          >
             Desde lectura gratuita hasta herramientas de investigación completas.
           </p>
         </div>
 
         {/* Plan type tabs */}
         <div className="flex gap-0 mb-10 w-fit" style={{ borderBottom: '1px solid var(--border)' }}>
-          {[{ id: 'individual', label: 'Individual' }, { id: 'team', label: 'Equipos' }].map(({ id, label }) => (
+          {[
+            { id: 'individual', label: 'Individual' },
+            { id: 'team', label: 'Equipos' },
+          ].map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setPlanType(id)}
@@ -220,15 +262,27 @@ const PricingSection = () => {
         {/* Annual / Monthly toggle */}
         {planType === 'individual' && (
           <div className="flex items-center gap-4 mb-12">
-            <span className="font-sans text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+            <span
+              className="font-sans text-xs uppercase tracking-wider"
+              style={{ color: 'var(--muted)' }}
+            >
               Facturación:
             </span>
-            {[{ id: false, label: 'Mensual' }, { id: true, label: 'Anual' }].map(({ id, label }) => (
+            {[
+              { id: false, label: 'Mensual' },
+              { id: true, label: 'Anual' },
+            ].map(({ id, label }) => (
               <button
                 key={label}
                 onClick={() => setAnnual(id)}
                 className="font-sans text-xs uppercase tracking-wider transition-colors"
-                style={{ color: annual === id ? 'var(--text)' : 'var(--muted)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                style={{
+                  color: annual === id ? 'var(--text)' : 'var(--muted)',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                }}
               >
                 {label}
                 {id && <span style={{ marginLeft: '0.375rem', color: 'var(--accent)' }}>−20%</span>}
@@ -240,17 +294,24 @@ const PricingSection = () => {
         {/* Individual plans — 4 columns */}
         {planType === 'individual' && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0" style={{ border: '1px solid var(--border)' }}>
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0"
+              style={{ border: '1px solid var(--border)' }}
+            >
               {PLANS.map((plan, idx) => {
-                const current = isCurrent(plan);
-                const price = displayPrice(plan);
+                const current = isCurrent(plan)
+                const price = displayPrice(plan)
 
                 return (
                   <div
                     key={plan.id}
                     style={{
                       backgroundColor: plan.highlight ? 'var(--surface)' : 'var(--bg)',
-                      borderLeft: plan.highlight ? '3px solid var(--accent)' : idx === 0 ? 'none' : '1px solid var(--border)',
+                      borderLeft: plan.highlight
+                        ? '3px solid var(--accent)'
+                        : idx === 0
+                          ? 'none'
+                          : '1px solid var(--border)',
                       borderRight: idx < PLANS.length - 1 && !plan.highlight ? 'none' : 'none',
                       padding: '2rem',
                       display: 'flex',
@@ -263,10 +324,13 @@ const PricingSection = () => {
                       <span
                         className="font-sans"
                         style={{
-                          fontSize: '0.625rem', fontWeight: 500, letterSpacing: '0.1em',
+                          fontSize: '0.625rem',
+                          fontWeight: 500,
+                          letterSpacing: '0.1em',
                           textTransform: 'uppercase',
                           color: plan.highlight ? 'var(--accent)' : 'var(--muted)',
-                          display: 'block', marginBottom: '0.75rem',
+                          display: 'block',
+                          marginBottom: '0.75rem',
                         }}
                       >
                         {plan.label}
@@ -277,7 +341,11 @@ const PricingSection = () => {
                     {/* Plan name */}
                     <h3
                       className={plan.highlight ? 'font-display' : 'font-sans font-medium'}
-                      style={{ fontSize: plan.highlight ? '1.5rem' : '1rem', color: 'var(--text)', marginBottom: '0.25rem' }}
+                      style={{
+                        fontSize: plan.highlight ? '1.5rem' : '1rem',
+                        color: 'var(--text)',
+                        marginBottom: '0.25rem',
+                      }}
                     >
                       {plan.name}
                     </h3>
@@ -286,24 +354,46 @@ const PricingSection = () => {
                     <div className="mt-4 mb-1">
                       {plan.highlight ? (
                         <div className="flex items-baseline gap-2">
-                          <span className="font-display" style={{ fontSize: '1.125rem', color: 'var(--muted)', textDecoration: 'line-through' }}>
+                          <span
+                            className="font-display"
+                            style={{
+                              fontSize: '1.125rem',
+                              color: 'var(--muted)',
+                              textDecoration: 'line-through',
+                            }}
+                          >
                             {plan.priceCrossed}
                           </span>
-                          <span className="font-display" style={{ fontSize: '2.25rem', color: 'var(--accent)', lineHeight: 1 }}>
+                          <span
+                            className="font-display"
+                            style={{ fontSize: '2.25rem', color: 'var(--accent)', lineHeight: 1 }}
+                          >
                             {plan.priceLabel}
                           </span>
                         </div>
                       ) : plan.free ? (
                         <div className="flex items-baseline gap-1">
-                          <span className="font-display" style={{ fontSize: '2.5rem', color: 'var(--text)', lineHeight: 1 }}>$0</span>
-                          <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>/mes</span>
+                          <span
+                            className="font-display"
+                            style={{ fontSize: '2.5rem', color: 'var(--text)', lineHeight: 1 }}
+                          >
+                            $0
+                          </span>
+                          <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                            /mes
+                          </span>
                         </div>
                       ) : (
                         <div className="flex items-baseline gap-1">
-                          <span className="font-display" style={{ fontSize: '2.5rem', color: 'var(--text)', lineHeight: 1 }}>
+                          <span
+                            className="font-display"
+                            style={{ fontSize: '2.5rem', color: 'var(--text)', lineHeight: 1 }}
+                          >
                             ${price}
                           </span>
-                          <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>/mes</span>
+                          <span className="font-sans text-xs" style={{ color: 'var(--muted)' }}>
+                            /mes
+                          </span>
                         </div>
                       )}
                       {annual && !plan.free && (
@@ -314,7 +404,14 @@ const PricingSection = () => {
                     </div>
 
                     {/* Divider */}
-                    <div style={{ height: 1, backgroundColor: 'var(--border)', margin: '1.5rem 0', opacity: 0.5 }} />
+                    <div
+                      style={{
+                        height: 1,
+                        backgroundColor: 'var(--border)',
+                        margin: '1.5rem 0',
+                        opacity: 0.5,
+                      }}
+                    />
 
                     {/* Features */}
                     <ul className="flex flex-col gap-3 flex-1 mb-8">
@@ -324,7 +421,9 @@ const PricingSection = () => {
                           className="flex items-start gap-3 font-sans"
                           style={{ fontSize: '0.875rem', color: 'var(--muted)', lineHeight: 1.55 }}
                         >
-                          <span style={{ color: 'var(--accent)', flexShrink: 0, fontWeight: 600 }}>·</span>
+                          <span style={{ color: 'var(--accent)', flexShrink: 0, fontWeight: 600 }}>
+                            ·
+                          </span>
                           {feat}
                         </li>
                       ))}
@@ -333,21 +432,36 @@ const PricingSection = () => {
                     {/* CTA */}
                     <button
                       onClick={() => handleSelectPlan(plan)}
-                      disabled={current || loading || (plan.id === 'lector' && !user) === false && plan.ctaAction === 'free' && !!user && user.subscriptionTier === 'OBSERVER'}
+                      disabled={
+                        current ||
+                        loading ||
+                        ((plan.id === 'lector' && !user) === false &&
+                          plan.ctaAction === 'free' &&
+                          !!user &&
+                          user.subscriptionTier === 'OBSERVER')
+                      }
                       className={`btn w-full ${plan.highlight ? 'btn-primary' : 'btn-outline'}`}
-                      style={current ? {
-                        backgroundColor: 'transparent',
-                        border: '1px solid var(--border)',
-                        color: 'var(--muted)',
-                        cursor: 'default',
-                      } : undefined}
+                      style={
+                        current
+                          ? {
+                              backgroundColor: 'transparent',
+                              border: '1px solid var(--border)',
+                              color: 'var(--muted)',
+                              cursor: 'default',
+                            }
+                          : undefined
+                      }
                     >
                       {loading ? (
                         <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                      ) : current ? 'Plan actual' : plan.cta}
+                      ) : current ? (
+                        'Plan actual'
+                      ) : (
+                        plan.cta
+                      )}
                     </button>
                   </div>
-                );
+                )
               })}
             </div>
 
@@ -355,12 +469,23 @@ const PricingSection = () => {
             {studentMsg && (
               <div
                 className="flex items-center justify-between mt-4 font-sans text-sm"
-                style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--surface)', borderLeft: '3px solid var(--accent)' }}
+                style={{
+                  padding: '0.75rem 1rem',
+                  backgroundColor: 'var(--surface)',
+                  borderLeft: '3px solid var(--accent)',
+                }}
               >
                 <span style={{ color: 'var(--text)' }}>{studentMsg}</span>
                 <button
                   onClick={() => setStudentMsg('')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', paddingLeft: '1rem', lineHeight: 1 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--muted)',
+                    paddingLeft: '1rem',
+                    lineHeight: 1,
+                  }}
                 >
                   ×
                 </button>
@@ -369,7 +494,10 @@ const PricingSection = () => {
 
             {/* Comparison table */}
             <div className="mt-20 mb-6">
-              <h3 className="font-display" style={{ fontSize: '1.5rem', color: 'var(--text)', marginBottom: '1.5rem' }}>
+              <h3
+                className="font-display"
+                style={{ fontSize: '1.5rem', color: 'var(--text)', marginBottom: '1.5rem' }}
+              >
                 Comparar planes
               </h3>
               <div style={{ overflowX: 'auto' }}>
@@ -387,11 +515,18 @@ const PricingSection = () => {
                     {COMPARISON.map(row => (
                       <tr key={row.feature}>
                         <td>
-                          <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>{row.feature}</span>
+                          <span className="font-sans text-sm" style={{ color: 'var(--text)' }}>
+                            {row.feature}
+                          </span>
                         </td>
                         {['lector', 'estudiante', 'miembro', 'researcher'].map(col => (
                           <td key={col} style={{ textAlign: 'center' }}>
-                            <span style={{ color: row[col] ? 'var(--accent)' : 'var(--muted)', fontWeight: row[col] ? 600 : 400 }}>
+                            <span
+                              style={{
+                                color: row[col] ? 'var(--accent)' : 'var(--muted)',
+                                fontWeight: row[col] ? 600 : 400,
+                              }}
+                            >
                               {row[col] ? '✓' : '—'}
                             </span>
                           </td>
@@ -404,8 +539,14 @@ const PricingSection = () => {
             </div>
 
             {/* FAQ */}
-            <div className="mt-16" style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
-              <h3 className="font-display mb-8" style={{ fontSize: '1.5rem', color: 'var(--text)' }}>
+            <div
+              className="mt-16"
+              style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem' }}
+            >
+              <h3
+                className="font-display mb-8"
+                style={{ fontSize: '1.5rem', color: 'var(--text)' }}
+              >
                 Preguntas frecuentes
               </h3>
               <div className="flex flex-col">
@@ -415,13 +556,24 @@ const PricingSection = () => {
                       onClick={() => setOpenFaq(openFaq === i ? null : i)}
                       className="w-full text-left flex items-center justify-between font-sans"
                       style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
                         padding: '1.25rem 0',
-                        color: 'var(--text)', fontSize: '0.9375rem', fontWeight: 500,
+                        color: 'var(--text)',
+                        fontSize: '0.9375rem',
+                        fontWeight: 500,
                       }}
                     >
                       {faq.q}
-                      <span style={{ color: 'var(--muted)', fontSize: '1.125rem', flexShrink: 0, marginLeft: '1rem' }}>
+                      <span
+                        style={{
+                          color: 'var(--muted)',
+                          fontSize: '1.125rem',
+                          flexShrink: 0,
+                          marginLeft: '1rem',
+                        }}
+                      >
                         {openFaq === i ? '−' : '+'}
                       </span>
                     </button>
@@ -448,7 +600,7 @@ const PricingSection = () => {
         )}
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default PricingSection;
+export default PricingSection

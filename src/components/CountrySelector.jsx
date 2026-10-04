@@ -1,42 +1,87 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, MapPin } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react'
+import { ChevronDown, MapPin } from 'lucide-react'
 
 const COUNTRIES = [
-  'México', 'Estados Unidos', 'España', 'Argentina', 'Colombia', 'Chile', 'Perú', 'Venezuela',
-  'Ecuador', 'Guatemala', 'Cuba', 'Bolivia', 'República Dominicana', 'Honduras', 'Paraguay',
-  'Nicaragua', 'El Salvador', 'Costa Rica', 'Panamá', 'Uruguay', 'Brasil', 'Canadá',
-  'Reino Unido', 'Francia', 'Alemania', 'Italia', 'Portugal', 'Países Bajos', 'Bélgica',
-  'Suiza', 'Austria', 'Suecia', 'Noruega', 'Dinamarca', 'Finlandia', 'Polonia', 'Rusia',
-  'China', 'Japón', 'India', 'Corea del Sur', 'Australia', 'Nueva Zelanda', 'Sudáfrica',
-  'Egipto', 'Nigeria', 'Kenia', 'Marruecos', 'Túnez', 'Argelia', 'Ghana', 'Etiopía'
-].sort();
+  'México',
+  'Estados Unidos',
+  'España',
+  'Argentina',
+  'Colombia',
+  'Chile',
+  'Perú',
+  'Venezuela',
+  'Ecuador',
+  'Guatemala',
+  'Cuba',
+  'Bolivia',
+  'República Dominicana',
+  'Honduras',
+  'Paraguay',
+  'Nicaragua',
+  'El Salvador',
+  'Costa Rica',
+  'Panamá',
+  'Uruguay',
+  'Brasil',
+  'Canadá',
+  'Reino Unido',
+  'Francia',
+  'Alemania',
+  'Italia',
+  'Portugal',
+  'Países Bajos',
+  'Bélgica',
+  'Suiza',
+  'Austria',
+  'Suecia',
+  'Noruega',
+  'Dinamarca',
+  'Finlandia',
+  'Polonia',
+  'Rusia',
+  'China',
+  'Japón',
+  'India',
+  'Corea del Sur',
+  'Australia',
+  'Nueva Zelanda',
+  'Sudáfrica',
+  'Egipto',
+  'Nigeria',
+  'Kenia',
+  'Marruecos',
+  'Túnez',
+  'Argelia',
+  'Ghana',
+  'Etiopía',
+].sort()
 
 const CountrySelector = ({ value, onChange, className = '' }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const dropdownRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const dropdownRef = useRef(null)
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-        setSearchQuery('');
+        setIsOpen(false)
+        setSearchQuery('')
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const filteredCountries = COUNTRIES.filter(country =>
     country.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  )
 
-  const handleSelect = (country) => {
-    onChange(country);
-    setIsOpen(false);
-    setSearchQuery('');
-  };
+  const handleSelect = country => {
+    onChange(country)
+    setIsOpen(false)
+    setSearchQuery('')
+  }
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -47,11 +92,17 @@ const CountrySelector = ({ value, onChange, className = '' }) => {
       >
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <span className={value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}>
+          <span
+            className={
+              value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'
+            }
+          >
             {value || 'Selecciona un país'}
           </span>
         </div>
-        <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {isOpen && (
@@ -60,7 +111,7 @@ const CountrySelector = ({ value, onChange, className = '' }) => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               placeholder="Buscar país..."
               className="w-full glass-input text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
               autoFocus
@@ -69,13 +120,15 @@ const CountrySelector = ({ value, onChange, className = '' }) => {
           <div className="overflow-y-auto max-h-64">
             {filteredCountries.length > 0 ? (
               <div className="py-1">
-                {filteredCountries.map((country) => (
+                {filteredCountries.map(country => (
                   <button
                     key={country}
                     type="button"
                     onClick={() => handleSelect(country)}
                     className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-between ${
-                      value === country ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                      value === country
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                        : 'text-gray-700 dark:text-gray-300'
                     }`}
                   >
                     <span>{country}</span>
@@ -94,11 +147,7 @@ const CountrySelector = ({ value, onChange, className = '' }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default CountrySelector;
-
-
-
-
+export default CountrySelector

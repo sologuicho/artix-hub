@@ -1,10 +1,10 @@
-const prisma = require('../prismaClient');
-const logger = require('../lib/logger');
+const prisma = require('../prismaClient')
+const logger = require('../lib/logger')
 
 // Helper: check if user can manage event content (creator, admin, or Artix Research proxy)
 const canManageContent = async (creatorId, userId, userUsername, userRole) => {
-  if (creatorId === userId) return true;
-  if (userRole === 'ADMIN') return true;
+  if (creatorId === userId) return true
+  if (userRole === 'ADMIN') return true
   if (userUsername === 'luisflores01') {
     const artixUser = await prisma.user.findFirst({
       where: {
@@ -14,11 +14,11 @@ const canManageContent = async (creatorId, userId, userUsername, userRole) => {
           { name: 'Artix Research' },
         ],
       },
-    });
-    if (artixUser && creatorId === artixUser.id) return true;
+    })
+    if (artixUser && creatorId === artixUser.id) return true
   }
-  return false;
-};
+  return false
+}
 
 // Get unique event types
 exports.getCategories = async (req, res) => {
@@ -26,54 +26,54 @@ exports.getCategories = async (req, res) => {
     const types = await prisma.event.findMany({
       where: {
         type: { not: null },
-        archived: false
+        archived: false,
       },
       select: { type: true },
       distinct: ['type'],
-      orderBy: { type: 'asc' }
-    });
+      orderBy: { type: 'asc' },
+    })
 
     const typeList = types
       .map(t => t.type)
       .filter(t => t && t.trim() !== '')
-      .sort();
+      .sort()
 
-    res.json({ ok: true, categories: typeList });
+    res.json({ ok: true, categories: typeList })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error fetching event types');
-    res.status(500).json({ ok: false, message: 'Failed to fetch event types' });
+    logger.error({ err: error }, '[eventController] Error fetching event types')
+    res.status(500).json({ ok: false, message: 'Failed to fetch event types' })
   }
-};
+}
 
 // Get all events with pagination and filters
 exports.getAllEvents = async (req, res) => {
   try {
-    const { page = 1, limit = 10, type, search, upcoming, dateFrom, dateTo, creatorId } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const { page = 1, limit = 10, type, search, upcoming, dateFrom, dateTo, creatorId } = req.query
+    const skip = (parseInt(page) - 1) * parseInt(limit)
 
-    const where = {};
+    const where = {}
     // By default, exclude archived events unless explicitly requested
     if (!req.query.includeArchived) {
-      where.archived = false;
+      where.archived = false
     }
-    if (type) where.type = type;
+    if (type) where.type = type
     if (creatorId) {
-      where.creatorId = creatorId;
+      where.creatorId = creatorId
     }
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
         { location: { contains: search, mode: 'insensitive' } },
-      ];
+      ]
     }
     // Only filter by date if explicitly requested
     if (upcoming === 'true') {
-      where.date = { gte: new Date() };
+      where.date = { gte: new Date() }
     } else if (dateFrom || dateTo) {
-      where.date = {};
-      if (dateFrom) where.date.gte = new Date(dateFrom);
-      if (dateTo) where.date.lte = new Date(dateTo + 'T23:59:59.999Z');
+      where.date = {}
+      if (dateFrom) where.date.gte = new Date(dateFrom)
+      if (dateTo) where.date.lte = new Date(dateTo + 'T23:59:59.999Z')
     }
     // If no date filter, show all events
 
@@ -97,7 +97,7 @@ exports.getAllEvents = async (req, res) => {
         orderBy: { date: 'asc' },
       }),
       prisma.event.count({ where }),
-    ]);
+    ])
 
     res.json({
       ok: true,
@@ -108,17 +108,17 @@ exports.getAllEvents = async (req, res) => {
         total,
         pages: Math.ceil(total / parseInt(limit)),
       },
-    });
+    })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error fetching events');
-    res.status(500).json({ ok: false, message: 'Failed to fetch events' });
+    logger.error({ err: error }, '[eventController] Error fetching events')
+    res.status(500).json({ ok: false, message: 'Failed to fetch events' })
   }
-};
+}
 
 // Get single event
 exports.getEvent = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
@@ -144,27 +144,37 @@ exports.getEvent = async (req, res) => {
           select: { registrations: true },
         },
       },
-    });
+    })
 
     if (!event) {
-      return res.status(404).json({ ok: false, message: 'Event not found' });
+      return res.status(404).json({ ok: false, message: 'Event not found' })
     }
 
-    res.json({ ok: true, event });
+    res.json({ ok: true, event })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error fetching event');
-    res.status(500).json({ ok: false, message: 'Failed to fetch event' });
+    logger.error({ err: error }, '[eventController] Error fetching event')
+    res.status(500).json({ ok: false, message: 'Failed to fetch event' })
   }
-};
+}
 
 // Create event
 exports.createEvent = async (req, res) => {
   try {
-    const { title, description, date, time, location, type, tags, bannerUrl, publishAsArtixResearch } = req.body;
-    const userId = req.user.id;
-    
+    const {
+      title,
+      description,
+      date,
+      time,
+      location,
+      type,
+      tags,
+      bannerUrl,
+      publishAsArtixResearch,
+    } = req.body
+    const userId = req.user.id
+
     // Si el usuario es luisflores01 y quiere publicar como Artix Research
-    let creatorId = userId;
+    let creatorId = userId
     if (publishAsArtixResearch && req.user.username === 'luisflores01') {
       // Buscar o crear el usuario Artix Research
       let artixUser = await prisma.user.findFirst({
@@ -172,11 +182,11 @@ exports.createEvent = async (req, res) => {
           OR: [
             { username: 'artixresearch' },
             { username: 'artix-research' },
-            { name: 'Artix Research' }
-          ]
-        }
-      });
-      
+            { name: 'Artix Research' },
+          ],
+        },
+      })
+
       if (!artixUser) {
         // Crear el usuario Artix Research si no existe
         artixUser = await prisma.user.create({
@@ -191,12 +201,18 @@ exports.createEvent = async (req, res) => {
             bio: 'Cuenta oficial de investigación de Artix Hub. Publicamos artículos científicos, investigaciones avanzadas y contenido académico de alta calidad sobre física cuántica, inteligencia artificial, química computacional y más.',
             occupation: 'Organización de Investigación',
             country: 'Global',
-            interests: ['Quantum Physics', 'AI Research', 'Chemistry', 'Machine Learning', 'Data Science']
-          }
-        });
+            interests: [
+              'Quantum Physics',
+              'AI Research',
+              'Chemistry',
+              'Machine Learning',
+              'Data Science',
+            ],
+          },
+        })
       }
-      
-      creatorId = artixUser.id;
+
+      creatorId = artixUser.id
     }
 
     const event = await prisma.event.create({
@@ -224,31 +240,36 @@ exports.createEvent = async (req, res) => {
           },
         },
       },
-    });
+    })
 
-    res.status(201).json({ ok: true, event });
+    res.status(201).json({ ok: true, event })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error creating event');
-    res.status(500).json({ ok: false, message: 'Failed to create event' });
+    logger.error({ err: error }, '[eventController] Error creating event')
+    res.status(500).json({ ok: false, message: 'Failed to create event' })
   }
-};
+}
 
 // Update event
 exports.updateEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { title, description, date, time, location, type, tags, bannerUrl } = req.body;
-    const userId = req.user.id;
+    const { id } = req.params
+    const { title, description, date, time, location, type, tags, bannerUrl } = req.body
+    const userId = req.user.id
 
     // Check if event exists and user owns it
-    const existing = await prisma.event.findUnique({ where: { id } });
+    const existing = await prisma.event.findUnique({ where: { id } })
     if (!existing) {
-      return res.status(404).json({ ok: false, message: 'Event not found' });
+      return res.status(404).json({ ok: false, message: 'Event not found' })
     }
-    
-    const canEdit = await canManageContent(existing.creatorId, userId, req.user.username, req.user.role);
+
+    const canEdit = await canManageContent(
+      existing.creatorId,
+      userId,
+      req.user.username,
+      req.user.role
+    )
     if (!canEdit) {
-      return res.status(403).json({ ok: false, message: 'Not authorized' });
+      return res.status(403).json({ ok: false, message: 'Not authorized' })
     }
 
     const event = await prisma.event.update({
@@ -262,8 +283,12 @@ exports.updateEvent = async (req, res) => {
         ...(type !== undefined && { type }),
         ...(tags !== undefined && { tags: Array.isArray(tags) ? tags : [] }),
         ...(bannerUrl !== undefined && { bannerUrl }),
-        ...(req.body.maxAttendees !== undefined && { maxAttendees: req.body.maxAttendees ? parseInt(req.body.maxAttendees) : null }),
-        ...(req.body.ticketPrice !== undefined && { ticketPrice: req.body.ticketPrice ? parseFloat(req.body.ticketPrice) : null }),
+        ...(req.body.maxAttendees !== undefined && {
+          maxAttendees: req.body.maxAttendees ? parseInt(req.body.maxAttendees) : null,
+        }),
+        ...(req.body.ticketPrice !== undefined && {
+          ticketPrice: req.body.ticketPrice ? parseFloat(req.body.ticketPrice) : null,
+        }),
         ...(req.body.ticketCurrency !== undefined && { ticketCurrency: req.body.ticketCurrency }),
         ...(req.body.streamUrl !== undefined && { streamUrl: req.body.streamUrl || null }),
       },
@@ -276,30 +301,35 @@ exports.updateEvent = async (req, res) => {
           },
         },
       },
-    });
+    })
 
-    res.json({ ok: true, event });
+    res.json({ ok: true, event })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error updating event');
-    res.status(500).json({ ok: false, message: 'Failed to update event' });
+    logger.error({ err: error }, '[eventController] Error updating event')
+    res.status(500).json({ ok: false, message: 'Failed to update event' })
   }
-};
+}
 
 // Archive/Unarchive event
 exports.archiveEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { archived } = req.body;
-    const userId = req.user.id;
+    const { id } = req.params
+    const { archived } = req.body
+    const userId = req.user.id
 
-    const existing = await prisma.event.findUnique({ where: { id } });
+    const existing = await prisma.event.findUnique({ where: { id } })
     if (!existing) {
-      return res.status(404).json({ ok: false, message: 'Event not found' });
+      return res.status(404).json({ ok: false, message: 'Event not found' })
     }
-    
-    const canArchive = await canManageContent(existing.creatorId, userId, req.user.username, req.user.role);
+
+    const canArchive = await canManageContent(
+      existing.creatorId,
+      userId,
+      req.user.username,
+      req.user.role
+    )
     if (!canArchive) {
-      return res.status(403).json({ ok: false, message: 'Not authorized' });
+      return res.status(403).json({ ok: false, message: 'Not authorized' })
     }
 
     const event = await prisma.event.update({
@@ -310,82 +340,90 @@ exports.archiveEvent = async (req, res) => {
           select: {
             id: true,
             name: true,
-            avatar: true
-          }
-        }
-      }
-    });
+            avatar: true,
+          },
+        },
+      },
+    })
 
-    res.json({ ok: true, event, message: archived ? 'Event archived' : 'Event unarchived' });
+    res.json({ ok: true, event, message: archived ? 'Event archived' : 'Event unarchived' })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error archiving event');
-    res.status(500).json({ ok: false, message: 'Failed to archive event' });
+    logger.error({ err: error }, '[eventController] Error archiving event')
+    res.status(500).json({ ok: false, message: 'Failed to archive event' })
   }
-};
+}
 
 // Delete event
 exports.deleteEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const { id } = req.params
+    const userId = req.user.id
 
     // Check if event exists and user owns it
-    const existing = await prisma.event.findUnique({ where: { id } });
+    const existing = await prisma.event.findUnique({ where: { id } })
     if (!existing) {
-      return res.status(404).json({ ok: false, message: 'Event not found' });
-    }
-    
-    const canDelete = await canManageContent(existing.creatorId, userId, req.user.username, req.user.role);
-    if (!canDelete) {
-      return res.status(403).json({ ok: false, message: 'Not authorized' });
+      return res.status(404).json({ ok: false, message: 'Event not found' })
     }
 
-    await prisma.event.delete({ where: { id } });
-    res.json({ ok: true, message: 'Event deleted successfully' });
+    const canDelete = await canManageContent(
+      existing.creatorId,
+      userId,
+      req.user.username,
+      req.user.role
+    )
+    if (!canDelete) {
+      return res.status(403).json({ ok: false, message: 'Not authorized' })
+    }
+
+    await prisma.event.delete({ where: { id } })
+    res.json({ ok: true, message: 'Event deleted successfully' })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error deleting event');
-    res.status(500).json({ ok: false, message: 'Failed to delete event' });
+    logger.error({ err: error }, '[eventController] Error deleting event')
+    res.status(500).json({ ok: false, message: 'Failed to delete event' })
   }
-};
+}
 
 // Register for event (handles capacity, waitlist, and paid tickets)
 exports.registerForEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const { id } = req.params
+    const userId = req.user.id
 
     const event = await prisma.event.findUnique({
       where: { id },
       include: { _count: { select: { registrations: true } } },
-    });
-    if (!event) return res.status(404).json({ ok: false, message: 'Event not found' });
+    })
+    if (!event) return res.status(404).json({ ok: false, message: 'Event not found' })
 
     // Already registered?
     const existing = await prisma.eventRegistration.findUnique({
       where: { userId_eventId: { userId, eventId: id } },
-    });
-    if (existing) return res.status(400).json({ ok: false, message: 'Ya estás inscrito en este evento' });
+    })
+    if (existing)
+      return res.status(400).json({ ok: false, message: 'Ya estás inscrito en este evento' })
 
     // Paid event — create Stripe checkout session
     if (event.ticketPrice && event.ticketPrice > 0) {
-      const { stripe } = require('../config/payments');
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const { stripe } = require('../config/payments')
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         customer_email: req.user.email,
-        line_items: [{
-          price_data: {
-            currency: (event.ticketCurrency || 'MXN').toLowerCase(),
-            product_data: { name: event.title, description: `Entrada para: ${event.title}` },
-            unit_amount: Math.round(event.ticketPrice * 100),
+        line_items: [
+          {
+            price_data: {
+              currency: (event.ticketCurrency || 'MXN').toLowerCase(),
+              product_data: { name: event.title, description: `Entrada para: ${event.title}` },
+              unit_amount: Math.round(event.ticketPrice * 100),
+            },
+            quantity: 1,
           },
-          quantity: 1,
-        }],
+        ],
         metadata: { userId, eventId: id, type: 'event_ticket' },
         success_url: `${frontendUrl}/events/${id}?registered=1`,
         cancel_url: `${frontendUrl}/events/${id}`,
-      });
-      return res.json({ ok: true, checkoutUrl: session.url, paid: true });
+      })
+      return res.json({ ok: true, checkoutUrl: session.url, paid: true })
     }
 
     // Check capacity
@@ -393,12 +431,13 @@ exports.registerForEvent = async (req, res) => {
       // Add to waitlist
       const onWaitlist = await prisma.eventWaitlist.findUnique({
         where: { userId_eventId: { userId, eventId: id } },
-      });
-      if (onWaitlist) return res.status(400).json({ ok: false, message: 'Ya estás en la lista de espera' });
+      })
+      if (onWaitlist)
+        return res.status(400).json({ ok: false, message: 'Ya estás en la lista de espera' })
 
-      await prisma.eventWaitlist.create({ data: { userId, eventId: id } });
-      const position = await prisma.eventWaitlist.count({ where: { eventId: id } });
-      return res.status(202).json({ ok: true, waitlisted: true, position });
+      await prisma.eventWaitlist.create({ data: { userId, eventId: id } })
+      const position = await prisma.eventWaitlist.count({ where: { eventId: id } })
+      return res.status(202).json({ ok: true, waitlisted: true, position })
     }
 
     // Free event with capacity available — register directly
@@ -406,94 +445,112 @@ exports.registerForEvent = async (req, res) => {
       data: { userId, eventId: id },
       include: {
         user: { select: { id: true, name: true, email: true, avatar: true } },
-        event: { select: { id: true, title: true, date: true, time: true, location: true, type: true } },
+        event: {
+          select: { id: true, title: true, date: true, time: true, location: true, type: true },
+        },
       },
-    });
+    })
 
-    const emailService = require('../services/emailService');
+    const emailService = require('../services/emailService')
     emailService.sendEventRegistration(registration.user, registration.event).catch(err => {
-      logger.error({ err }, '[eventController] Error sending event registration email');
-    });
+      logger.error({ err }, '[eventController] Error sending event registration email')
+    })
 
-    res.status(201).json({ ok: true, registration });
+    res.status(201).json({ ok: true, registration })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error registering for event');
-    res.status(500).json({ ok: false, message: 'Failed to register for event' });
+    logger.error({ err: error }, '[eventController] Error registering for event')
+    res.status(500).json({ ok: false, message: 'Failed to register for event' })
   }
-};
+}
 
 // Unregister from event
 exports.unregisterFromEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const { id } = req.params
+    const userId = req.user.id
 
     const existing = await prisma.eventRegistration.findUnique({
       where: { userId_eventId: { userId, eventId: id } },
-    });
-    if (!existing) return res.status(404).json({ ok: false, message: 'No estás inscrito' });
+    })
+    if (!existing) return res.status(404).json({ ok: false, message: 'No estás inscrito' })
 
-    await prisma.eventRegistration.delete({ where: { userId_eventId: { userId, eventId: id } } });
+    await prisma.eventRegistration.delete({ where: { userId_eventId: { userId, eventId: id } } })
 
     // Promote first person on waitlist
     const event = await prisma.event.findUnique({
-      where: { id }, include: { _count: { select: { registrations: true } } },
-    });
+      where: { id },
+      include: { _count: { select: { registrations: true } } },
+    })
     if (event?.maxAttendees) {
       const first = await prisma.eventWaitlist.findFirst({
         where: { eventId: id },
         orderBy: { createdAt: 'asc' },
         include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
-      });
+      })
       if (first) {
         await prisma.$transaction([
-          prisma.eventWaitlist.delete({ where: { userId_eventId: { userId: first.userId, eventId: id } } }),
+          prisma.eventWaitlist.delete({
+            where: { userId_eventId: { userId: first.userId, eventId: id } },
+          }),
           prisma.eventRegistration.create({ data: { userId: first.userId, eventId: id } }),
-        ]);
+        ])
         // Notify promoted user
-        const emailService = require('../services/emailService');
-        emailService.sendEventRegistration(first.user, { id, title: event.title, date: event.date, time: event.time, location: event.location, type: event.type })
-          .catch(() => {});
+        const emailService = require('../services/emailService')
+        emailService
+          .sendEventRegistration(first.user, {
+            id,
+            title: event.title,
+            date: event.date,
+            time: event.time,
+            location: event.location,
+            type: event.type,
+          })
+          .catch(() => {})
       }
     }
 
-    res.json({ ok: true, message: 'Registro cancelado' });
+    res.json({ ok: true, message: 'Registro cancelado' })
   } catch (error) {
-    logger.error({ err: error }, '[eventController] Error unregistering');
-    res.status(500).json({ ok: false, message: 'Failed to unregister' });
+    logger.error({ err: error }, '[eventController] Error unregistering')
+    res.status(500).json({ ok: false, message: 'Failed to unregister' })
   }
-};
+}
 
 // Get waitlist status for current user
 exports.getWaitlistStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const { id } = req.params
+    const userId = req.user.id
     const entry = await prisma.eventWaitlist.findUnique({
       where: { userId_eventId: { userId, eventId: id } },
-    });
-    if (!entry) return res.json({ ok: true, onWaitlist: false });
+    })
+    if (!entry) return res.json({ ok: true, onWaitlist: false })
     const position = await prisma.eventWaitlist.count({
       where: { eventId: id, createdAt: { lte: entry.createdAt } },
-    });
-    res.json({ ok: true, onWaitlist: true, position });
+    })
+    res.json({ ok: true, onWaitlist: true, position })
   } catch (_err) {
-    res.status(500).json({ ok: false, message: 'Error' });
+    res.status(500).json({ ok: false, message: 'Error' })
   }
-};
+}
 
 // Toggle live status (organizer only)
 exports.setLive = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { isLive, streamUrl } = req.body;
-    const userId = req.user.id;
+    const { id } = req.params
+    const { isLive, streamUrl } = req.body
+    const userId = req.user.id
 
-    const event = await prisma.event.findUnique({ where: { id } });
-    if (!event) return res.status(404).json({ ok: false, message: 'Event not found' });
+    const event = await prisma.event.findUnique({ where: { id } })
+    if (!event) return res.status(404).json({ ok: false, message: 'Event not found' })
 
-    const canManage = await canManageContent(event.creatorId, userId, req.user.username, req.user.role);
-    if (!canManage) return res.status(403).json({ ok: false, message: 'Not authorized' });
+    const canManage = await canManageContent(
+      event.creatorId,
+      userId,
+      req.user.username,
+      req.user.role
+    )
+    if (!canManage) return res.status(403).json({ ok: false, message: 'Not authorized' })
 
     const updated = await prisma.event.update({
       where: { id },
@@ -501,35 +558,37 @@ exports.setLive = async (req, res) => {
         isLive: Boolean(isLive),
         ...(streamUrl !== undefined && { streamUrl: streamUrl || null }),
       },
-    });
+    })
 
     // Notify registrants via Socket.IO
-    const { getIO } = require('../socket/socketServer');
+    const { getIO } = require('../socket/socketServer')
     try {
-      getIO().to(`event-lobby:${id}`).emit('lobby:live', { isLive: updated.isLive, streamUrl: updated.streamUrl });
-    } catch (_) { // intentional
+      getIO()
+        .to(`event-lobby:${id}`)
+        .emit('lobby:live', { isLive: updated.isLive, streamUrl: updated.streamUrl })
+    } catch (_) {
+      // intentional
     }
 
-    res.json({ ok: true, event: updated });
+    res.json({ ok: true, event: updated })
   } catch (err) {
-    logger.error({ err }, '[eventController] Error setting live');
-    res.status(500).json({ ok: false, message: 'Error' });
+    logger.error({ err }, '[eventController] Error setting live')
+    res.status(500).json({ ok: false, message: 'Error' })
   }
-};
+}
 
 // Get lobby messages (last 100)
 exports.getLobbyMessages = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
     const messages = await prisma.eventLobbyMessage.findMany({
       where: { eventId: id },
       include: { user: { select: { id: true, name: true, username: true, avatar: true } } },
       orderBy: { createdAt: 'asc' },
       take: 100,
-    });
-    res.json({ ok: true, messages });
+    })
+    res.json({ ok: true, messages })
   } catch (_err) {
-    res.status(500).json({ ok: false, message: 'Error' });
+    res.status(500).json({ ok: false, message: 'Error' })
   }
-};
-
+}

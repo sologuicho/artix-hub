@@ -1,25 +1,25 @@
-import { useState } from 'react';
-import { Search, X, Filter, Calendar, Tag, User } from 'lucide-react';
+import { useState } from 'react'
+import { Search, X, Filter, Calendar, Tag, User } from 'lucide-react'
 
 const AdvancedSearch = ({ onSearch, type = 'articles' }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false)
   const [filters, setFilters] = useState({
     query: '',
     author: '',
     category: '',
     tags: '',
     dateFrom: '',
-    dateTo: ''
-  });
+    dateTo: '',
+  })
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
+    setFilters(prev => ({ ...prev, [key]: value }))
+  }
 
   const handleSearch = () => {
-    onSearch(filters);
-    setIsOpen(false);
-  };
+    onSearch(filters)
+    setIsOpen(false)
+  }
 
   const handleReset = () => {
     setFilters({
@@ -28,16 +28,25 @@ const AdvancedSearch = ({ onSearch, type = 'articles' }) => {
       category: '',
       tags: '',
       dateFrom: '',
-      dateTo: ''
-    });
-    onSearch({});
-  };
+      dateTo: '',
+    })
+    onSearch({})
+  }
 
-  const categories = type === 'articles' 
-    ? ['Quantum Physics', 'AI Research', 'Chemistry', 'Biology', 'Environmental Science', 'Mathematics', 'Computer Science']
-    : type === 'events'
-    ? ['Conferencia', 'Taller', 'Congreso', 'Seminario', 'Webinar']
-    : ['Announcements', 'Updates', 'Community', 'News', 'Tutorials'];
+  const categories =
+    type === 'articles'
+      ? [
+          'Quantum Physics',
+          'AI Research',
+          'Chemistry',
+          'Biology',
+          'Environmental Science',
+          'Mathematics',
+          'Computer Science',
+        ]
+      : type === 'events'
+        ? ['Conferencia', 'Taller', 'Congreso', 'Seminario', 'Webinar']
+        : ['Announcements', 'Updates', 'Community', 'News', 'Tutorials']
 
   return (
     <div className="relative">
@@ -48,8 +57,8 @@ const AdvancedSearch = ({ onSearch, type = 'articles' }) => {
           <input
             type="text"
             value={filters.query}
-            onChange={(e) => handleFilterChange('query', e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onChange={e => handleFilterChange('query', e.target.value)}
+            onKeyPress={e => e.key === 'Enter' && handleSearch()}
             placeholder="Buscar por título, palabras clave..."
             className="w-full pl-10 pr-4 py-2 glass-input text-gray-900 dark:text-gray-100 rounded-lg"
           />
@@ -88,7 +97,7 @@ const AdvancedSearch = ({ onSearch, type = 'articles' }) => {
               <input
                 type="text"
                 value={filters.author}
-                onChange={(e) => handleFilterChange('author', e.target.value)}
+                onChange={e => handleFilterChange('author', e.target.value)}
                 placeholder="Nombre del autor"
                 className="w-full glass-input text-gray-900 dark:text-gray-100"
               />
@@ -102,12 +111,14 @@ const AdvancedSearch = ({ onSearch, type = 'articles' }) => {
               </label>
               <select
                 value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
+                onChange={e => handleFilterChange('category', e.target.value)}
                 className="w-full glass-select text-gray-900 dark:text-gray-100"
               >
                 <option value="">Todas las categorías</option>
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
             </div>
@@ -121,7 +132,7 @@ const AdvancedSearch = ({ onSearch, type = 'articles' }) => {
               <input
                 type="text"
                 value={filters.tags}
-                onChange={(e) => handleFilterChange('tags', e.target.value)}
+                onChange={e => handleFilterChange('tags', e.target.value)}
                 placeholder="Separadas por comas"
                 className="w-full glass-input text-gray-900 dark:text-gray-100"
               />
@@ -137,14 +148,14 @@ const AdvancedSearch = ({ onSearch, type = 'articles' }) => {
                 <input
                   type="date"
                   value={filters.dateFrom}
-                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  onChange={e => handleFilterChange('dateFrom', e.target.value)}
                   className="glass-input text-gray-900 dark:text-gray-100 text-sm"
                   placeholder="Desde"
                 />
                 <input
                   type="date"
                   value={filters.dateTo}
-                  onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                  onChange={e => handleFilterChange('dateTo', e.target.value)}
                   className="glass-input text-gray-900 dark:text-gray-100 text-sm"
                   placeholder="Hasta"
                 />
@@ -176,8 +187,7 @@ const AdvancedSearch = ({ onSearch, type = 'articles' }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default AdvancedSearch;
-
+export default AdvancedSearch

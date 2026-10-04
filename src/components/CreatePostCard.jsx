@@ -1,125 +1,130 @@
-import { useState, useRef, useEffect } from 'react';
-import { Image as ImageIcon, X, Send, Upload } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useRef, useEffect } from 'react'
+import { Image as ImageIcon, X, Send, Upload } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 // import RichTextEditorWithMentions from './RichTextEditorWithMentions';
 // import TagSelector from './TagSelector';
 
-import { BACKEND_URL } from '../config/client';
+import { BACKEND_URL } from '../config/client'
 
 const CreatePostCard = ({ onPostCreated }) => {
-  const { user } = useAuth();
-  const [content, setContent] = useState('');
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('');
-  const [tags, setTags] = useState([]);
-  const [coverUrl, setCoverUrl] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
-  const [documents, setDocuments] = useState([]);
-  const [, setMentions] = useState([]);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationMessage, setValidationMessage] = useState('');
-  const fileInputRef = useRef(null);
-  const videoInputRef = useRef(null);
-  const coverInputRef = useRef(null);
-  const documentInputRef = useRef(null);
+  const { user } = useAuth()
+  const [content, setContent] = useState('')
+  const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('')
+  const [tags, setTags] = useState([])
+  const [coverUrl, setCoverUrl] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [videoUrl, setVideoUrl] = useState('')
+  const [documents, setDocuments] = useState([])
+  const [, setMentions] = useState([])
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationMessage, setValidationMessage] = useState('')
+  const fileInputRef = useRef(null)
+  const videoInputRef = useRef(null)
+  const coverInputRef = useRef(null)
+  const documentInputRef = useRef(null)
 
   // Lock body scroll when modal is open
   useEffect(() => {
     if (isExpanded) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden'
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'unset'
     }
     return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isExpanded]);
+      document.body.style.overflow = 'unset'
+    }
+  }, [isExpanded])
 
-  const handleCoverSelect = async (e) => {
-    const file = e.target.files[0];
+  const handleCoverSelect = async e => {
+    const file = e.target.files[0]
     if (file && file.type.startsWith('image/')) {
       // Simplified: Direct FileReader to avoid dynamic import issues for now
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        setCoverUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
+        setCoverUrl(reader.result)
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
-  const handleFileSelect = async (e) => {
-    const file = e.target.files[0];
+  const handleFileSelect = async e => {
+    const file = e.target.files[0]
     if (file) {
       if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
+        const reader = new FileReader()
         reader.onloadend = () => {
-          setImageUrl(reader.result);
-        };
-        reader.readAsDataURL(file);
+          setImageUrl(reader.result)
+        }
+        reader.readAsDataURL(file)
       }
     }
-  };
+  }
 
-  const handleVideoSelect = (e) => {
-    const file = e.target.files[0];
+  const handleVideoSelect = e => {
+    const file = e.target.files[0]
     if (file && file.type.startsWith('video/')) {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        setVideoUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDocumentSelect = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      if (file.type === 'application/pdf' || file.type.includes('document') || file.type.includes('msword') || file.type.includes('wordprocessingml')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setDocuments(prev => [...prev, { name: file.name, url: reader.result, type: file.type }]);
-        };
-        reader.readAsDataURL(file);
+        setVideoUrl(reader.result)
       }
-    });
-  };
+      reader.readAsDataURL(file)
+    }
+  }
 
-  const extractMentions = (text) => {
-    const mentionRegex = /@(\w+)/g;
-    const matches = text.match(mentionRegex);
-    return matches ? matches.map(m => m.substring(1)) : [];
-  };
+  const handleDocumentSelect = e => {
+    const files = Array.from(e.target.files)
+    files.forEach(file => {
+      if (
+        file.type === 'application/pdf' ||
+        file.type.includes('document') ||
+        file.type.includes('msword') ||
+        file.type.includes('wordprocessingml')
+      ) {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setDocuments(prev => [...prev, { name: file.name, url: reader.result, type: file.type }])
+        }
+        reader.readAsDataURL(file)
+      }
+    })
+  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const extractMentions = text => {
+    const mentionRegex = /@(\w+)/g
+    const matches = text.match(mentionRegex)
+    return matches ? matches.map(m => m.substring(1)) : []
+  }
+
+  const handleSubmit = async e => {
+    e.preventDefault()
     if (!content.trim() && !coverUrl && !imageUrl && !videoUrl && documents.length === 0) {
-      setValidationMessage('Debes agregar contenido o al menos un archivo');
-      return;
+      setValidationMessage('Debes agregar contenido o al menos un archivo')
+      return
     }
 
-    setValidationMessage('');
-    setIsSubmitting(true);
+    setValidationMessage('')
+    setIsSubmitting(true)
 
     try {
       const getCsrfToken = () => {
-        const cookies = document.cookie.split(';');
+        const cookies = document.cookie.split(';')
         for (const cookie of cookies) {
-          const [name, value] = cookie.trim().split('=');
-          if (name === 'csrf') return value;
+          const [name, value] = cookie.trim().split('=')
+          if (name === 'csrf') return value
         }
-        return null;
-      };
+        return null
+      }
 
-      const extractedMentions = extractMentions(content);
-      const documentUrls = documents.map(doc => doc.url);
+      const extractedMentions = extractMentions(content)
+      const documentUrls = documents.map(doc => doc.url)
 
       const response = await fetch(`${BACKEND_URL}/api/blog`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': getCsrfToken() || ''
+          'x-csrf-token': getCsrfToken() || '',
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -131,35 +136,35 @@ const CreatePostCard = ({ onPostCreated }) => {
           imageUrl: imageUrl || null,
           videoUrl: videoUrl || null,
           documents: documentUrls,
-          mentions: extractedMentions
-        })
-      });
+          mentions: extractedMentions,
+        }),
+      })
 
-      const data = await response.json();
+      const data = await response.json()
       if (data.ok) {
-        setContent('');
-        setTitle('');
-        setCategory('');
-        setTags([]);
-        setCoverUrl('');
-        setImageUrl('');
-        setVideoUrl('');
-        setDocuments([]);
-        setMentions([]);
-        setIsExpanded(false);
-        setValidationMessage('');
-        if (onPostCreated) onPostCreated();
+        setContent('')
+        setTitle('')
+        setCategory('')
+        setTags([])
+        setCoverUrl('')
+        setImageUrl('')
+        setVideoUrl('')
+        setDocuments([])
+        setMentions([])
+        setIsExpanded(false)
+        setValidationMessage('')
+        if (onPostCreated) onPostCreated()
       } else {
-        setValidationMessage(data.message || 'Error al crear el post');
+        setValidationMessage(data.message || 'Error al crear el post')
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error creating post:', error);
-      setValidationMessage('Error al crear el post');
+      console.error('Error creating post:', error)
+      setValidationMessage('Error al crear el post')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <>
@@ -191,7 +196,7 @@ const CreatePostCard = ({ onPostCreated }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div
             className="bg-[#0A0A0B] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
@@ -229,7 +234,7 @@ const CreatePostCard = ({ onPostCreated }) => {
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={e => setTitle(e.target.value)}
                   placeholder="Titulo (opcional)"
                   className="w-full bg-transparent border-none text-xl font-bold text-white placeholder-gray-600 focus:ring-0 p-0"
                 />
@@ -238,16 +243,14 @@ const CreatePostCard = ({ onPostCreated }) => {
                 <div className="min-h-[150px]">
                   <textarea
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    onChange={e => setContent(e.target.value)}
                     placeholder="¿Qué quieres compartir? (Editor simple activo)"
                     className="w-full h-40 bg-transparent text-white border border-white/10 rounded-xl p-4 focus:ring-2 focus:ring-blue-500/50 resize-none glass-input"
                   />
                 </div>
 
                 {/* Tags Placeholder */}
-                <div>
-                  {/* TagSelector disabled for stability */}
-                </div>
+                <div>{/* TagSelector disabled for stability */}</div>
 
                 {/* Previews */}
                 {(coverUrl || imageUrl || videoUrl || documents.length > 0) && (
@@ -256,14 +259,26 @@ const CreatePostCard = ({ onPostCreated }) => {
                     {coverUrl && (
                       <div className="relative group rounded-xl overflow-hidden border border-white/10">
                         <img src={coverUrl} alt="Cover" className="w-full max-h-40 object-cover" />
-                        <button type="button" onClick={() => setCoverUrl('')} className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"><X size={16} /></button>
+                        <button
+                          type="button"
+                          onClick={() => setCoverUrl('')}
+                          className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
+                        >
+                          <X size={16} />
+                        </button>
                       </div>
                     )}
                     {/* Image Preview */}
                     {imageUrl && (
                       <div className="relative group rounded-xl overflow-hidden border border-white/10">
                         <img src={imageUrl} alt="Image" className="w-full max-h-40 object-cover" />
-                        <button type="button" onClick={() => setImageUrl('')} className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"><X size={16} /></button>
+                        <button
+                          type="button"
+                          onClick={() => setImageUrl('')}
+                          className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
+                        >
+                          <X size={16} />
+                        </button>
                       </div>
                     )}
                   </div>
@@ -279,8 +294,20 @@ const CreatePostCard = ({ onPostCreated }) => {
               {/* Modal Footer / Actions */}
               <div className="px-6 py-4 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  <button type="button" onClick={() => coverInputRef.current?.click()} className="p-2 text-gray-400 hover:text-white"><Upload size={20} /></button>
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 text-gray-400 hover:text-white"><ImageIcon size={20} /></button>
+                  <button
+                    type="button"
+                    onClick={() => coverInputRef.current?.click()}
+                    className="p-2 text-gray-400 hover:text-white"
+                  >
+                    <Upload size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 text-gray-400 hover:text-white"
+                  >
+                    <ImageIcon size={20} />
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -303,16 +330,41 @@ const CreatePostCard = ({ onPostCreated }) => {
               </div>
 
               {/* Hidden Inputs */}
-              <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverSelect} className="hidden" />
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
-              <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
-              <input ref={documentInputRef} type="file" accept=".pdf,.doc,.docx,application/pdf" onChange={handleDocumentSelect} multiple className="hidden" />
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCoverSelect}
+                className="hidden"
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleVideoSelect}
+                className="hidden"
+              />
+              <input
+                ref={documentInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf"
+                onChange={handleDocumentSelect}
+                multiple
+                className="hidden"
+              />
             </form>
           </div>
         </div>
       )}
     </>
-  );
-};
+  )
+}
 
-export default CreatePostCard;
+export default CreatePostCard

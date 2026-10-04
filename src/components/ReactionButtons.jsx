@@ -1,16 +1,16 @@
-import { ThumbsUp, Heart, Hand, Laugh } from 'lucide-react';
+import { ThumbsUp, Heart, Hand, Laugh } from 'lucide-react'
 
 const TYPES = [
-  { key: 'like',  Icon: ThumbsUp, label: 'Me gusta' },
-  { key: 'heart', Icon: Heart,    label: 'Me encanta' },
-  { key: 'clap',  Icon: Hand,     label: 'Aplaudir' },
-  { key: 'laugh', Icon: Laugh,    label: 'Divertido' },
-];
+  { key: 'like', Icon: ThumbsUp, label: 'Me gusta' },
+  { key: 'heart', Icon: Heart, label: 'Me encanta' },
+  { key: 'clap', Icon: Hand, label: 'Aplaudir' },
+  { key: 'laugh', Icon: Laugh, label: 'Divertido' },
+]
 
 const ReactionButtons = ({ reactions = {}, onReaction, disabled = false, className = '' }) => (
   <div className={`flex items-center gap-5 ${className}`}>
     {TYPES.map(({ key, Icon, label }) => {
-      const { count = 0, active = false } = reactions[key] || {};
+      const { count = 0, active = false } = reactions[key] || {}
       return (
         <button
           key={key}
@@ -24,15 +24,20 @@ const ReactionButtons = ({ reactions = {}, onReaction, disabled = false, classNa
             color: active ? 'var(--accent)' : 'var(--muted)',
             padding: 0,
           }}
-          onMouseEnter={e => { if (!disabled && !active) e.currentTarget.style.color = 'var(--text)'; }}
-          onMouseLeave={e => { if (!disabled && !active) e.currentTarget.style.color = active ? 'var(--accent)' : 'var(--muted)'; }}
+          onMouseEnter={e => {
+            if (!disabled && !active) e.currentTarget.style.color = 'var(--text)'
+          }}
+          onMouseLeave={e => {
+            if (!disabled && !active)
+              e.currentTarget.style.color = active ? 'var(--accent)' : 'var(--muted)'
+          }}
         >
           <Icon size={15} style={active ? { fill: 'currentColor' } : {}} />
           {count > 0 && <span>{count}</span>}
         </button>
-      );
+      )
     })}
   </div>
-);
+)
 
-export default ReactionButtons;
+export default ReactionButtons

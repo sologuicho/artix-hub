@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Minus, Plus, Calendar, ArrowRight } from 'lucide-react';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Minus, Plus, Calendar, ArrowRight } from 'lucide-react'
 
 // ─── Pricing tiers ────────────────────────────────────────────────
 const TIERS = [
-  { min: 2,  max: 5,   price: 6, label: '2 – 5 usuarios' },
-  { min: 6,  max: 15,  price: 5, label: '6 – 15 usuarios' },
-  { min: 16, max: 30,  price: 4, label: '16 – 30 usuarios' },
+  { min: 2, max: 5, price: 6, label: '2 – 5 usuarios' },
+  { min: 6, max: 15, price: 5, label: '6 – 15 usuarios' },
+  { min: 16, max: 30, price: 4, label: '16 – 30 usuarios' },
   { min: 31, max: Infinity, price: null, label: '31+ usuarios' },
-];
+]
 
-const getTier = (seats) => TIERS.find((t) => seats >= t.min && seats <= t.max);
+const getTier = seats => TIERS.find(t => seats >= t.min && seats <= t.max)
 
 // ─── Table row ────────────────────────────────────────────────────
 const TierRow = ({ tier, navigate }) => {
-  const isEnterprise = tier.price === null;
+  const isEnterprise = tier.price === null
 
   return (
     <div className="flex items-center justify-between px-5 py-4 rounded-xl border border-white/5 hover:border-white/15 hover:bg-white/[0.03] transition-all group">
@@ -32,9 +32,7 @@ const TierRow = ({ tier, navigate }) => {
 
       <button
         onClick={() =>
-          isEnterprise
-            ? navigate('/contact')
-            : navigate(`/auth?plan=team&seats=${tier.min}`)
+          isEnterprise ? navigate('/contact') : navigate(`/auth?plan=team&seats=${tier.min}`)
         }
         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
           isEnterprise
@@ -55,20 +53,20 @@ const TierRow = ({ tier, navigate }) => {
         )}
       </button>
     </div>
-  );
-};
+  )
+}
 
 // ─── Custom calculator row ─────────────────────────────────────────
 const CustomRow = ({ navigate }) => {
-  const [seats, setSeats] = useState(3);
+  const [seats, setSeats] = useState(3)
 
-  const tier = getTier(seats);
-  const isEnterprise = tier?.price === null;
-  const monthlyTotal = isEnterprise ? null : seats * tier.price;
-  const annualTotal = monthlyTotal ? Math.round(monthlyTotal * 12 * 0.8) : null;
+  const tier = getTier(seats)
+  const isEnterprise = tier?.price === null
+  const monthlyTotal = isEnterprise ? null : seats * tier.price
+  const annualTotal = monthlyTotal ? Math.round(monthlyTotal * 12 * 0.8) : null
 
-  const decrement = () => setSeats((s) => Math.max(2, s - 1));
-  const increment = () => setSeats((s) => s + 1);
+  const decrement = () => setSeats(s => Math.max(2, s - 1))
+  const increment = () => setSeats(s => s + 1)
 
   return (
     <div className="mt-3 rounded-xl border border-blue-500/25 bg-blue-950/20 p-5 transition-all">
@@ -100,9 +98,7 @@ const CustomRow = ({ navigate }) => {
         {/* Result + CTA */}
         {isEnterprise ? (
           <div className="flex items-center gap-4 flex-wrap">
-            <span className="text-sm text-gray-400 italic">
-              Para equipos grandes, contáctanos
-            </span>
+            <span className="text-sm text-gray-400 italic">Para equipos grandes, contáctanos</span>
             <button
               onClick={() => navigate('/contact')}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 transition-all"
@@ -119,9 +115,7 @@ const CustomRow = ({ navigate }) => {
                 <span className="text-lg font-bold text-white">${monthlyTotal}/mes</span>
               </div>
               <div className="flex items-center gap-2 mt-0.5 justify-end">
-                <span className="text-xs text-gray-500">
-                  ${annualTotal}/año
-                </span>
+                <span className="text-xs text-gray-500">${annualTotal}/año</span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
                   Ahorra 20%
                 </span>
@@ -139,12 +133,12 @@ const CustomRow = ({ navigate }) => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
 // ─── Main component ────────────────────────────────────────────────
 const TeamPricingCalculator = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   return (
     <div className="space-y-2">
@@ -155,7 +149,7 @@ const TeamPricingCalculator = () => {
       </div>
 
       {/* Tier rows */}
-      {TIERS.map((tier) => (
+      {TIERS.map(tier => (
         <TierRow key={tier.label} tier={tier} navigate={navigate} />
       ))}
 
@@ -164,10 +158,11 @@ const TeamPricingCalculator = () => {
 
       {/* Footer note */}
       <p className="text-xs text-gray-600 pt-3 text-center">
-        Todos los precios en USD. Facturación por equipo. Cada miembro tiene acceso completo al plan Pro.
+        Todos los precios en USD. Facturación por equipo. Cada miembro tiene acceso completo al plan
+        Pro.
       </p>
     </div>
-  );
-};
+  )
+}
 
-export default TeamPricingCalculator;
+export default TeamPricingCalculator

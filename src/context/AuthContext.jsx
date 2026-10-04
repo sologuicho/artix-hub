@@ -1,20 +1,20 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react'
 
-const AuthContext = createContext();
+const AuthContext = createContext()
 
-import { BACKEND_URL } from '../config/client';
+import { BACKEND_URL } from '../config/client'
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext)
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error('useAuth must be used within AuthProvider')
   }
-  return context;
-};
+  return context
+}
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   // Always verify session with backend — never trust localStorage alone
   const checkAuth = async () => {
@@ -22,80 +22,80 @@ export const AuthProvider = ({ children }) => {
       const response = await fetch(`${BACKEND_URL}/me`, {
         method: 'GET',
         credentials: 'include',
-      });
+      })
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json()
         if (data.ok && data.user) {
-          setUser(data.user);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          return true;
+          setUser(data.user)
+          localStorage.setItem('user', JSON.stringify(data.user))
+          return true
         }
       }
       // Backend says not authenticated — clear everything
-      setUser(null);
-      localStorage.removeItem('user');
-      return false;
+      setUser(null)
+      localStorage.removeItem('user')
+      return false
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error checking auth:', error);
+      console.error('Error checking auth:', error)
       // Network error: keep the localStorage snapshot so UX doesn't break on flaky network,
       // but do NOT set user from it — remain in loading:false state with whatever was already set
-      setUser(null);
-      localStorage.removeItem('user');
-      return false;
+      setUser(null)
+      localStorage.removeItem('user')
+      return false
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
     // Always verify with backend on mount — do not pre-populate from localStorage.
     // This prevents showing stale/invalid user state before the server response.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    checkAuth();
-  }, []);
+    checkAuth()
+  }, [])
 
-  const login = async (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const login = async userData => {
+    setUser(userData)
+    localStorage.setItem('user', JSON.stringify(userData))
     // Re-verify with backend to get fresh data
-    await checkAuth();
-  };
+    await checkAuth()
+  }
 
   const logout = async () => {
     try {
       const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrf='))
-        ?.split('=')[1];
+        ?.split('=')[1]
       await fetch(`${BACKEND_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'x-csrf-token': csrfToken || '' },
-      });
+      })
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error logging out:', error);
+      console.error('Error logging out:', error)
     }
-    setUser(null);
-    localStorage.removeItem('user');
-  };
+    setUser(null)
+    localStorage.removeItem('user')
+  }
 
-  const updateUser = async (userData) => {
-    const updatedUser = { ...user, ...userData };
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    await checkAuth();
-  };
+  const updateUser = async userData => {
+    const updatedUser = { ...user, ...userData }
+    setUser(updatedUser)
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+    await checkAuth()
+  }
 
-  const isAuthenticated = () => user !== null;
+  const isAuthenticated = () => user !== null
 
-  const needsProfileSetup = () => user && !user.profileComplete;
+  const needsProfileSetup = () => user && !user.profileComplete
 
   // Alias explícito para re-sincronizar el usuario con el backend
   // (usado por PaymentSuccess, PricingModal, etc.)
-  const refreshUser = checkAuth;
+  const refreshUser = checkAuth
 
   return (
     <AuthContext.Provider
@@ -113,5 +113,5 @@ export const AuthProvider = ({ children }) => {
     >
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}

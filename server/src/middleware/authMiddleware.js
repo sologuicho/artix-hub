@@ -1,34 +1,34 @@
-const { verifyToken } = require('../utils/jwt');
-const { verifyAuthToken, AuthTokenErrorCodes } = require('../core/auth/policy');
-const logger = require('../lib/logger');
+const { verifyToken } = require('../utils/jwt')
+const { verifyAuthToken, AuthTokenErrorCodes } = require('../core/auth/policy')
+const logger = require('../lib/logger')
 
 async function protect(req, res, next) {
   try {
-    const token = req.cookies && req.cookies.session;
-    if (!token) return res.status(401).json({ message: 'Not authorized' });
+    const token = req.cookies && req.cookies.session
+    if (!token) return res.status(401).json({ message: 'Not authorized' })
 
-    const { user } = await verifyAuthToken(token);
+    const { user } = await verifyAuthToken(token)
 
     if (user.banned) {
       return res.status(403).json({
         ok: false,
         error: 'ACCOUNT_BANNED',
-        message: 'Tu cuenta ha sido suspendida. Contacta a soporte.'
-      });
+        message: 'Tu cuenta ha sido suspendida. Contacta a soporte.',
+      })
     }
 
-    req.user = user;
-    next();
+    req.user = user
+    next()
   } catch (err) {
-    logger.error({ err }, '[authMiddleware] Token verification failed');
+    logger.error({ err }, '[authMiddleware] Token verification failed')
     if (err.code === AuthTokenErrorCodes.USER_NOT_FOUND) {
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'User not found' })
     }
     if (err.code === AuthTokenErrorCodes.SESSION_REVOKED) {
-      return res.status(401).json({ message: err.message });
+      return res.status(401).json({ message: err.message })
     }
-    return res.status(401).json({ message: 'Invalid token' });
+    return res.status(401).json({ message: 'Invalid token' })
   }
 }
 
-module.exports = { protect, verifyToken };
+module.exports = { protect, verifyToken }

@@ -1,24 +1,24 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-const logger = require('../lib/logger');
+const { PrismaClient } = require('@prisma/client')
+const prisma = new PrismaClient()
+const logger = require('../lib/logger')
 
 // Get user dashboard statistics
 exports.getDashboardStats = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id
 
     // Get counts
     const [articlesCount, postsCount, eventsCount] = await Promise.all([
       prisma.article.count({
-        where: { authorId: userId }
+        where: { authorId: userId },
       }),
       prisma.blogPost.count({
-        where: { authorId: userId }
+        where: { authorId: userId },
       }),
       prisma.event.count({
-        where: { creatorId: userId }
-      })
-    ]);
+        where: { creatorId: userId },
+      }),
+    ])
 
     // Get recent articles
     const recentArticles = await prisma.article.findMany({
@@ -38,23 +38,23 @@ exports.getDashboardStats = async (req, res) => {
             id: true,
             name: true,
             avatar: true,
-            username: true
-          }
-        }
-      }
-    });
+            username: true,
+          },
+        },
+      },
+    })
 
     // Get upcoming events
     const upcomingEvents = await prisma.event.findMany({
       where: {
         creatorId: userId,
         date: {
-          gte: new Date()
-        }
+          gte: new Date(),
+        },
       },
       orderBy: { date: 'asc' },
-      take: 5
-    });
+      take: 5,
+    })
 
     // Get recent blog posts
     const recentPosts = await prisma.blogPost.findMany({
@@ -73,19 +73,19 @@ exports.getDashboardStats = async (req, res) => {
             id: true,
             name: true,
             avatar: true,
-            username: true
-          }
-        }
-      }
-    });
+            username: true,
+          },
+        },
+      },
+    })
 
     // Get draft articles (only actual drafts, not published or reviewing)
     const drafts = await prisma.article.findMany({
       where: {
         authorId: userId,
         status: {
-          in: ['draft'] // Only show actual drafts, exclude 'reviewing' and 'published'
-        }
+          in: ['draft'], // Only show actual drafts, exclude 'reviewing' and 'published'
+        },
       },
       orderBy: { updatedAt: 'desc' },
       take: 5,
@@ -95,28 +95,26 @@ exports.getDashboardStats = async (req, res) => {
             id: true,
             name: true,
             avatar: true,
-            username: true
-          }
-        }
-      }
-    });
+            username: true,
+          },
+        },
+      },
+    })
 
     res.json({
       ok: true,
       stats: {
         articles: articlesCount,
         posts: postsCount,
-        events: eventsCount
+        events: eventsCount,
       },
       recentArticles,
       upcomingEvents,
       recentPosts,
-      drafts
-    });
+      drafts,
+    })
   } catch (error) {
-    logger.error({ err: error }, '[dashboardController] Error fetching dashboard stats');
-    res.status(500).json({ ok: false, message: 'Failed to fetch dashboard statistics' });
+    logger.error({ err: error }, '[dashboardController] Error fetching dashboard stats')
+    res.status(500).json({ ok: false, message: 'Failed to fetch dashboard statistics' })
   }
-};
-
-
+}

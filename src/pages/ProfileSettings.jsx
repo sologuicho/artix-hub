@@ -1,21 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Save, Upload, X } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import ProtectedRoute from '../components/ProtectedRoute';
-import { compressImage, getFileSizeMB, formatFileSize } from '../utils/imageCompression';
-import CountrySelector from '../components/CountrySelector';
-import OccupationSelector from '../components/OccupationSelector';
-import TagSelector from '../components/TagSelector';
-import { BACKEND_URL } from '../config/client';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Save, Upload, X } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import ProtectedRoute from '../components/ProtectedRoute'
+import { compressImage, getFileSizeMB, formatFileSize } from '../utils/imageCompression'
+import CountrySelector from '../components/CountrySelector'
+import OccupationSelector from '../components/OccupationSelector'
+import TagSelector from '../components/TagSelector'
+import { BACKEND_URL } from '../config/client'
 
-const MONO = "'IBM Plex Mono', monospace";
-const SANS = "'IBM Plex Sans', sans-serif";
-const ACCENT = '#C4451A';
+const MONO = "'IBM Plex Mono', monospace"
+const SANS = "'IBM Plex Sans', sans-serif"
+const ACCENT = '#C4451A'
 
 const ProfileSettings = () => {
-  const { user, updateUser } = useAuth();
-  const navigate = useNavigate();
+  const { user, updateUser } = useAuth()
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -24,16 +24,16 @@ const ProfileSettings = () => {
     occupation: '',
     country: '',
     interests: [],
-  });
-  const [avatarPreview, setAvatarPreview] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  })
+  const [avatarPreview, setAvatarPreview] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (user) {
-      const nameParts = (user.name || '').trim().split(/\s+/);
-      const lastName = nameParts.length > 1 ? nameParts.pop() : '';
-      const firstName = nameParts.join(' ');
+      const nameParts = (user.name || '').trim().split(/\s+/)
+      const lastName = nameParts.length > 1 ? nameParts.pop() : ''
+      const firstName = nameParts.join(' ')
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         firstName,
@@ -43,53 +43,55 @@ const ProfileSettings = () => {
         occupation: user.occupation || '',
         country: user.country || '',
         interests: user.interests || [],
-      });
-      setAvatarPreview(user.avatar || '');
+      })
+      setAvatarPreview(user.avatar || '')
     }
-  }, [user]);
+  }, [user])
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const handleInputChange = e => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
 
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const fileSizeMB = getFileSizeMB(file);
+  const handleAvatarChange = async e => {
+    const file = e.target.files[0]
+    if (!file) return
+    const fileSizeMB = getFileSizeMB(file)
     if (fileSizeMB > 10) {
-      alert(`La imagen es muy grande (${formatFileSize(fileSizeMB)}). Selecciona una imagen más pequeña.`);
-      return;
+      alert(
+        `La imagen es muy grande (${formatFileSize(fileSizeMB)}). Selecciona una imagen más pequeña.`
+      )
+      return
     }
     try {
-      const compressed = await compressImage(file, 800, 800, 0.85);
-      setAvatarPreview(compressed);
+      const compressed = await compressImage(file, 800, 800, 0.85)
+      setAvatarPreview(compressed)
     } catch {
-      const reader = new FileReader();
-      reader.onloadend = () => setAvatarPreview(reader.result);
-      reader.readAsDataURL(file);
+      const reader = new FileReader()
+      reader.onloadend = () => setAvatarPreview(reader.result)
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const getCsrfToken = () => {
-    const cookies = document.cookie.split(';');
+    const cookies = document.cookie.split(';')
     for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'csrf') return value;
+      const [name, value] = cookie.trim().split('=')
+      if (name === 'csrf') return value
     }
-    return null;
-  };
+    return null
+  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setError('');
+  const handleSubmit = async e => {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
     try {
-      let avatarToSend;
+      let avatarToSend
       if (avatarPreview && avatarPreview !== user?.avatar) {
-        avatarToSend = avatarPreview;
+        avatarToSend = avatarPreview
       } else if (!avatarPreview && user?.avatar) {
-        avatarToSend = user.avatar;
+        avatarToSend = user.avatar
       }
 
       const payload = {
@@ -100,8 +102,8 @@ const ProfileSettings = () => {
         country: formData.country,
         interests: formData.interests,
         profileComplete: true,
-      };
-      if (avatarToSend !== undefined) payload.avatar = avatarToSend;
+      }
+      if (avatarToSend !== undefined) payload.avatar = avatarToSend
 
       const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
         method: 'PUT',
@@ -111,26 +113,26 @@ const ProfileSettings = () => {
         },
         credentials: 'include',
         body: JSON.stringify(payload),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error ${response.status}`);
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Error ${response.status}`)
       }
 
-      const data = await response.json();
+      const data = await response.json()
       if (data.ok) {
-        if (updateUser) updateUser(data.user);
-        navigate('/profile');
+        if (updateUser) updateUser(data.user)
+        navigate('/profile')
       } else {
-        throw new Error(data.message || 'Error al actualizar el perfil');
+        throw new Error(data.message || 'Error al actualizar el perfil')
       }
     } catch (err) {
-      setError(err.message || 'Error de conexión al actualizar el perfil');
+      setError(err.message || 'Error de conexión al actualizar el perfil')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const labelStyle = {
     display: 'block',
@@ -140,7 +142,7 @@ const ProfileSettings = () => {
     textTransform: 'uppercase',
     color: 'var(--muted)',
     marginBottom: '0.5rem',
-  };
+  }
 
   const inputStyle = {
     width: '100%',
@@ -152,71 +154,93 @@ const ProfileSettings = () => {
     fontSize: '0.875rem',
     outline: 'none',
     boxSizing: 'border-box',
-  };
+  }
 
   return (
     <ProtectedRoute>
       <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
         <div style={{ maxWidth: '680px', margin: '0 auto', padding: '4rem 1.5rem' }}>
-
           {/* Page header */}
-          <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--border)', marginBottom: '2.5rem' }}>
-            <span style={{
-              fontFamily: MONO,
-              fontSize: '0.5625rem',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'var(--muted)',
-            }}>
+          <div
+            style={{
+              paddingBottom: '2rem',
+              borderBottom: '1px solid var(--border)',
+              marginBottom: '2.5rem',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: MONO,
+                fontSize: '0.5625rem',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--muted)',
+              }}
+            >
               Cuenta
             </span>
-            <h1 style={{
-              fontFamily: SANS,
-              fontWeight: 700,
-              fontSize: '2rem',
-              color: 'var(--text)',
-              lineHeight: 1.1,
-              marginTop: '0.375rem',
-              marginBottom: 0,
-            }}>
+            <h1
+              style={{
+                fontFamily: SANS,
+                fontWeight: 700,
+                fontSize: '2rem',
+                color: 'var(--text)',
+                lineHeight: 1.1,
+                marginTop: '0.375rem',
+                marginBottom: 0,
+              }}
+            >
               Configuración de Perfil
             </h1>
           </div>
 
           {error && (
-            <div style={{
-              backgroundColor: 'var(--surface)',
-              borderLeft: `3px solid ${ACCENT}`,
-              padding: '0.875rem 1rem',
-              fontFamily: SANS,
-              fontSize: '0.875rem',
-              color: ACCENT,
-              marginBottom: '1.5rem',
-            }}>
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderLeft: `3px solid ${ACCENT}`,
+                padding: '0.875rem 1rem',
+                fontFamily: SANS,
+                fontSize: '0.875rem',
+                color: ACCENT,
+                marginBottom: '1.5rem',
+              }}
+            >
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
+          >
             {/* Avatar */}
             <div>
               <label style={labelStyle}>Foto de Perfil</label>
-              <p style={{ fontFamily: SANS, fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.875rem' }}>
+              <p
+                style={{
+                  fontFamily: SANS,
+                  fontSize: '0.75rem',
+                  color: 'var(--muted)',
+                  marginBottom: '0.875rem',
+                }}
+              >
                 Recomendado: imágenes de 2-3 MB o menos. Se comprimirán automáticamente.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{
-                  width: 80,
-                  height: 80,
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--surface)',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
+                <div
+                  style={{
+                    width: 80,
+                    height: 80,
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -230,19 +254,21 @@ const ProfileSettings = () => {
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <label style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.625rem 1rem',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'transparent',
-                    color: 'var(--text)',
-                    fontFamily: SANS,
-                    fontSize: '0.8125rem',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}>
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem 1rem',
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text)',
+                      fontFamily: SANS,
+                      fontSize: '0.8125rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
                     <Upload size={13} />
                     Cambiar foto
                     <input
@@ -329,7 +355,7 @@ const ProfileSettings = () => {
               <label style={labelStyle}>Ocupación</label>
               <OccupationSelector
                 value={formData.occupation}
-                onChange={(value) => setFormData(prev => ({ ...prev, occupation: value }))}
+                onChange={value => setFormData(prev => ({ ...prev, occupation: value }))}
               />
             </div>
 
@@ -338,7 +364,7 @@ const ProfileSettings = () => {
               <label style={labelStyle}>País</label>
               <CountrySelector
                 value={formData.country}
-                onChange={(value) => setFormData(prev => ({ ...prev, country: value }))}
+                onChange={value => setFormData(prev => ({ ...prev, country: value }))}
               />
             </div>
 
@@ -347,14 +373,21 @@ const ProfileSettings = () => {
               <label style={labelStyle}>Intereses</label>
               <TagSelector
                 tags={formData.interests}
-                onChange={(tags) => setFormData(prev => ({ ...prev, interests: tags }))}
+                onChange={tags => setFormData(prev => ({ ...prev, interests: tags }))}
                 context="interests"
                 placeholder="Buscar o escribir interés..."
               />
             </div>
 
             {/* Submit */}
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <div
+              style={{
+                borderTop: '1px solid var(--border)',
+                paddingTop: '1.5rem',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
               <button
                 type="submit"
                 disabled={saving}
@@ -382,7 +415,7 @@ const ProfileSettings = () => {
         </div>
       </div>
     </ProtectedRoute>
-  );
-};
+  )
+}
 
-export default ProfileSettings;
+export default ProfileSettings

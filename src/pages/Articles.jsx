@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BACKEND_URL } from '../config/client';
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { BACKEND_URL } from '../config/client'
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 const readTime = (content = '') =>
-  Math.max(1, Math.round(content.replace(/<[^>]+>/g, '').split(/\s+/).length / 200));
+  Math.max(1, Math.round(content.replace(/<[^>]+>/g, '').split(/\s+/).length / 200))
 
 const initials = (name = '') =>
   name
@@ -12,19 +12,19 @@ const initials = (name = '') =>
     .slice(0, 2)
     .map(w => w[0] || '')
     .join('')
-    .toUpperCase();
+    .toUpperCase()
 
 const fmtCount = n => {
-  if (!n) return null;
-  if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'k';
-  return String(n);
-};
+  if (!n) return null
+  if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'k'
+  return String(n)
+}
 
 /* ─── Featured card ────────────────────────────────────────────────────────── */
 const FeaturedCard = ({ article }) => {
-  const navigate = useNavigate();
-  const rt = readTime(article.content);
-  const [hovered, setHovered] = useState(false);
+  const navigate = useNavigate()
+  const rt = readTime(article.content)
+  const [hovered, setHovered] = useState(false)
 
   return (
     <div
@@ -151,7 +151,9 @@ const FeaturedCard = ({ article }) => {
           <span style={{ fontSize: 13, color: '#c8c6c1', fontWeight: 500 }}>
             {article.author?.name || 'Anónimo'}
           </span>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#6f6f6a' }}>
+          <span
+            style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#6f6f6a' }}
+          >
             ·{' '}
             {new Date(article.createdAt).toLocaleDateString('es-MX', {
               day: 'numeric',
@@ -162,14 +164,14 @@ const FeaturedCard = ({ article }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
 /* ─── Article grid cell ────────────────────────────────────────────────────── */
 const ArticleCell = ({ article, isRight }) => {
-  const navigate = useNavigate();
-  const [hovered, setHovered] = useState(false);
-  const rt = readTime(article.content);
+  const navigate = useNavigate()
+  const [hovered, setHovered] = useState(false)
+  const rt = readTime(article.content)
 
   return (
     <div
@@ -252,7 +254,9 @@ const ArticleCell = ({ article, isRight }) => {
         >
           {initials(article.author?.name || 'A')}
         </div>
-        <span style={{ fontSize: 12.5, color: '#c8c6c1' }}>{article.author?.name || 'Anónimo'}</span>
+        <span style={{ fontSize: 12.5, color: '#c8c6c1' }}>
+          {article.author?.name || 'Anónimo'}
+        </span>
         <span style={{ flex: 1 }} />
         {article.viewCount !== null && (
           <span
@@ -267,20 +271,20 @@ const ArticleCell = ({ article, isRight }) => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
 /* ─── Main page ────────────────────────────────────────────────────────────── */
 const Articles = () => {
-  const [articles, setArticles] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('Todos');
-  const [sort, setSort] = useState('Recientes'); // 'Recientes' | 'Popular'
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const LIMIT = 12;
+  const [articles, setArticles] = useState([])
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState('Todos')
+  const [sort, setSort] = useState('Recientes') // 'Recientes' | 'Popular'
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const LIMIT = 12
 
   /* fetch categories once */
   useEffect(() => {
@@ -288,57 +292,56 @@ const Articles = () => {
       .then(r => r.json())
       .then(d => {
         if (d.ok && Array.isArray(d.categories)) {
-          setCategories(['Todos', ...d.categories]);
+          setCategories(['Todos', ...d.categories])
         }
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {})
+  }, [])
 
   /* fetch articles whenever category/sort changes */
   const fetchArticles = useCallback(
     async (reset = false) => {
-      setLoading(true);
+      setLoading(true)
       try {
-        const params = new URLSearchParams({ status: 'published', limit: String(LIMIT) });
-        if (activeCategory !== 'Todos') params.set('category', activeCategory);
-        const res = await fetch(`${BACKEND_URL}/api/articles?${params}`);
-        const data = await res.json();
+        const params = new URLSearchParams({ status: 'published', limit: String(LIMIT) })
+        if (activeCategory !== 'Todos') params.set('category', activeCategory)
+        const res = await fetch(`${BACKEND_URL}/api/articles?${params}`)
+        const data = await res.json()
         if (data.ok) {
-          const list = data.articles || [];
-          setArticles(reset ? list : prev => [...prev, ...list]);
-          setHasMore(list.length === LIMIT);
+          const list = data.articles || []
+          setArticles(reset ? list : prev => [...prev, ...list])
+          setHasMore(list.length === LIMIT)
         }
-      } catch (_) { // intentional
+      } catch (_) {
+        // intentional
+      } finally {
+        setLoading(false)
       }
-      finally { setLoading(false); }
     },
     [activeCategory]
-  );
+  )
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPage(1);
-    fetchArticles(true);
+    setPage(1)
+    fetchArticles(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory]);
+  }, [activeCategory])
 
   /* client-side filter + sort */
   const filtered = articles.filter(a => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    return (
-      a.title?.toLowerCase().includes(q) ||
-      a.author?.name?.toLowerCase().includes(q)
-    );
-  });
+    if (!query) return true
+    const q = query.toLowerCase()
+    return a.title?.toLowerCase().includes(q) || a.author?.name?.toLowerCase().includes(q)
+  })
 
   const sorted =
     sort === 'Popular'
       ? [...filtered].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
-      : filtered;
+      : filtered
 
-  const featured = sorted[0];
-  const grid = sorted.slice(1);
+  const featured = sorted[0]
+  const grid = sorted.slice(1)
 
   return (
     <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
@@ -348,7 +351,6 @@ const Articles = () => {
       `}</style>
 
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
-
         {/* ── Page title ── */}
         <div
           style={{
@@ -445,7 +447,7 @@ const Articles = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
             {(categories.length > 0 ? categories : ['Todos']).map(cat => {
-              const on = cat === activeCategory;
+              const on = cat === activeCategory
               return (
                 <button
                   key={cat}
@@ -467,7 +469,7 @@ const Articles = () => {
                 >
                   {cat}
                 </button>
-              );
+              )
             })}
           </div>
           <button
@@ -547,9 +549,9 @@ const Articles = () => {
           <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 64 }}>
             <button
               onClick={() => {
-                const next = page + 1;
-                setPage(next);
-                fetchArticles(false);
+                const next = page + 1
+                setPage(next)
+                fetchArticles(false)
               }}
               style={{
                 appearance: 'none',
@@ -564,12 +566,12 @@ const Articles = () => {
                 transition: 'border-color 0.15s, color 0.15s',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(196,69,26,0.5)';
-                e.currentTarget.style.color = '#e0815e';
+                e.currentTarget.style.borderColor = 'rgba(196,69,26,0.5)'
+                e.currentTarget.style.color = '#e0815e'
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-                e.currentTarget.style.color = '#86847f';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
+                e.currentTarget.style.color = '#86847f'
               }}
             >
               CARGAR MÁS
@@ -578,7 +580,7 @@ const Articles = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Articles;
+export default Articles

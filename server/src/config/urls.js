@@ -6,6 +6,6 @@ const ALLOWED_ORIGINS = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
   'http://localhost:3000',
-].filter(Boolean);
+].filter(Boolean)
 
-module.exports = { ALLOWED_ORIGINS };
+module.exports = { ALLOWED_ORIGINS }

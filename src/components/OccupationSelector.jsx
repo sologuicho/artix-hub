@@ -1,50 +1,111 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Briefcase } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react'
+import { ChevronDown, Briefcase } from 'lucide-react'
 
 const OCCUPATIONS = [
-  'Estudiante', 'Profesor', 'Investigador', 'Científico', 'Ingeniero de Software',
-  'Ingeniero', 'Médico', 'Abogado', 'Arquitecto', 'Diseñador', 'Artista',
-  'Escritor', 'Periodista', 'Psicólogo', 'Economista', 'Contador', 'Consultor',
-  'Emprendedor', 'CEO', 'CTO', 'Director', 'Gerente', 'Analista', 'Desarrollador',
-  'Programador', 'Data Scientist', 'Analista de Datos', 'Product Manager',
-  'Project Manager', 'Marketing Manager', 'Diseñador UX/UI', 'Diseñador Gráfico',
-  'Fotógrafo', 'Videógrafo', 'Editor', 'Traductor', 'Profesor Universitario',
-  'Investigador Postdoctoral', 'Estudiante de Doctorado', 'Estudiante de Maestría',
-  'Estudiante de Licenciatura', 'Biólogo', 'Químico', 'Físico', 'Matemático',
-  'Estadístico', 'Sociólogo', 'Antropólogo', 'Historiador', 'Filósofo',
-  'Lingüista', 'Geólogo', 'Astrónomo', 'Meteorólogo', 'Oceanógrafo',
-  'Veterinario', 'Nutricionista', 'Fisioterapeuta', 'Enfermero', 'Farmacéutico',
-  'Dentista', 'Optometrista', 'Audiólogo', 'Terapeuta', 'Coach', 'Mentor',
-  'Instructor', 'Capacitador', 'Especialista', 'Experto', 'Asesor', 'Freelancer',
-  'Independiente', 'Retirado', 'Desempleado', 'Buscando empleo'
-].sort();
+  'Estudiante',
+  'Profesor',
+  'Investigador',
+  'Científico',
+  'Ingeniero de Software',
+  'Ingeniero',
+  'Médico',
+  'Abogado',
+  'Arquitecto',
+  'Diseñador',
+  'Artista',
+  'Escritor',
+  'Periodista',
+  'Psicólogo',
+  'Economista',
+  'Contador',
+  'Consultor',
+  'Emprendedor',
+  'CEO',
+  'CTO',
+  'Director',
+  'Gerente',
+  'Analista',
+  'Desarrollador',
+  'Programador',
+  'Data Scientist',
+  'Analista de Datos',
+  'Product Manager',
+  'Project Manager',
+  'Marketing Manager',
+  'Diseñador UX/UI',
+  'Diseñador Gráfico',
+  'Fotógrafo',
+  'Videógrafo',
+  'Editor',
+  'Traductor',
+  'Profesor Universitario',
+  'Investigador Postdoctoral',
+  'Estudiante de Doctorado',
+  'Estudiante de Maestría',
+  'Estudiante de Licenciatura',
+  'Biólogo',
+  'Químico',
+  'Físico',
+  'Matemático',
+  'Estadístico',
+  'Sociólogo',
+  'Antropólogo',
+  'Historiador',
+  'Filósofo',
+  'Lingüista',
+  'Geólogo',
+  'Astrónomo',
+  'Meteorólogo',
+  'Oceanógrafo',
+  'Veterinario',
+  'Nutricionista',
+  'Fisioterapeuta',
+  'Enfermero',
+  'Farmacéutico',
+  'Dentista',
+  'Optometrista',
+  'Audiólogo',
+  'Terapeuta',
+  'Coach',
+  'Mentor',
+  'Instructor',
+  'Capacitador',
+  'Especialista',
+  'Experto',
+  'Asesor',
+  'Freelancer',
+  'Independiente',
+  'Retirado',
+  'Desempleado',
+  'Buscando empleo',
+].sort()
 
 const OccupationSelector = ({ value, onChange, className = '' }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const dropdownRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const dropdownRef = useRef(null)
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-        setSearchQuery('');
+        setIsOpen(false)
+        setSearchQuery('')
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const filteredOccupations = OCCUPATIONS.filter(occupation =>
     occupation.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  )
 
-  const handleSelect = (occupation) => {
-    onChange(occupation);
-    setIsOpen(false);
-    setSearchQuery('');
-  };
+  const handleSelect = occupation => {
+    onChange(occupation)
+    setIsOpen(false)
+    setSearchQuery('')
+  }
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -55,11 +116,17 @@ const OccupationSelector = ({ value, onChange, className = '' }) => {
       >
         <div className="flex items-center gap-2">
           <Briefcase className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <span className={value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}>
+          <span
+            className={
+              value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'
+            }
+          >
             {value || 'Selecciona una ocupación'}
           </span>
         </div>
-        <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {isOpen && (
@@ -68,7 +135,7 @@ const OccupationSelector = ({ value, onChange, className = '' }) => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               placeholder="Buscar ocupación..."
               className="w-full glass-input text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
               autoFocus
@@ -77,13 +144,15 @@ const OccupationSelector = ({ value, onChange, className = '' }) => {
           <div className="overflow-y-auto max-h-64">
             {filteredOccupations.length > 0 ? (
               <div className="py-1">
-                {filteredOccupations.map((occupation) => (
+                {filteredOccupations.map(occupation => (
                   <button
                     key={occupation}
                     type="button"
                     onClick={() => handleSelect(occupation)}
                     className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-between ${
-                      value === occupation ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                      value === occupation
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                        : 'text-gray-700 dark:text-gray-300'
                     }`}
                   >
                     <span>{occupation}</span>
@@ -102,11 +171,7 @@ const OccupationSelector = ({ value, onChange, className = '' }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default OccupationSelector;
-
-
-
-
+export default OccupationSelector

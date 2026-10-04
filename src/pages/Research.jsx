@@ -1,51 +1,51 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../config/client';
+import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { BACKEND_URL } from '../config/client'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate = (iso) =>
-  new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+const fmtDate = iso =>
+  new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
 
-const fmtCount = (n) => {
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
-  return String(n);
-};
+const fmtCount = n => {
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
+}
 
-const statusBadgeStyle = (status) => {
-  if (!status) return {};
-  const s = status.toLowerCase();
+const statusBadgeStyle = status => {
+  if (!status) return {}
+  const s = status.toLowerCase()
   if (s === 'published' || s === 'peer-reviewed' || s === 'publicado') {
     return {
       border: '1px solid rgba(196,69,26,0.45)',
       color: '#e0815e',
       background: 'rgba(196,69,26,0.09)',
-    };
+    }
   }
   if (s === 'under_review' || s === 'en revisión' || s === 'en revision') {
     return {
       border: '1px solid rgba(255,255,255,0.14)',
       color: '#9a9a95',
       background: 'transparent',
-    };
+    }
   }
   // preprint / draft
   return {
     border: '1px solid rgba(255,255,255,0.14)',
     color: '#b6b4af',
     background: 'transparent',
-  };
-};
+  }
+}
 
-const statusLabel = (status) => {
-  if (!status) return '';
-  const s = status.toLowerCase();
-  if (s === 'published') return 'Publicado';
-  if (s === 'under_review') return 'En revisión';
-  if (s === 'draft') return 'Preprint';
-  return status;
-};
+const statusLabel = status => {
+  if (!status) return ''
+  const s = status.toLowerCase()
+  if (s === 'published') return 'Publicado'
+  if (s === 'under_review') return 'En revisión'
+  if (s === 'draft') return 'Preprint'
+  return status
+}
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
@@ -64,16 +64,19 @@ const StatusBadge = ({ status }) => (
   >
     {statusLabel(status)}
   </span>
-);
+)
 
 const PaperRow = ({ item }) => {
-  const citeCount = item.viewCount || 0;
-  const citeColor = citeCount >= 150 ? '#e0815e' : '#b6b4af';
+  const citeCount = item.viewCount || 0
+  const citeColor = citeCount >= 150 ? '#e0815e' : '#b6b4af'
   const tags = Array.isArray(item.tags)
     ? item.tags
     : typeof item.tags === 'string'
-    ? item.tags.split(',').map((t) => t.trim()).filter(Boolean)
-    : [];
+      ? item.tags
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+      : []
 
   return (
     <article
@@ -141,9 +144,7 @@ const PaperRow = ({ item }) => {
               {item.category}
             </span>
           )}
-          {item.category && item.createdAt && (
-            <span style={{ color: '#3a3a36' }}>·</span>
-          )}
+          {item.category && item.createdAt && <span style={{ color: '#3a3a36' }}>·</span>}
           {item.createdAt && (
             <span
               style={{
@@ -158,10 +159,7 @@ const PaperRow = ({ item }) => {
         </div>
 
         {/* Title */}
-        <Link
-          to={`/research/${item.id}`}
-          style={{ textDecoration: 'none' }}
-        >
+        <Link to={`/research/${item.id}`} style={{ textDecoration: 'none' }}>
           <h3
             style={{
               margin: 0,
@@ -173,8 +171,8 @@ const PaperRow = ({ item }) => {
               cursor: 'pointer',
               fontFamily: "'IBM Plex Sans', sans-serif",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#e0815e')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#eceae6')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#e0815e')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#eceae6')}
           >
             {item.title}
           </h3>
@@ -209,9 +207,7 @@ const PaperRow = ({ item }) => {
               maxWidth: 660,
             }}
           >
-            {item.abstract.length > 200
-              ? item.abstract.slice(0, 200) + '…'
-              : item.abstract}
+            {item.abstract.length > 200 ? item.abstract.slice(0, 200) + '…' : item.abstract}
           </p>
         )}
 
@@ -227,7 +223,7 @@ const PaperRow = ({ item }) => {
         >
           {tags.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-              {tags.slice(0, 4).map((tag) => (
+              {tags.slice(0, 4).map(tag => (
                 <span
                   key={tag}
                   style={{
@@ -238,13 +234,13 @@ const PaperRow = ({ item }) => {
                     padding: '2px 8px',
                     cursor: 'default',
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(196,69,26,0.5)';
-                    e.currentTarget.style.color = '#e0815e';
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = 'rgba(196,69,26,0.5)'
+                    e.currentTarget.style.color = '#e0815e'
                   }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)';
-                    e.currentTarget.style.color = '#86847f';
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+                    e.currentTarget.style.color = '#86847f'
                   }}
                 >
                   {tag}
@@ -278,13 +274,13 @@ const PaperRow = ({ item }) => {
               border: '1px solid rgba(255,255,255,0.1)',
               padding: '4px 10px',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)';
-              e.currentTarget.style.color = '#e9e7e3';
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)'
+              e.currentTarget.style.color = '#e9e7e3'
             }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-              e.currentTarget.style.color = '#9a9a95';
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+              e.currentTarget.style.color = '#9a9a95'
             }}
           >
             EPUB
@@ -292,108 +288,109 @@ const PaperRow = ({ item }) => {
         </div>
       </div>
     </article>
-  );
-};
+  )
+}
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-const SORTS = ['Citas', 'Recientes', 'Tendencia'];
+const SORTS = ['Citas', 'Recientes', 'Tendencia']
 const STATUS_OPTIONS = [
-  { key: 'published',   label: 'Publicado' },
+  { key: 'published', label: 'Publicado' },
   { key: 'under_review', label: 'En revisión' },
-  { key: 'draft',       label: 'Preprint' },
-];
-const PAGE_SIZE = 10;
+  { key: 'draft', label: 'Preprint' },
+]
+const PAGE_SIZE = 10
 
 const Research = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth()
 
-  const [allResearch, setAllResearch] = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [activeField, setActiveField] = useState('Todos');
-  const [activeSort, setActiveSort]   = useState('Citas');
+  const [allResearch, setAllResearch] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [activeField, setActiveField] = useState('Todos')
+  const [activeSort, setActiveSort] = useState('Citas')
   const [activeStatus, setActiveStatus] = useState({
     published: true,
     under_review: true,
     draft: true,
-  });
-  const [page, setPage]               = useState(1);
-  const [totalCount, setTotalCount]   = useState(0);
-  const [weekCount, setWeekCount]     = useState(0);
-  const [reviewCount, setReviewCount] = useState(0);
+  })
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [weekCount, setWeekCount] = useState(0)
+  const [reviewCount, setReviewCount] = useState(0)
 
   // Derive unique categories from fetched data
-  const fields = ['Todos', ...Array.from(
-    new Set(allResearch.map((r) => r.category).filter(Boolean))
-  )];
+  const fields = ['Todos', ...Array.from(new Set(allResearch.map(r => r.category).filter(Boolean)))]
 
   const fetchResearch = useCallback(async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const params = new URLSearchParams();
-      params.append('limit', '100'); // fetch all then filter client-side for sort/field
+      const params = new URLSearchParams()
+      params.append('limit', '100') // fetch all then filter client-side for sort/field
       const res = await fetch(`${BACKEND_URL}/api/research?${params.toString()}`, {
         credentials: 'include',
-      });
-      const data = await res.json();
+      })
+      const data = await res.json()
       if (data.ok) {
-        const list = data.research || [];
-        setAllResearch(list);
-        setTotalCount(list.length);
-        const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        setWeekCount(list.filter((r) => new Date(r.createdAt).getTime() > oneWeekAgo).length);
+        const list = data.research || []
+        setAllResearch(list)
+        setTotalCount(list.length)
+        const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+        setWeekCount(list.filter(r => new Date(r.createdAt).getTime() > oneWeekAgo).length)
         setReviewCount(
-          list.filter((r) => {
-            const s = (r.status || '').toLowerCase();
-            return s === 'under_review' || s === 'en revisión';
+          list.filter(r => {
+            const s = (r.status || '').toLowerCase()
+            return s === 'under_review' || s === 'en revisión'
           }).length
-        );
+        )
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('Error fetching research:', err);
+      console.error('Error fetching research:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchResearch();
-  }, [fetchResearch]);
+    fetchResearch()
+  }, [fetchResearch])
 
   // Reset page when filters change
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPage(1);
-  }, [activeField, activeSort, activeStatus]);
+    setPage(1)
+  }, [activeField, activeSort, activeStatus])
 
   // Filtered + sorted list
   const filtered = allResearch
-    .filter((r) => {
-      if (activeField !== 'Todos' && r.category !== activeField) return false;
-      const s = (r.status || 'published').toLowerCase();
-      if (s === 'published' || s === 'peer-reviewed' || s === 'publicado') return activeStatus.published;
-      if (s === 'under_review' || s === 'en revisión' || s === 'en revision') return activeStatus.under_review;
-      if (s === 'draft' || s === 'preprint') return activeStatus.draft;
-      return activeStatus.published;
+    .filter(r => {
+      if (activeField !== 'Todos' && r.category !== activeField) return false
+      const s = (r.status || 'published').toLowerCase()
+      if (s === 'published' || s === 'peer-reviewed' || s === 'publicado')
+        return activeStatus.published
+      if (s === 'under_review' || s === 'en revisión' || s === 'en revision')
+        return activeStatus.under_review
+      if (s === 'draft' || s === 'preprint') return activeStatus.draft
+      return activeStatus.published
     })
     .sort((a, b) => {
-      if (activeSort === 'Citas') return (b.viewCount || 0) - (a.viewCount || 0);
-      if (activeSort === 'Recientes') return new Date(b.createdAt) - new Date(a.createdAt);
+      if (activeSort === 'Citas') return (b.viewCount || 0) - (a.viewCount || 0)
+      if (activeSort === 'Recientes') return new Date(b.createdAt) - new Date(a.createdAt)
       // Tendencia: recent + views combo
-      const score = (r) =>
-        (r.viewCount || 0) / Math.max(1, (Date.now() - new Date(r.createdAt)) / 86400000);
-      return score(b) - score(a);
-    });
+      const score = r =>
+        (r.viewCount || 0) / Math.max(1, (Date.now() - new Date(r.createdAt)) / 86400000)
+      return score(b) - score(a)
+    })
 
-  const paginated = filtered.slice(0, page * PAGE_SIZE);
-  const hasMore   = paginated.length < filtered.length;
+  const paginated = filtered.slice(0, page * PAGE_SIZE)
+  const hasMore = paginated.length < filtered.length
 
   const resultLabel =
     filtered.length +
-    ' resultado' + (filtered.length !== 1 ? 's' : '') +
-    (activeField !== 'Todos' ? ' · ' + activeField : '');
+    ' resultado' +
+    (filtered.length !== 1 ? 's' : '') +
+    (activeField !== 'Todos' ? ' · ' + activeField : '')
 
   return (
     <div
@@ -459,16 +456,30 @@ const Research = () => {
             {/* Aggregate stats */}
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", display: 'flex', gap: 30 }}>
               <div>
-                <div style={{ fontSize: 19, color: '#e9e7e3' }}>{totalCount.toLocaleString('es-MX')}</div>
-                <div style={{ fontSize: 10.5, letterSpacing: '0.1em', color: '#6f6f6a', marginTop: 2 }}>PAPERS</div>
+                <div style={{ fontSize: 19, color: '#e9e7e3' }}>
+                  {totalCount.toLocaleString('es-MX')}
+                </div>
+                <div
+                  style={{ fontSize: 10.5, letterSpacing: '0.1em', color: '#6f6f6a', marginTop: 2 }}
+                >
+                  PAPERS
+                </div>
               </div>
               <div>
                 <div style={{ fontSize: 19, color: '#e9e7e3' }}>{weekCount}</div>
-                <div style={{ fontSize: 10.5, letterSpacing: '0.1em', color: '#6f6f6a', marginTop: 2 }}>ESTA SEMANA</div>
+                <div
+                  style={{ fontSize: 10.5, letterSpacing: '0.1em', color: '#6f6f6a', marginTop: 2 }}
+                >
+                  ESTA SEMANA
+                </div>
               </div>
               <div>
                 <div style={{ fontSize: 19, color: '#e0815e' }}>{reviewCount}</div>
-                <div style={{ fontSize: 10.5, letterSpacing: '0.1em', color: '#6f6f6a', marginTop: 2 }}>EN REVISIÓN</div>
+                <div
+                  style={{ fontSize: 10.5, letterSpacing: '0.1em', color: '#6f6f6a', marginTop: 2 }}
+                >
+                  EN REVISIÓN
+                </div>
               </div>
             </div>
 
@@ -487,8 +498,8 @@ const Research = () => {
                   display: 'inline-block',
                   whiteSpace: 'nowrap',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(196,69,26,0.12)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(196,69,26,0.12)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 Subir paper
               </Link>
@@ -532,8 +543,8 @@ const Research = () => {
                 CAMPO
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {fields.map((f) => {
-                  const on = f === activeField;
+                {fields.map(f => {
+                  const on = f === activeField
                   return (
                     <button
                       key={f}
@@ -565,10 +576,10 @@ const Research = () => {
                       >
                         {f === 'Todos'
                           ? allResearch.length
-                          : allResearch.filter((r) => r.category === f).length}
+                          : allResearch.filter(r => r.category === f).length}
                       </span>
                     </button>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -593,13 +604,11 @@ const Research = () => {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {STATUS_OPTIONS.map(({ key, label }) => {
-                  const on = !!activeStatus[key];
+                  const on = !!activeStatus[key]
                   return (
                     <button
                       key={key}
-                      onClick={() =>
-                        setActiveStatus((prev) => ({ ...prev, [key]: !prev[key] }))
-                      }
+                      onClick={() => setActiveStatus(prev => ({ ...prev, [key]: !prev[key] }))}
                       style={{
                         appearance: 'none',
                         background: 'none',
@@ -638,7 +647,7 @@ const Research = () => {
                         {label}
                       </span>
                     </button>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -667,8 +676,8 @@ const Research = () => {
                 {loading ? 'Cargando…' : resultLabel}
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                {SORTS.map((s) => {
-                  const on = s === activeSort;
+                {SORTS.map(s => {
+                  const on = s === activeSort
                   return (
                     <button
                       key={s}
@@ -688,7 +697,7 @@ const Research = () => {
                     >
                       {s}
                     </button>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -754,7 +763,7 @@ const Research = () => {
               </div>
             ) : (
               <>
-                {paginated.map((item) => (
+                {paginated.map(item => (
                   <PaperRow key={item.id} item={item} />
                 ))}
 
@@ -762,7 +771,7 @@ const Research = () => {
                 {hasMore && (
                   <div style={{ padding: '28px 0', textAlign: 'center' }}>
                     <button
-                      onClick={() => setPage((p) => p + 1)}
+                      onClick={() => setPage(p => p + 1)}
                       style={{
                         appearance: 'none',
                         cursor: 'pointer',
@@ -774,13 +783,13 @@ const Research = () => {
                         border: '1px solid rgba(255,255,255,0.12)',
                         padding: '11px 26px',
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)';
-                        e.currentTarget.style.color = '#e9e7e3';
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'
+                        e.currentTarget.style.color = '#e9e7e3'
                       }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-                        e.currentTarget.style.color = '#9a9a95';
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
+                        e.currentTarget.style.color = '#9a9a95'
                       }}
                     >
                       Cargar más resultados
@@ -793,7 +802,7 @@ const Research = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Research;
+export default Research
