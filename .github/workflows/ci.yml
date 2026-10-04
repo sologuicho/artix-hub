@@ -62,13 +62,13 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Audit frontend dependencies
-        run: npm audit --audit-level=critical
+        run: npm audit --audit-level=high --omit=dev
 
       - name: Install backend dependencies
         run: cd server && npm ci
 
       - name: Audit backend dependencies
-        run: cd server && npm audit --audit-level=critical
+        run: cd server && npm audit --audit-level=high --omit=dev
 
   test-backend:
     name: Backend Tests
