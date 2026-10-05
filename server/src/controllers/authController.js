@@ -79,7 +79,7 @@ exports.register = async (req, res) => {
       },
     })
 
-    setAuthCookies(res, user)
+    const { token, csrfToken } = setAuthCookies(res, user)
 
     // Fire-and-forget: welcome email + verification token
     ;(async () => {
@@ -104,7 +104,7 @@ exports.register = async (req, res) => {
     })()
 
     const { password: _, ...safeUser } = user
-    res.status(201).json({ ok: true, user: safeUser })
+    res.status(201).json({ ok: true, user: safeUser, token, csrfToken })
   } catch (error) {
     logger.error({ err: error }, 'Registration error')
     res.status(500).json({ ok: false, message: 'Error en el servidor durante el registro' })
@@ -133,10 +133,10 @@ exports.login = async (req, res) => {
       return res.status(401).json({ ok: false, message: 'Credenciales inválidas' })
     }
 
-    setAuthCookies(res, user)
+    const { token, csrfToken } = setAuthCookies(res, user)
 
     const { password: _, ...safeUser } = user
-    res.json({ ok: true, user: safeUser })
+    res.json({ ok: true, user: safeUser, token, csrfToken })
   } catch (error) {
     logger.error({ err: error }, 'Login error')
     res.status(500).json({ ok: false, message: 'Error en el servidor durante el inicio de sesión' })
@@ -154,18 +154,19 @@ exports.oauthCallback = async (req, res) => {
       )
     }
 
-    setAuthCookies(res, user)
+    const { token, csrfToken } = setAuthCookies(res, user)
+    const params = new URLSearchParams({ t: token, c: csrfToken })
 
     // Redirect to frontend; frontend will read the csrf cookie and include it in headers for stateful requests
     // Only redirect to setup-username if user doesn't have a username
     if (!user.username) {
       return res.redirect(
-        `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/setup-username?from=oauth`
+        `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/setup-username?from=oauth&${params}`
       )
     }
 
     return res.redirect(
-      `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?success=true`
+      `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?success=true&${params}`
     )
   } catch (err) {
     logger.error({ err }, 'OAuth callback error')

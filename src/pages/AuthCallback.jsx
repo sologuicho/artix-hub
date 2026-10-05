@@ -11,7 +11,18 @@ const AuthCallback = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const success = new URLSearchParams(window.location.search).get('success')
+      const params = new URLSearchParams(window.location.search)
+      const success = params.get('success')
+      const token = params.get('t')
+      const csrf = params.get('c')
+
+      if (token) sessionStorage.setItem('artix_token', token)
+      if (csrf) sessionStorage.setItem('artix_csrf', csrf)
+
+      if (token || csrf) {
+        const cleanUrl = window.location.pathname + '?success=true'
+        window.history.replaceState({}, '', cleanUrl)
+      }
 
       if (success !== 'true') {
         navigate('/auth?error=oauth_cancelled')

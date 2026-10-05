@@ -78,6 +78,8 @@ export const AuthProvider = ({ children }) => {
       // eslint-disable-next-line no-console
       console.error('Error logging out:', error)
     }
+    sessionStorage.removeItem('artix_token')
+    sessionStorage.removeItem('artix_csrf')
     setUser(null)
     localStorage.removeItem('user')
   }

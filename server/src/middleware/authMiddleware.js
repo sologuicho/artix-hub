@@ -4,7 +4,8 @@ const logger = require('../lib/logger')
 
 async function protect(req, res, next) {
   try {
-    const token = req.cookies && req.cookies.session
+    const token =
+      (req.cookies && req.cookies.session) || req.headers.authorization?.replace('Bearer ', '')
     if (!token) return res.status(401).json({ message: 'Not authorized' })
 
     const { user } = await verifyAuthToken(token)

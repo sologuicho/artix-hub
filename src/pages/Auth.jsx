@@ -175,6 +175,8 @@ const Auth = () => {
       })
       const data = await res.json()
       if (data.ok) {
+        if (data.token) sessionStorage.setItem('artix_token', data.token)
+        if (data.csrfToken) sessionStorage.setItem('artix_csrf', data.csrfToken)
         await checkAuth()
         navigate(data.user.profileComplete ? '/' : '/profile/setup')
       } else {
@@ -221,6 +223,8 @@ const Auth = () => {
       })
       const data = await res.json()
       if (data.ok) {
+        if (data.token) sessionStorage.setItem('artix_token', data.token)
+        if (data.csrfToken) sessionStorage.setItem('artix_csrf', data.csrfToken)
         await checkAuth()
         navigate(isStudentIntent ? '/student-verification' : '/profile/setup')
       } else {
