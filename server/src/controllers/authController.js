@@ -9,20 +9,22 @@ const logger = require('../lib/logger')
 const setAuthCookies = (res, user) => {
   const token = signToken(user)
   const csrfToken = require('crypto').randomBytes(24).toString('hex')
+  const isProd = process.env.NODE_ENV === 'production'
 
-  // Set HttpOnly, Secure cookie for session
+  // SameSite=None required for cross-domain cookies (frontend on Vercel, backend on Render)
+  const sameSite = isProd ? 'none' : 'lax'
+
   res.cookie('session', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   })
 
-  // Set csrf token cookie available to JS
   res.cookie('csrf', csrfToken, {
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   })
 
