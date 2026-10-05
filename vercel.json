@@ -1,21 +1,18 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "https://artix-hub.onrender.com/api/:path*"
+      "src": "/api/(.*)",
+      "dest": "https://artix-hub.onrender.com/api/$1"
     },
     {
-      "source": "/auth/:path*",
-      "destination": "https://artix-hub.onrender.com/auth/:path*"
+      "src": "/auth/(.*)",
+      "dest": "https://artix-hub.onrender.com/auth/$1"
     },
-    { "source": "/me", "destination": "https://artix-hub.onrender.com/me" },
-    {
-      "source": "/health",
-      "destination": "https://artix-hub.onrender.com/health"
-    },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "src": "/me", "dest": "https://artix-hub.onrender.com/me" },
+    { "src": "/health", "dest": "https://artix-hub.onrender.com/health" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
