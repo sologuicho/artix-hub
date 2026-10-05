@@ -285,3 +285,13 @@ initializeSocket(server)
 server.listen(PORT, '0.0.0.0', () => {
   logger.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Server listening')
 })
+
+// Prevent Render free tier from sleeping (spins down after 15 min of inactivity)
+if (process.env.NODE_ENV === 'production' && process.env.BACKEND_URL) {
+  setInterval(
+    () => {
+      http.get(`${process.env.BACKEND_URL}/health`, res => res.resume()).on('error', () => {})
+    },
+    14 * 60 * 1000
+  )
+}
