@@ -3,6 +3,19 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://artix-hub.onrender.com/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://artix-hub.onrender.com/auth/:path*"
+    },
+    { "source": "/me", "destination": "https://artix-hub.onrender.com/me" },
+    {
+      "source": "/health",
+      "destination": "https://artix-hub.onrender.com/health"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -11,20 +11,17 @@ const setAuthCookies = (res, user) => {
   const csrfToken = require('crypto').randomBytes(24).toString('hex')
   const isProd = process.env.NODE_ENV === 'production'
 
-  // SameSite=None required for cross-domain cookies (frontend on Vercel, backend on Render)
-  const sameSite = isProd ? 'none' : 'lax'
-
   res.cookie('session', token, {
     httpOnly: true,
     secure: isProd,
-    sameSite,
+    sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   })
 
   res.cookie('csrf', csrfToken, {
     httpOnly: false,
     secure: isProd,
-    sameSite,
+    sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   })
 
