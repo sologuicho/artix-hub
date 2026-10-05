@@ -38,6 +38,10 @@ if (missingEnvVars.length > 0) {
 const app = express()
 const PORT = process.env.PORT || 4000
 
+// Trust Cloudflare + Render's reverse proxy so X-Forwarded-For is used
+// by rate-limiter and req.ip correctly
+app.set('trust proxy', 1)
+
 app.use(helmet())
 app.use(correlationMiddleware)
 
