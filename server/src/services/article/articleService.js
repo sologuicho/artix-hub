@@ -166,11 +166,7 @@ exports.createArticle = async (body, currentUser) => {
   })
 
   if (article.status === 'reviewing') {
-    triggerModerationAfterCreate('article', {
-      id: article.id,
-      title: article.title,
-      body: article.content,
-    })
+    triggerModerationAfterCreate('article', { id: article.id })
   }
 
   return article
@@ -202,15 +198,15 @@ exports.updateArticle = async (id, body, currentUser) => {
     ...(references !== undefined && { references: Array.isArray(references) ? references : [] }),
     ...(pdfUrl !== undefined && { pdfUrl }),
     ...(coverUrl !== undefined && { coverUrl }),
+    ...(existing.status === 'rejected' && safeStatus === 'reviewing' && {
+      moderationReason: null,
+      moderationError:  null,
+    }),
     ...moderationPatch,
   })
 
-  if (existing.status === 'draft' && safeStatus === 'reviewing') {
-    triggerModerationAfterCreate('article', {
-      id: updated.id,
-      title: updated.title,
-      body: updated.content,
-    })
+  if ((existing.status === 'draft' || existing.status === 'rejected') && safeStatus === 'reviewing') {
+    triggerModerationAfterCreate('article', { id: updated.id })
   }
 
   return updated

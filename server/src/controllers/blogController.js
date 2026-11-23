@@ -267,11 +267,7 @@ exports.createBlogPost = async (req, res) => {
     }
 
     if (post.status === 'reviewing') {
-      triggerModerationAfterCreate('blogPost', {
-        id:    post.id,
-        title: post.title || '',
-        body:  post.content,
-      })
+      triggerModerationAfterCreate('blogPost', { id: post.id })
     }
 
     res.status(201).json({ ok: true, post })
@@ -335,6 +331,10 @@ exports.updateBlogPost = async (req, res) => {
         ...(documents !== undefined && { documents: Array.isArray(documents) ? documents : [] }),
         ...(mentionIds.length > 0 && { mentions: mentionIds }),
         ...(safeStatus !== undefined && { status: safeStatus }),
+        ...(existing.status === 'rejected' && safeStatus === 'reviewing' && {
+          moderationReason: null,
+          moderationError:  null,
+        }),
         ...moderationPatch,
       },
       include: {
@@ -348,12 +348,8 @@ exports.updateBlogPost = async (req, res) => {
       },
     })
 
-    if (existing.status === 'draft' && safeStatus === 'reviewing') {
-      triggerModerationAfterCreate('blogPost', {
-        id:    post.id,
-        title: post.title || '',
-        body:  post.content,
-      })
+    if ((existing.status === 'draft' || existing.status === 'rejected') && safeStatus === 'reviewing') {
+      triggerModerationAfterCreate('blogPost', { id: post.id })
     }
 
     res.json({ ok: true, post })

@@ -260,11 +260,7 @@ exports.createEvent = async (req, res) => {
     })
 
     if (event.status === 'reviewing') {
-      triggerModerationAfterCreate('event', {
-        id:    event.id,
-        title: event.title,
-        body:  event.description,
-      })
+      triggerModerationAfterCreate('event', { id: event.id })
     }
 
     res.status(201).json({ ok: true, event })
@@ -322,6 +318,10 @@ exports.updateEvent = async (req, res) => {
         ...(ticketCurrency !== undefined && { ticketCurrency }),
         ...(streamUrl !== undefined && { streamUrl: streamUrl || null }),
         ...(safeStatus !== undefined && { status: safeStatus }),
+        ...(existing.status === 'rejected' && safeStatus === 'reviewing' && {
+          moderationReason: null,
+          moderationError:  null,
+        }),
         ...moderationPatch,
       },
       include: {
@@ -335,12 +335,8 @@ exports.updateEvent = async (req, res) => {
       },
     })
 
-    if (existing.status === 'draft' && safeStatus === 'reviewing') {
-      triggerModerationAfterCreate('event', {
-        id:    event.id,
-        title: event.title,
-        body:  event.description,
-      })
+    if ((existing.status === 'draft' || existing.status === 'rejected') && safeStatus === 'reviewing') {
+      triggerModerationAfterCreate('event', { id: event.id })
     }
 
     res.json({ ok: true, event })

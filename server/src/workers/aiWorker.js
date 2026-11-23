@@ -8,15 +8,21 @@
  *   ai:index     — calls ai-core /v1/index to add/update a document
  *   ai:delete    — calls ai-core /v1/index/:id to remove a document
  *
- * Retry strategy for ai:moderate: up to MAX_RETRIES attempts with
- * exponential backoff via jobQueue re-enqueue. If all retries fail,
- * content is left in 'reviewing' status (manual review fallback).
+ * ai:moderate reads the CURRENT content from the DB at execution time.
+ * The job payload carries only { entity, id } — no title/body snapshot —
+ * so a job that was queued before a subsequent edit always moderates the
+ * latest version. Deduplication in jobQueue ensures only one pending job
+ * per content item at a time.
+ *
+ * Retry strategy: up to MAX_RETRIES attempts with exponential backoff.
+ * On exhaustion, content stays in 'reviewing' and moderationError is set
+ * (admin-only). moderationReason is never touched on retries.
  */
 
-const prisma        = require('../lib/prisma')
-const jobQueue      = require('../integrations/queue/jobQueue')
-const aiCore        = require('../lib/aiCoreClient')
-const logger        = require('../lib/logger')
+const prisma   = require('../prismaClient')
+const jobQueue = require('../integrations/queue/jobQueue')
+const aiCore   = require('../lib/aiCoreClient')
+const logger   = require('../lib/logger')
 
 const MAX_RETRIES   = 3
 const BASE_DELAY_MS = 2_000 // 2s, 4s, 8s
@@ -30,6 +36,13 @@ const MODELS = {
   event:    prisma.event,
 }
 
+const BODY_FIELD = {
+  article:  'content',
+  research: 'content',
+  blogPost: 'content',
+  event:    'description',
+}
+
 function getModel(entity) {
   const model = MODELS[entity]
   if (!model) throw new Error(`Unknown entity type for moderation: ${entity}`)
@@ -38,13 +51,23 @@ function getModel(entity) {
 
 // ─── ai:moderate ─────────────────────────────────────────────────────────────
 
-async function handleModerate({ entity, id, title, body, attempt = 1 }) {
+async function handleModerate({ entity, id, attempt = 1 }) {
   if (!aiCore.isConfigured()) {
     logger.warn({ entity, id }, '[aiWorker] ai-core not configured — skipping moderation')
     return
   }
 
   try {
+    // Always read from DB so we moderate the current content, not a stale snapshot
+    const record = await getModel(entity).findUnique({ where: { id } })
+    if (!record) {
+      logger.warn({ entity, id }, '[aiWorker] Record not found — skipping moderation')
+      return
+    }
+
+    const title = record.title ?? ''
+    const body  = record[BODY_FIELD[entity]] ?? ''
+
     const result = await aiCore.moderate({
       type:       entity,
       title,
@@ -54,7 +77,6 @@ async function handleModerate({ entity, id, title, body, attempt = 1 }) {
 
     const { decision, score, reasons } = result
 
-    // Map ai-core decision → Artix Hub status
     const statusMap = {
       approved:     'published',
       needs_review: 'reviewing',
@@ -67,15 +89,13 @@ async function handleModerate({ entity, id, title, body, attempt = 1 }) {
       data: {
         status:           newStatus,
         moderationScore:  score,
-        // moderationReason is author-visible — only write human-readable rejection reasons
         moderationReason: newStatus === 'rejected' && reasons?.length ? reasons.join('; ') : null,
-        moderationError:  null, // clear any previous technical error on success
+        moderationError:  null,
         ...(newStatus === 'published' && entity === 'blogPost' && { archived: false }),
         ...(newStatus === 'published' && entity === 'event'    && { archived: false }),
       },
     })
 
-    // Index the content now that it's published
     if (newStatus === 'published') {
       jobQueue.enqueue('ai:index', { entity, id, title, body })
     }
@@ -87,11 +107,13 @@ async function handleModerate({ entity, id, title, body, attempt = 1 }) {
     if (attempt < MAX_RETRIES) {
       const delay = BASE_DELAY_MS * 2 ** (attempt - 1)
       setTimeout(() => {
-        jobQueue.enqueue('ai:moderate', { entity, id, title, body, attempt: attempt + 1 })
+        jobQueue.enqueue(
+          'ai:moderate',
+          { entity, id, attempt: attempt + 1 },
+          { jobId: `${entity}:${id}` }
+        )
       }, delay)
     } else {
-      // All retries exhausted: store technical details in moderationError (admin-only),
-      // leave moderationReason null so the author only sees "En revisión".
       logger.warn({ entity, id }, '[aiWorker] Max retries reached — content stays in reviewing')
       try {
         await getModel(entity).update({
@@ -112,7 +134,6 @@ async function handleModerate({ entity, id, title, body, attempt = 1 }) {
 async function handleIndex({ entity, id, title, body, metadata = {} }) {
   if (!aiCore.isConfigured()) return
 
-  // Normalize entity name: blogPost → post to match ai-core entity convention
   const aiEntity = entity === 'blogPost' ? 'post' : entity
 
   try {

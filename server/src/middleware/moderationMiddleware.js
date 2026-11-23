@@ -6,12 +6,16 @@
  * Not an Express middleware per se — a module with two callable helpers:
  *   triggerModerationAfterCreate  — enqueue ai:moderate for brand-new content
  *   triggerModerationAfterEdit    — enqueue ai:moderate when published content is edited
+ *
+ * The job payload intentionally carries ONLY { entity, id }. The worker reads
+ * the current content from the DB at execution time so stale snapshots never
+ * reach ai-core. Deduplication is handled by jobQueue via jobId = `${entity}:${id}`.
  */
 
 const jobQueue = require('../integrations/queue/jobQueue')
 const logger   = require('../lib/logger')
 
-// Field that holds the "body" text for each entity type
+// Field that holds the "body" text for each entity type — used for change detection only
 const BODY_FIELD = {
   article:  'content',
   research: 'content',
@@ -24,17 +28,17 @@ const BODY_FIELD = {
  * Enqueues ai:moderate so the worker sets the final status.
  *
  * @param {'article'|'research'|'blogPost'|'event'} entity
- * @param {{ id: string, title: string, body: string }} content
+ * @param {{ id: string }} content
  */
-function triggerModerationAfterCreate(entity, { id, title, body }) {
-  jobQueue.enqueue('ai:moderate', { entity, id, title, body })
+function triggerModerationAfterCreate(entity, { id }) {
+  jobQueue.enqueue('ai:moderate', { entity, id }, { jobId: `${entity}:${id}` })
   logger.info({ entity, id }, '[moderation] Queued ai:moderate after create')
 }
 
 /**
- * Call after successfully updating published content.
+ * Call before updating content.
  * Sets status back to 'reviewing' via the returned patch and enqueues ai:moderate
- * only when title or body actually changed.
+ * only when title or body actually changed on a published item.
  *
  * Returns a Prisma data patch `{ status: 'reviewing' }` to merge into the update
  * call, or `{}` when no re-moderation is needed (so it's safe to spread).
@@ -47,22 +51,19 @@ function triggerModerationAfterCreate(entity, { id, title, body }) {
 function triggerModerationAfterEdit(entity, existing, incoming) {
   if (existing.status !== 'published') return {}
 
-  const bodyField   = BODY_FIELD[entity]
+  const bodyField    = BODY_FIELD[entity]
   const titleChanged = incoming.title !== undefined && incoming.title !== existing.title
   const bodyChanged  = incoming[bodyField] !== undefined && incoming[bodyField] !== existing[bodyField]
 
   if (!titleChanged && !bodyChanged) return {}
 
-  const title = incoming.title    ?? existing.title
-  const body  = incoming[bodyField] ?? existing[bodyField]
-
-  // Schedule moderation — runs after the caller's DB update completes
+  // Schedule moderation — runs after the caller's DB update completes.
+  // Worker reads the saved content from DB, so we only need { entity, id }.
   setImmediate(() => {
-    jobQueue.enqueue('ai:moderate', { entity, id: existing.id, title, body })
+    jobQueue.enqueue('ai:moderate', { entity, id: existing.id }, { jobId: `${entity}:${existing.id}` })
     logger.info({ entity, id: existing.id }, '[moderation] Queued ai:moderate after edit')
   })
 
-  // Caller must include this patch so the content goes back to reviewing
   return { status: 'reviewing' }
 }
 

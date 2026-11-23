@@ -157,7 +157,11 @@ describe('triggerModerationAfterEdit', () => {
     )
     expect(patch).toEqual({ status: 'reviewing' })
     await new Promise(resolve => setImmediate(resolve))
-    expect(enqueue).toHaveBeenCalledWith('ai:moderate', expect.objectContaining({ id: 'a1' }))
+    expect(enqueue).toHaveBeenCalledWith(
+      'ai:moderate',
+      expect.objectContaining({ id: 'a1' }),
+      expect.objectContaining({ jobId: 'article:a1' })
+    )
   })
 
   it('returns { status: reviewing } and enqueues when published title changes', async () => {
@@ -167,7 +171,11 @@ describe('triggerModerationAfterEdit', () => {
     )
     expect(patch).toEqual({ status: 'reviewing' })
     await new Promise(resolve => setImmediate(resolve))
-    expect(enqueue).toHaveBeenCalledWith('ai:moderate', expect.objectContaining({ id: 'r1' }))
+    expect(enqueue).toHaveBeenCalledWith(
+      'ai:moderate',
+      expect.objectContaining({ id: 'r1' }),
+      expect.objectContaining({ jobId: 'research:r1' })
+    )
   })
 })
 
@@ -201,7 +209,11 @@ describe('articleService — create status security', () => {
       { id: 'u1', role: 'user' }
     )
     expect(repoCreate).toHaveBeenCalledWith(expect.objectContaining({ status: 'reviewing' }))
-    expect(enqueue).toHaveBeenCalledWith('ai:moderate', expect.objectContaining({ id: 'a1' }))
+    expect(enqueue).toHaveBeenCalledWith(
+      'ai:moderate',
+      expect.objectContaining({ id: 'a1' }),
+      expect.objectContaining({ jobId: 'article:a1' })
+    )
   })
 
   it('allows status:draft and does NOT enqueue moderation', async () => {
@@ -257,7 +269,25 @@ describe('articleService — update status and field security', () => {
   it('draft→reviewing transition enqueues moderation', async () => {
     repoUpdate.mockResolvedValue({ id: 'a1', title: 'Old', content: 'Old body', status: 'reviewing' })
     await articleService.updateArticle('a1', { status: 'reviewing' }, user)
-    expect(enqueue).toHaveBeenCalledWith('ai:moderate', expect.objectContaining({ id: 'a1' }))
+    expect(enqueue).toHaveBeenCalledWith(
+      'ai:moderate',
+      expect.objectContaining({ id: 'a1' }),
+      expect.objectContaining({ jobId: 'article:a1' })
+    )
+  })
+
+  it('rejected→reviewing clears moderationReason and enqueues moderation', async () => {
+    repoFindById.mockResolvedValue({ ...existing, status: 'rejected', moderationReason: 'hate speech' })
+    repoUpdate.mockResolvedValue({ id: 'a1', status: 'reviewing', moderationReason: null })
+    await articleService.updateArticle('a1', { status: 'reviewing' }, user)
+    const data = repoUpdate.mock.calls[0][1]
+    expect(data).toHaveProperty('moderationReason', null)
+    expect(data).toHaveProperty('moderationError', null)
+    expect(enqueue).toHaveBeenCalledWith(
+      'ai:moderate',
+      expect.objectContaining({ id: 'a1' }),
+      expect.objectContaining({ jobId: 'article:a1' })
+    )
   })
 
   it('published + body change sets status to reviewing and enqueues moderation', async () => {
@@ -267,6 +297,10 @@ describe('articleService — update status and field security', () => {
     const data = repoUpdate.mock.calls[0][1]
     expect(data).toHaveProperty('status', 'reviewing')
     await new Promise(resolve => setImmediate(resolve))
-    expect(enqueue).toHaveBeenCalledWith('ai:moderate', expect.objectContaining({ id: 'a1' }))
+    expect(enqueue).toHaveBeenCalledWith(
+      'ai:moderate',
+      expect.objectContaining({ id: 'a1' }),
+      expect.objectContaining({ jobId: 'article:a1' })
+    )
   })
 })

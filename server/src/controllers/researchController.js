@@ -318,11 +318,7 @@ exports.createResearch = async (req, res) => {
     })
 
     if (research.status === 'reviewing') {
-      triggerModerationAfterCreate('research', {
-        id: research.id,
-        title: research.title,
-        body: research.content,
-      })
+      triggerModerationAfterCreate('research', { id: research.id })
     }
 
     res.status(201).json({ ok: true, research })
@@ -369,6 +365,10 @@ exports.updateResearch = async (req, res) => {
           references: Array.isArray(references) ? references : [],
         }),
         ...(safeStatus !== undefined && { status: safeStatus }),
+        ...(existing.status === 'rejected' && safeStatus === 'reviewing' && {
+          moderationReason: null,
+          moderationError:  null,
+        }),
         ...moderationPatch,
       },
       include: {
@@ -382,12 +382,8 @@ exports.updateResearch = async (req, res) => {
       },
     })
 
-    if (existing.status === 'draft' && safeStatus === 'reviewing') {
-      triggerModerationAfterCreate('research', {
-        id: research.id,
-        title: research.title,
-        body: research.content,
-      })
+    if ((existing.status === 'draft' || existing.status === 'rejected') && safeStatus === 'reviewing') {
+      triggerModerationAfterCreate('research', { id: research.id })
     }
 
     res.json({ ok: true, research })
