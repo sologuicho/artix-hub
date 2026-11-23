@@ -1174,6 +1174,11 @@ const AdminPanel = () => {
                                 Motivo: {item.moderationReason}
                               </p>
                             )}
+                            {item.moderationError && (
+                              <p style={{ fontFamily: MONO, fontSize: '0.625rem', color: 'var(--muted)', marginTop: 3, maxWidth: 320, fontStyle: 'italic' }}>
+                                Error interno: {item.moderationError}
+                              </p>
+                            )}
                           </td>
                           <td style={tdStyle}>
                             <span style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>

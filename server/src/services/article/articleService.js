@@ -240,7 +240,7 @@ exports.addComment = async (articleId, content, currentUser) => {
 exports.getCategories = async () => {
   const prisma = require('../../prismaClient')
   const categories = await prisma.article.findMany({
-    where: { status: { not: 'archived' } },
+    where: { status: 'published' },
     select: { category: true },
     distinct: ['category'],
     orderBy: { category: 'asc' },

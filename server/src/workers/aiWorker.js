@@ -65,9 +65,11 @@ async function handleModerate({ entity, id, title, body, attempt = 1 }) {
     await getModel(entity).update({
       where: { id },
       data: {
-        status:          newStatus,
+        status:           newStatus,
         moderationScore:  score,
-        moderationReason: reasons?.length ? reasons.join('; ') : null,
+        // moderationReason is author-visible — only write human-readable rejection reasons
+        moderationReason: newStatus === 'rejected' && reasons?.length ? reasons.join('; ') : null,
+        moderationError:  null, // clear any previous technical error on success
         ...(newStatus === 'published' && entity === 'blogPost' && { archived: false }),
         ...(newStatus === 'published' && entity === 'event'    && { archived: false }),
       },
@@ -88,7 +90,19 @@ async function handleModerate({ entity, id, title, body, attempt = 1 }) {
         jobQueue.enqueue('ai:moderate', { entity, id, title, body, attempt: attempt + 1 })
       }, delay)
     } else {
+      // All retries exhausted: store technical details in moderationError (admin-only),
+      // leave moderationReason null so the author only sees "En revisión".
       logger.warn({ entity, id }, '[aiWorker] Max retries reached — content stays in reviewing')
+      try {
+        await getModel(entity).update({
+          where: { id },
+          data: {
+            moderationError: `ai:moderate failed after ${MAX_RETRIES} attempts: ${err.message}`,
+          },
+        })
+      } catch (dbErr) {
+        logger.error({ dbErr, entity, id }, '[aiWorker] Failed to persist moderationError')
+      }
     }
   }
 }

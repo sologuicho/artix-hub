@@ -151,6 +151,7 @@ exports.createBlogPost = async (req, res) => {
     const {
       title,
       content,
+      status,
       category,
       tags,
       coverUrl,
@@ -226,6 +227,7 @@ exports.createBlogPost = async (req, res) => {
       data: {
         title: title || null,
         content,
+        status: status || 'reviewing',
         category: category || 'General',
         tags: tags || [],
         coverUrl: coverUrl || null,
@@ -263,11 +265,13 @@ exports.createBlogPost = async (req, res) => {
       }
     }
 
-    triggerModerationAfterCreate('blogPost', {
-      id:    post.id,
-      title: post.title || '',
-      body:  post.content,
-    })
+    if (post.status === 'reviewing') {
+      triggerModerationAfterCreate('blogPost', {
+        id:    post.id,
+        title: post.title || '',
+        body:  post.content,
+      })
+    }
 
     res.status(201).json({ ok: true, post })
   } catch (error) {

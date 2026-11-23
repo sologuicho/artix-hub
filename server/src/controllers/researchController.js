@@ -237,6 +237,7 @@ exports.createResearch = async (req, res) => {
       description,
       category,
       tags,
+      status,
       coverUrl,
       pdfUrl,
       documents,
@@ -300,7 +301,7 @@ exports.createResearch = async (req, res) => {
         documents: documents && Array.isArray(documents) ? documents : [],
         references: references || [],
         isCollaborative: isCollaborative || false,
-        status: 'reviewing', // Start in reviewing status
+        status: status || 'reviewing',
         authorId: authorId,
       },
       include: {
@@ -315,11 +316,13 @@ exports.createResearch = async (req, res) => {
       },
     })
 
-    triggerModerationAfterCreate('research', {
-      id: research.id,
-      title: research.title,
-      body: research.content,
-    })
+    if (research.status === 'reviewing') {
+      triggerModerationAfterCreate('research', {
+        id: research.id,
+        title: research.title,
+        body: research.content,
+      })
+    }
 
     res.status(201).json({ ok: true, research })
   } catch (error) {

@@ -187,6 +187,7 @@ model Article {
   isCollaborative  Boolean               @default(false)
   moderationScore  Float?
   moderationReason String?               @db.Text
+  moderationError  String?               @db.Text
   authorId         String
   author           User                  @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   collaborators    ArticleCollaborator[]
@@ -220,6 +221,7 @@ model Research {
   isCollaborative  Boolean                @default(false)
   moderationScore  Float?
   moderationReason String?                @db.Text
+  moderationError  String?                @db.Text
   authorId         String
   author           User                   @relation("ResearchAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   collaborators    ResearchCollaborator[]
@@ -287,6 +289,7 @@ model Event {
   status           String              @default("reviewing") // reviewing, published, rejected, archived
   moderationScore  Float?
   moderationReason String?             @db.Text
+  moderationError  String?             @db.Text
   // Capacity & tickets
   maxAttendees    Int?                // null = unlimited
   ticketPrice     Float?              // null / 0 = free
@@ -373,6 +376,7 @@ model BlogPost {
   status           String      @default("reviewing") // reviewing, published, rejected, archived
   moderationScore  Float?
   moderationReason String?     @db.Text
+  moderationError  String?     @db.Text
   authorId         String
   author           User        @relation("BlogPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   reactions        Reaction[]

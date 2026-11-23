@@ -181,6 +181,7 @@ exports.createEvent = async (req, res) => {
       time,
       location,
       type,
+      status,
       tags,
       bannerUrl,
       publishAsArtixResearch,
@@ -239,6 +240,7 @@ exports.createEvent = async (req, res) => {
         type,
         tags: tags || [],
         bannerUrl,
+        status: status || 'reviewing',
         creatorId: creatorId,
         maxAttendees: req.body.maxAttendees ? parseInt(req.body.maxAttendees) : null,
         ticketPrice: req.body.ticketPrice ? parseFloat(req.body.ticketPrice) : null,
@@ -256,11 +258,13 @@ exports.createEvent = async (req, res) => {
       },
     })
 
-    triggerModerationAfterCreate('event', {
-      id:    event.id,
-      title: event.title,
-      body:  event.description,
-    })
+    if (event.status === 'reviewing') {
+      triggerModerationAfterCreate('event', {
+        id:    event.id,
+        title: event.title,
+        body:  event.description,
+      })
+    }
 
     res.status(201).json({ ok: true, event })
   } catch (error) {

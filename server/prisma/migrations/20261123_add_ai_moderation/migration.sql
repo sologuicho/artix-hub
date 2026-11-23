@@ -4,7 +4,8 @@
 -- ─── Article ─────────────────────────────────────────────────────────────────
 ALTER TABLE "Article"
   ADD COLUMN IF NOT EXISTS "moderationScore"  DOUBLE PRECISION,
-  ADD COLUMN IF NOT EXISTS "moderationReason" TEXT;
+  ADD COLUMN IF NOT EXISTS "moderationReason" TEXT,
+  ADD COLUMN IF NOT EXISTS "moderationError"  TEXT;
 
 -- New articles go through review before publishing
 ALTER TABLE "Article" ALTER COLUMN "status" SET DEFAULT 'reviewing';
@@ -12,7 +13,8 @@ ALTER TABLE "Article" ALTER COLUMN "status" SET DEFAULT 'reviewing';
 -- ─── Research ────────────────────────────────────────────────────────────────
 ALTER TABLE "Research"
   ADD COLUMN IF NOT EXISTS "moderationScore"  DOUBLE PRECISION,
-  ADD COLUMN IF NOT EXISTS "moderationReason" TEXT;
+  ADD COLUMN IF NOT EXISTS "moderationReason" TEXT,
+  ADD COLUMN IF NOT EXISTS "moderationError"  TEXT;
 
 ALTER TABLE "Research" ALTER COLUMN "status" SET DEFAULT 'reviewing';
 
@@ -21,7 +23,8 @@ ALTER TABLE "Research" ALTER COLUMN "status" SET DEFAULT 'reviewing';
 ALTER TABLE "BlogPost"
   ADD COLUMN IF NOT EXISTS "status"           VARCHAR(50) NOT NULL DEFAULT 'reviewing',
   ADD COLUMN IF NOT EXISTS "moderationScore"  DOUBLE PRECISION,
-  ADD COLUMN IF NOT EXISTS "moderationReason" TEXT;
+  ADD COLUMN IF NOT EXISTS "moderationReason" TEXT,
+  ADD COLUMN IF NOT EXISTS "moderationError"  TEXT;
 
 -- Existing posts: map archived boolean → status.
 -- archived = true  → 'archived'
@@ -34,7 +37,8 @@ UPDATE "BlogPost"
 ALTER TABLE "Event"
   ADD COLUMN IF NOT EXISTS "status"           VARCHAR(50) NOT NULL DEFAULT 'reviewing',
   ADD COLUMN IF NOT EXISTS "moderationScore"  DOUBLE PRECISION,
-  ADD COLUMN IF NOT EXISTS "moderationReason" TEXT;
+  ADD COLUMN IF NOT EXISTS "moderationReason" TEXT,
+  ADD COLUMN IF NOT EXISTS "moderationError"  TEXT;
 
 UPDATE "Event"
   SET "status" = CASE WHEN "archived" THEN 'archived' ELSE 'published' END
