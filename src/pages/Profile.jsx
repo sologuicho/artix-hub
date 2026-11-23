@@ -54,18 +54,19 @@ function ContentBadge({ type }) {
   )
 }
 
+const STATUS_STYLES = {
+  reviewing: { bg: 'rgba(224,129,94,0.12)', border: 'rgba(224,129,94,0.4)', color: '#e0815e', label: 'EN REVISIÓN' },
+  rejected:  { bg: 'rgba(220,60,60,0.12)',  border: 'rgba(220,60,60,0.4)',  color: '#e05e5e', label: 'RECHAZADO' },
+}
+
 function ContentRow({ item }) {
+  const statusStyle = item.status && item.status !== 'published' ? STATUS_STYLES[item.status] : null
   return (
-    <Link
-      to={item.href}
+    <div
       style={{
-        textDecoration: 'none',
-        display: 'block',
         padding: '22px 4px 22px 0',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
       }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.012)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
     >
       <div
         style={{
@@ -90,22 +91,43 @@ function ContentRow({ item }) {
             </span>
           </>
         )}
+        {statusStyle && (
+          <span
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              padding: '2px 8px',
+              border: `1px solid ${statusStyle.border}`,
+              color: statusStyle.color,
+              background: statusStyle.bg,
+            }}
+          >
+            {statusStyle.label}
+          </span>
+        )}
       </div>
-      <h3
-        style={{
-          margin: 0,
-          fontSize: 18,
-          lineHeight: 1.34,
-          fontWeight: 600,
-          letterSpacing: '-0.01em',
-          color: '#eceae6',
-          transition: 'color 0.15s',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#e0815e')}
-        onMouseLeave={e => (e.currentTarget.style.color = '#eceae6')}
+      <Link
+        to={item.href}
+        style={{ textDecoration: 'none' }}
+        onMouseEnter={e => (e.currentTarget.querySelector('h3').style.color = '#e0815e')}
+        onMouseLeave={e => (e.currentTarget.querySelector('h3').style.color = '#eceae6')}
       >
-        {item.title}
-      </h3>
+        <h3
+          style={{
+            margin: 0,
+            fontSize: 18,
+            lineHeight: 1.34,
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+            color: '#eceae6',
+            transition: 'color 0.15s',
+          }}
+        >
+          {item.title}
+        </h3>
+      </Link>
       {item.excerpt && (
         <p
           style={{
@@ -120,7 +142,24 @@ function ContentRow({ item }) {
           {item.excerpt.length > 160 ? item.excerpt.slice(0, 160) + '…' : item.excerpt}
         </p>
       )}
-    </Link>
+      {item.status === 'rejected' && item.moderationReason && (
+        <p
+          style={{
+            margin: '10px 0 0',
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: '#c07070',
+            background: 'rgba(220,60,60,0.07)',
+            border: '1px solid rgba(220,60,60,0.2)',
+            padding: '8px 12px',
+            maxWidth: 600,
+          }}
+        >
+          Motivo: {item.moderationReason}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -310,11 +349,12 @@ export default function Profile() {
     if (!profile?.id || contentLoaded) return
     setContentLoaded(true)
     try {
+      const ownFilter = isOwnProfile ? '' : '&status=published'
       const [artRes, resRes, fwrRes, fwgRes] = await Promise.all([
-        fetch(`${BACKEND_URL}/api/articles?authorId=${profile.id}&status=published&limit=20`, {
+        fetch(`${BACKEND_URL}/api/articles?authorId=${profile.id}${ownFilter}&limit=50`, {
           credentials: 'include',
         }),
-        fetch(`${BACKEND_URL}/api/research?authorId=${profile.id}&status=published&limit=20`, {
+        fetch(`${BACKEND_URL}/api/research?authorId=${profile.id}${ownFilter}&limit=50`, {
           credentials: 'include',
         }),
         fetch(`${BACKEND_URL}/api/follow/${profile.id}/followers`, { credentials: 'include' }),
@@ -333,7 +373,7 @@ export default function Profile() {
     } catch (_) {
       // intentional
     }
-  }, [profile, contentLoaded])
+  }, [profile, contentLoaded, isOwnProfile])
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
@@ -379,47 +419,38 @@ export default function Profile() {
   }
 
   /* Derived content for current tab */
+  const mapArticle = a => ({
+    id: a.id,
+    href: `/articles/${a.id}`,
+    badgeLabel: 'ARTÍCULO',
+    date: fmtDate(a.createdAt || a.publishedAt),
+    meta: a.viewCount ? `${fmtCount(a.viewCount)} lecturas` : '',
+    title: a.title,
+    excerpt: a.description || a.excerpt || '',
+    status: a.status,
+    moderationReason: a.moderationReason,
+  })
+  const mapResearch = r => ({
+    id: r.id,
+    href: `/research/${r.id}`,
+    badgeLabel: 'PAPER',
+    date: fmtDate(r.createdAt || r.publishedAt),
+    meta: r.citationCount ? `${fmtCount(r.citationCount)} citas` : '',
+    title: r.title,
+    excerpt: r.abstract || r.description || '',
+    status: r.status,
+    moderationReason: r.moderationReason,
+  })
+
   const allPubs = [
-    ...articles.map(a => ({
-      id: a.id,
-      href: `/articles/${a.id}`,
-      badgeLabel: 'ARTÍCULO',
-      date: fmtDate(a.createdAt || a.publishedAt),
-      meta: a.viewCount ? `${fmtCount(a.viewCount)} lecturas` : '',
-      title: a.title,
-      excerpt: a.description || a.excerpt || '',
-    })),
-    ...research.map(r => ({
-      id: r.id,
-      href: `/research/${r.id}`,
-      badgeLabel: 'PAPER',
-      date: fmtDate(r.createdAt || r.publishedAt),
-      meta: r.citationCount ? `${fmtCount(r.citationCount)} citas` : '',
-      title: r.title,
-      excerpt: r.abstract || r.description || '',
-    })),
+    ...articles.map(mapArticle),
+    ...research.map(mapResearch),
   ].sort((a, b) => (b.date < a.date ? -1 : 1))
 
   const tabItems = {
     Publicaciones: allPubs,
-    Papers: research.map(r => ({
-      id: r.id,
-      href: `/research/${r.id}`,
-      badgeLabel: 'PAPER',
-      date: fmtDate(r.createdAt || r.publishedAt),
-      meta: r.citationCount ? `${fmtCount(r.citationCount)} citas` : '',
-      title: r.title,
-      excerpt: r.abstract || r.description || '',
-    })),
-    Artículos: articles.map(a => ({
-      id: a.id,
-      href: `/articles/${a.id}`,
-      badgeLabel: 'ARTÍCULO',
-      date: fmtDate(a.createdAt || a.publishedAt),
-      meta: a.viewCount ? `${fmtCount(a.viewCount)} lecturas` : '',
-      title: a.title,
-      excerpt: a.description || a.excerpt || '',
-    })),
+    Papers: research.map(mapResearch),
+    Artículos: articles.map(mapArticle),
   }
 
   const isPeoplTab = activeTab === 'Seguidores' || activeTab === 'Siguiendo'
