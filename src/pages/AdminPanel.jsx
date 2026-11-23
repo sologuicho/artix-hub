@@ -117,6 +117,15 @@ const AdminPanel = () => {
   const [studentPagination, setStudentPagination] = useState({ page: 1, totalPages: 1, total: 0 })
   const [loadingStudents, setLoadingStudents] = useState(false)
 
+  const [modItems, setModItems] = useState([])
+  const [modPagination, setModPagination] = useState({ page: 1, totalPages: 1, total: 0 })
+  const [modTypeFilter, setModTypeFilter] = useState('')
+  const [modStatusFilter, setModStatusFilter] = useState('reviewing')
+  const [loadingMod, setLoadingMod] = useState(false)
+  const [modPendingCount, setModPendingCount] = useState(0)
+  const [rejectingItem, setRejectingItem] = useState(null) // {id, type}
+  const [rejectReason, setRejectReason] = useState('')
+
   const getCsrfToken = () =>
     document.cookie
       .split('; ')
@@ -275,6 +284,8 @@ const AdminPanel = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (activeTab === 'content') fetchContent(1, contentType)
     if (activeTab === 'students') fetchStudents(1)
+    if (activeTab === 'moderation') fetchModeration(1, modTypeFilter, modStatusFilter)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, contentType])
 
   const handleApproveStudent = async id => {
@@ -329,6 +340,92 @@ const AdminPanel = () => {
       setError('Error de conexión')
     }
   }
+
+  const fetchModeration = async (page = 1, type = modTypeFilter, statusF = modStatusFilter) => {
+    setLoadingMod(true)
+    try {
+      const params = new URLSearchParams({ page, limit: 20 })
+      if (type) params.append('type', type)
+      if (statusF) params.append('status', statusF)
+      const res = await fetch(`${BACKEND_URL}/api/admin/moderation?${params}`, {
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setModItems(data.items)
+        setModPagination({ page: data.pagination.page, totalPages: data.pagination.totalPages || 1, total: data.pagination.total })
+      } else setError(data.message || 'Error al cargar moderación')
+    } catch {
+      setError('Error de conexión')
+    } finally {
+      setLoadingMod(false)
+    }
+  }
+
+  const pollPendingCount = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/moderation?status=reviewing&limit=1`, {
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (res.ok) setModPendingCount(data.pagination?.total || 0)
+    } catch { /* silent */ }
+  }
+
+  const handleApproveContent = async (type, id) => {
+    setError(null)
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/content/${type}/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() },
+        credentials: 'include',
+        body: JSON.stringify({ status: 'published' }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setModItems(prev => prev.filter(i => !(i.id === id && i.type === type)))
+        setModPendingCount(c => Math.max(0, c - 1))
+      } else setError(data.message || 'Error al aprobar')
+    } catch {
+      setError('Error de conexión')
+    }
+  }
+
+  const handleRejectContent = async (type, id, reason) => {
+    setError(null)
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/content/${type}/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() },
+        credentials: 'include',
+        body: JSON.stringify({ status: 'rejected', reason }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setModItems(prev =>
+          prev.map(i =>
+            i.id === id && i.type === type
+              ? { ...i, status: 'rejected', moderationReason: reason }
+              : i
+          )
+        )
+        setRejectingItem(null)
+        setRejectReason('')
+        setModPendingCount(c => Math.max(0, c - 1))
+      } else setError(data.message || 'Error al rechazar')
+    } catch {
+      setError('Error de conexión')
+    }
+  }
+
+  // Poll for new reviewing items every 30 s
+  React.useEffect(() => {
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'admin')) return
+    pollPendingCount()
+    const id = setInterval(pollPendingCount, 30_000)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   if (!user || (user.role !== 'ADMIN' && user.role !== 'admin')) {
     return <Navigate to="/" replace />
@@ -473,6 +570,11 @@ const AdminPanel = () => {
             { id: 'users', label: 'Usuarios' },
             { id: 'content', label: 'Contenido' },
             {
+              id: 'moderation',
+              label: modPendingCount > 0 ? `Moderación (${modPendingCount})` : 'Moderación',
+              alert: modPendingCount > 0,
+            },
+            {
               id: 'students',
               label:
                 studentPagination.total > 0
@@ -493,7 +595,7 @@ const AdminPanel = () => {
                 textTransform: 'uppercase',
                 paddingBottom: '0.75rem',
                 marginBottom: '-1px',
-                color: activeTab === tab.id ? '#C4451A' : 'var(--muted)',
+                color: activeTab === tab.id ? '#C4451A' : tab.alert ? '#e0815e' : 'var(--muted)',
                 borderBottom: activeTab === tab.id ? '2px solid #C4451A' : '2px solid transparent',
                 transition: 'color 0.15s',
               }}
@@ -951,6 +1053,221 @@ const AdminPanel = () => {
                     fetchStudents(p)
                   }}
                   disabled={studentPagination.page >= studentPagination.totalPages}
+                >
+                  <ArrowRight size={13} />
+                </PageBtn>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── Moderation tab ── */}
+        {activeTab === 'moderation' && (
+          <section>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                borderBottom: '1px solid var(--border)',
+                paddingBottom: '1rem',
+                marginBottom: '1.5rem',
+              }}
+            >
+              <h2 style={{ fontFamily: SANS, fontWeight: 700, fontSize: '1.5rem', color: 'var(--text)' }}>
+                Cola de moderación
+                {modPendingCount > 0 && (
+                  <span
+                    style={{
+                      marginLeft: '0.75rem',
+                      fontFamily: MONO,
+                      fontSize: '0.6875rem',
+                      background: 'rgba(224,129,94,0.15)',
+                      border: '1px solid rgba(224,129,94,0.4)',
+                      color: '#e0815e',
+                      padding: '2px 8px',
+                      verticalAlign: 'middle',
+                    }}
+                  >
+                    {modPendingCount} pendiente{modPendingCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </h2>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <select
+                  value={modTypeFilter}
+                  onChange={e => {
+                    setModTypeFilter(e.target.value)
+                    fetchModeration(1, e.target.value, modStatusFilter)
+                  }}
+                  style={{ fontFamily: MONO, fontSize: '0.6875rem', background: 'none', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.375rem 0.75rem', cursor: 'pointer', outline: 'none' }}
+                >
+                  <option value="">Todos los tipos</option>
+                  <option value="article">Artículos</option>
+                  <option value="research">Investigaciones</option>
+                  <option value="event">Eventos</option>
+                  <option value="blogpost">Blog posts</option>
+                </select>
+                <select
+                  value={modStatusFilter}
+                  onChange={e => {
+                    setModStatusFilter(e.target.value)
+                    fetchModeration(1, modTypeFilter, e.target.value)
+                  }}
+                  style={{ fontFamily: MONO, fontSize: '0.6875rem', background: 'none', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.375rem 0.75rem', cursor: 'pointer', outline: 'none' }}
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="reviewing">En revisión</option>
+                  <option value="rejected">Rechazados</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['Tipo', 'Título / Autor', 'Fecha', 'Score IA', 'Estado', 'Acciones'].map((h, i) => (
+                      <th key={h} style={{ ...thStyle, textAlign: i === 5 ? 'center' : 'left' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingMod ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 6 }).map((_, j) => (
+                          <td key={j} style={tdStyle}>
+                            <div style={{ height: 14, backgroundColor: 'var(--surface)' }} />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : modItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)', fontFamily: MONO, fontSize: '0.6875rem' }}>
+                        No hay contenido pendiente.
+                      </td>
+                    </tr>
+                  ) : (
+                    modItems.map(item => (
+                      <React.Fragment key={`${item.type}-${item.id}`}>
+                        <tr>
+                          <td style={tdStyle}>
+                            <span style={{ fontFamily: MONO, fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)' }}>
+                              {item.type}
+                            </span>
+                          </td>
+                          <td style={tdStyle}>
+                            <p style={{ fontFamily: SANS, fontSize: '0.875rem', color: 'var(--text)', fontWeight: 500, marginBottom: 2 }}>
+                              {item.title || 'Sin título'}
+                            </p>
+                            <p style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>
+                              {item.author?.name || '—'} · {item.author?.email}
+                            </p>
+                            {item.moderationReason && (
+                              <p style={{ fontFamily: MONO, fontSize: '0.6875rem', color: '#e05e5e', marginTop: 4, maxWidth: 320 }}>
+                                Motivo: {item.moderationReason}
+                              </p>
+                            )}
+                          </td>
+                          <td style={tdStyle}>
+                            <span style={{ fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>
+                              {new Date(item.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </td>
+                          <td style={tdStyle}>
+                            <span style={{ fontFamily: MONO, fontSize: '0.6875rem', color: item.moderationScore != null ? (item.moderationScore > 0.7 ? '#e05e5e' : item.moderationScore > 0.4 ? '#e0815e' : '#8a8a85') : 'var(--muted)' }}>
+                              {item.moderationScore != null ? (item.moderationScore * 100).toFixed(0) + '%' : '—'}
+                            </span>
+                          </td>
+                          <td style={tdStyle}>
+                            <span style={{
+                              fontFamily: MONO, fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.08em',
+                              padding: '2px 7px',
+                              border: `1px solid ${item.status === 'reviewing' ? 'rgba(224,129,94,0.4)' : 'rgba(220,60,60,0.4)'}`,
+                              color: item.status === 'reviewing' ? '#e0815e' : '#e05e5e',
+                              background: item.status === 'reviewing' ? 'rgba(224,129,94,0.1)' : 'rgba(220,60,60,0.1)',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {item.status === 'reviewing' ? 'EN REVISIÓN' : 'RECHAZADO'}
+                            </span>
+                          </td>
+                          <td style={{ ...tdStyle, textAlign: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                              {item.status !== 'published' && (
+                                <button
+                                  onClick={() => handleApproveContent(item.type, item.id)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: MONO, fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#C4451A' }}
+                                >
+                                  Aprobar
+                                </button>
+                              )}
+                              {item.status !== 'rejected' && (
+                                <button
+                                  onClick={() => { setRejectingItem({ id: item.id, type: item.type }); setRejectReason('') }}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: MONO, fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', transition: 'color 0.15s' }}
+                                  onMouseEnter={e => { e.currentTarget.style.color = '#e05252' }}
+                                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)' }}
+                                >
+                                  Rechazar
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                        {rejectingItem?.id === item.id && rejectingItem?.type === item.type && (
+                          <tr>
+                            <td colSpan={6} style={{ padding: '0.75rem 0 1rem', borderBottom: '1px solid var(--border)' }}>
+                              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', maxWidth: 600 }}>
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  placeholder="Motivo del rechazo (opcional)…"
+                                  value={rejectReason}
+                                  onChange={e => setRejectReason(e.target.value)}
+                                  onKeyDown={e => { if (e.key === 'Enter') handleRejectContent(item.type, item.id, rejectReason); if (e.key === 'Escape') { setRejectingItem(null); setRejectReason('') } }}
+                                  style={{ flex: 1, fontFamily: SANS, fontSize: '0.875rem', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', outline: 'none', color: 'var(--text)', paddingBottom: '0.25rem' }}
+                                />
+                                <button
+                                  onClick={() => handleRejectContent(item.type, item.id, rejectReason)}
+                                  style={{ fontFamily: MONO, fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase', background: 'none', border: '1px solid rgba(220,60,60,0.5)', color: '#e05e5e', padding: '0.25rem 0.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                >
+                                  Confirmar
+                                </button>
+                                <button
+                                  onClick={() => { setRejectingItem(null); setRejectReason('') }}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', fontFamily: MONO, fontSize: '0.6875rem', color: 'var(--muted)' }}>
+              <span>Página {modPagination.page} de {modPagination.totalPages} · {modPagination.total} ítem{modPagination.total !== 1 ? 's' : ''}</span>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <PageBtn
+                  onClick={() => { const p = Math.max(1, modPagination.page - 1); setModPagination(prev => ({ ...prev, page: p })); fetchModeration(p) }}
+                  disabled={modPagination.page <= 1}
+                >
+                  <ArrowLeft size={13} />
+                </PageBtn>
+                <PageBtn
+                  onClick={() => { const p = Math.min(modPagination.totalPages, modPagination.page + 1); setModPagination(prev => ({ ...prev, page: p })); fetchModeration(p) }}
+                  disabled={modPagination.page >= modPagination.totalPages}
                 >
                   <ArrowRight size={13} />
                 </PageBtn>
