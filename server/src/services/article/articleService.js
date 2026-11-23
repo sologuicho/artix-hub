@@ -9,6 +9,10 @@ const {
   triggerModerationAfterCreate,
   triggerModerationAfterEdit,
 } = require('../../middleware/moderationMiddleware')
+const {
+  sanitizeCreateStatus,
+  sanitizeUpdateStatus,
+} = require('../../lib/contentStatus')
 
 jobQueue.register('article:track-read', async ({ userId }) => {
   const { trackArticleRead } = require('../subscription/subscriptionService')
@@ -154,7 +158,7 @@ exports.createArticle = async (body, currentUser) => {
     description,
     category,
     tags: tags || [],
-    status: status || 'reviewing',
+    status: sanitizeCreateStatus(status),
     references: references || [],
     pdfUrl,
     coverUrl,
@@ -183,6 +187,8 @@ exports.updateArticle = async (id, body, currentUser) => {
 
   const { title, content, description, category, tags, status, references, pdfUrl, coverUrl } = body
 
+  const safeStatus = sanitizeUpdateStatus(status)
+
   // Re-moderate when published content's title or body changes
   const moderationPatch = triggerModerationAfterEdit('article', existing, { title, content })
 
@@ -192,7 +198,7 @@ exports.updateArticle = async (id, body, currentUser) => {
     ...(description !== undefined && { description }),
     ...(category !== undefined && { category }),
     ...(tags !== undefined && { tags: Array.isArray(tags) ? tags : [] }),
-    ...(status !== undefined && { status }),
+    ...(safeStatus !== undefined && { status: safeStatus }),
     ...(references !== undefined && { references: Array.isArray(references) ? references : [] }),
     ...(pdfUrl !== undefined && { pdfUrl }),
     ...(coverUrl !== undefined && { coverUrl }),

@@ -4,6 +4,7 @@ const {
   triggerModerationAfterCreate,
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
+const { sanitizeCreateStatus } = require('../lib/contentStatus')
 
 // Helper function to check if user can edit/delete content (including Artix Research content for luisflores01)
 const canManageContent = async (authorId, userId, userUsername, userRole) => {
@@ -301,7 +302,7 @@ exports.createResearch = async (req, res) => {
         documents: documents && Array.isArray(documents) ? documents : [],
         references: references || [],
         isCollaborative: isCollaborative || false,
-        status: status || 'reviewing',
+        status: sanitizeCreateStatus(status),
         authorId: authorId,
       },
       include: {
@@ -326,6 +327,8 @@ exports.createResearch = async (req, res) => {
 
     res.status(201).json({ ok: true, research })
   } catch (error) {
+    if (error.code === 'INVALID_STATUS')
+      return res.status(400).json({ ok: false, message: error.message })
     logger.error({ err: error }, '[researchController] Error creating research')
     res.status(500).json({ ok: false, message: 'Failed to create research' })
   }

@@ -4,6 +4,7 @@ const {
   triggerModerationAfterCreate,
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
+const { sanitizeCreateStatus } = require('../lib/contentStatus')
 
 // Helper: check if user can manage event content (creator, admin, or Artix Research proxy)
 const canManageContent = async (creatorId, userId, userUsername, userRole) => {
@@ -240,7 +241,7 @@ exports.createEvent = async (req, res) => {
         type,
         tags: tags || [],
         bannerUrl,
-        status: status || 'reviewing',
+        status: sanitizeCreateStatus(status),
         creatorId: creatorId,
         maxAttendees: req.body.maxAttendees ? parseInt(req.body.maxAttendees) : null,
         ticketPrice: req.body.ticketPrice ? parseFloat(req.body.ticketPrice) : null,
@@ -268,6 +269,8 @@ exports.createEvent = async (req, res) => {
 
     res.status(201).json({ ok: true, event })
   } catch (error) {
+    if (error.code === 'INVALID_STATUS')
+      return res.status(400).json({ ok: false, message: error.message })
     logger.error({ err: error }, '[eventController] Error creating event')
     res.status(500).json({ ok: false, message: 'Failed to create event' })
   }

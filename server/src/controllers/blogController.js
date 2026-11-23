@@ -4,6 +4,7 @@ const {
   triggerModerationAfterCreate,
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
+const { sanitizeCreateStatus } = require('../lib/contentStatus')
 
 // Helper: only author or admin can manage content
 const canManageContent = (authorId, userId, userRole) => authorId === userId || userRole === 'ADMIN'
@@ -227,7 +228,7 @@ exports.createBlogPost = async (req, res) => {
       data: {
         title: title || null,
         content,
-        status: status || 'reviewing',
+        status: sanitizeCreateStatus(status),
         category: category || 'General',
         tags: tags || [],
         coverUrl: coverUrl || null,
@@ -275,6 +276,8 @@ exports.createBlogPost = async (req, res) => {
 
     res.status(201).json({ ok: true, post })
   } catch (error) {
+    if (error.code === 'INVALID_STATUS')
+      return res.status(400).json({ ok: false, message: error.message })
     logger.error({ err: error }, '[blogController] Error creating blog post')
     res.status(500).json({ ok: false, message: 'Failed to create blog post' })
   }

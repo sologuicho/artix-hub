@@ -14,6 +14,8 @@ const handleError = (res, error, context) => {
   if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message })
   if (error.code === 'UNAUTHORIZED')
     return res.status(403).json({ ok: false, message: error.message })
+  if (error.code === 'INVALID_STATUS')
+    return res.status(400).json({ ok: false, message: error.message })
   logger.error({ err: error }, `[articleController] ${context}`)
   res.status(500).json({ ok: false, message: `Failed to ${context}` })
 }
