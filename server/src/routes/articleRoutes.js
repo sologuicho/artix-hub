@@ -10,7 +10,7 @@ const { optionalAuth } = require('../middleware/optionalAuth')
 const { checkUsageLimit } = require('../controllers/subscriptionController')
 
 // Public routes
-router.get('/', articleController.getAllArticles)
+router.get('/', optionalAuth, articleController.getAllArticles)
 router.get('/categories', articleController.getCategories)
 router.get('/:id', optionalAuth, checkUsageLimit, articleController.getArticle)
 

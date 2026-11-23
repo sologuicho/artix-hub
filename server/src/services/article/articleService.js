@@ -108,6 +108,14 @@ exports.getArticle = async (id, currentUser) => {
     throw err
   }
 
+  const isOwner = currentUser?.id === article.authorId
+  const isAdmin = currentUser?.role === 'ADMIN'
+  if (article.status !== 'published' && !isOwner && !isAdmin) {
+    const err = new Error('Article not found')
+    err.code = 'NOT_FOUND'
+    throw err
+  }
+
   // Fire-and-forget tracking (non-blocking)
   if (currentUser) {
     jobQueue.enqueue('article:track-read', { userId: currentUser.id })

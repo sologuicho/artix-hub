@@ -31,7 +31,7 @@ exports.getCategories = async (req, res) => {
 // GET /api/articles
 exports.getAllArticles = async (req, res) => {
   try {
-    const result = await articleService.getAllArticles(req.query)
+    const result = await articleService.getAllArticles(req.query, req.user)
     res.json({ ok: true, ...result })
   } catch (error) {
     handleError(res, error, 'fetch articles')

@@ -38,7 +38,7 @@ exports.getCategories = async (req, res) => {
     const categories = await prisma.research.findMany({
       where: {
         category: { not: null },
-        status: { not: 'archived' },
+        status: 'published',
       },
       select: { category: true },
       distinct: ['category'],
@@ -62,12 +62,14 @@ exports.getAllResearch = async (req, res) => {
   try {
     const { search, category, author, status } = req.query
 
+    const isAdmin = req.user?.role === 'ADMIN'
     const where = {}
-    // By default, exclude archived research unless explicitly requested
-    if (status !== 'archived' && !req.query.includeArchived) {
+    if (!isAdmin) {
+      where.status = 'published'
+    } else if (status !== 'archived' && !req.query.includeArchived) {
       where.status = { not: 'archived' }
-    } else {
-      where.status = status || 'published'
+    } else if (status) {
+      where.status = status
     }
 
     if (search) {
@@ -161,6 +163,12 @@ exports.getResearch = async (req, res) => {
     })
 
     if (!research) {
+      return res.status(404).json({ ok: false, message: 'Research not found' })
+    }
+
+    const isOwner = req.user?.id === research.authorId
+    const isAdmin = req.user?.role === 'ADMIN'
+    if (research.status !== 'published' && !isOwner && !isAdmin) {
       return res.status(404).json({ ok: false, message: 'Research not found' })
     }
 
