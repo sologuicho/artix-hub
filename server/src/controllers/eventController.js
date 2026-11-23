@@ -4,7 +4,7 @@ const {
   triggerModerationAfterCreate,
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
-const { sanitizeCreateStatus } = require('../lib/contentStatus')
+const { sanitizeCreateStatus, sanitizeUpdateStatus } = require('../lib/contentStatus')
 
 // Helper: check if user can manage event content (creator, admin, or Artix Research proxy)
 const canManageContent = async (creatorId, userId, userUsername, userRole) => {
@@ -280,8 +280,13 @@ exports.createEvent = async (req, res) => {
 exports.updateEvent = async (req, res) => {
   try {
     const { id } = req.params
-    const { title, description, date, time, location, type, tags, bannerUrl } = req.body
+    const {
+      title, description, date, time, location, type, tags, bannerUrl, status,
+      maxAttendees, ticketPrice, ticketCurrency, streamUrl,
+    } = req.body
     const userId = req.user.id
+
+    const safeStatus = sanitizeUpdateStatus(status)
 
     // Check if event exists and user owns it
     const existing = await prisma.event.findUnique({ where: { id } })
@@ -312,14 +317,11 @@ exports.updateEvent = async (req, res) => {
         ...(type !== undefined && { type }),
         ...(tags !== undefined && { tags: Array.isArray(tags) ? tags : [] }),
         ...(bannerUrl !== undefined && { bannerUrl }),
-        ...(req.body.maxAttendees !== undefined && {
-          maxAttendees: req.body.maxAttendees ? parseInt(req.body.maxAttendees) : null,
-        }),
-        ...(req.body.ticketPrice !== undefined && {
-          ticketPrice: req.body.ticketPrice ? parseFloat(req.body.ticketPrice) : null,
-        }),
-        ...(req.body.ticketCurrency !== undefined && { ticketCurrency: req.body.ticketCurrency }),
-        ...(req.body.streamUrl !== undefined && { streamUrl: req.body.streamUrl || null }),
+        ...(maxAttendees !== undefined && { maxAttendees: maxAttendees ? parseInt(maxAttendees) : null }),
+        ...(ticketPrice !== undefined && { ticketPrice: ticketPrice ? parseFloat(ticketPrice) : null }),
+        ...(ticketCurrency !== undefined && { ticketCurrency }),
+        ...(streamUrl !== undefined && { streamUrl: streamUrl || null }),
+        ...(safeStatus !== undefined && { status: safeStatus }),
         ...moderationPatch,
       },
       include: {
@@ -333,8 +335,18 @@ exports.updateEvent = async (req, res) => {
       },
     })
 
+    if (existing.status === 'draft' && safeStatus === 'reviewing') {
+      triggerModerationAfterCreate('event', {
+        id:    event.id,
+        title: event.title,
+        body:  event.description,
+      })
+    }
+
     res.json({ ok: true, event })
   } catch (error) {
+    if (error.code === 'INVALID_STATUS')
+      return res.status(400).json({ ok: false, message: error.message })
     logger.error({ err: error }, '[eventController] Error updating event')
     res.status(500).json({ ok: false, message: 'Failed to update event' })
   }

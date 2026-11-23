@@ -4,7 +4,7 @@ const {
   triggerModerationAfterCreate,
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
-const { sanitizeCreateStatus } = require('../lib/contentStatus')
+const { sanitizeCreateStatus, sanitizeUpdateStatus } = require('../lib/contentStatus')
 
 // Helper: only author or admin can manage content
 const canManageContent = (authorId, userId, userRole) => authorId === userId || userRole === 'ADMIN'
@@ -287,9 +287,11 @@ exports.createBlogPost = async (req, res) => {
 exports.updateBlogPost = async (req, res) => {
   try {
     const { id } = req.params
-    const { title, content, category, tags, coverUrl, imageUrl, videoUrl, documents, mentions } =
+    const { title, content, category, tags, coverUrl, imageUrl, videoUrl, documents, mentions, status } =
       req.body
     const userId = req.user.id
+
+    const safeStatus = sanitizeUpdateStatus(status)
 
     // Check if post exists and user owns it
     const existing = await prisma.blogPost.findUnique({ where: { id } })
@@ -332,6 +334,7 @@ exports.updateBlogPost = async (req, res) => {
         ...(videoUrl !== undefined && { videoUrl }),
         ...(documents !== undefined && { documents: Array.isArray(documents) ? documents : [] }),
         ...(mentionIds.length > 0 && { mentions: mentionIds }),
+        ...(safeStatus !== undefined && { status: safeStatus }),
         ...moderationPatch,
       },
       include: {
@@ -345,8 +348,18 @@ exports.updateBlogPost = async (req, res) => {
       },
     })
 
+    if (existing.status === 'draft' && safeStatus === 'reviewing') {
+      triggerModerationAfterCreate('blogPost', {
+        id:    post.id,
+        title: post.title || '',
+        body:  post.content,
+      })
+    }
+
     res.json({ ok: true, post })
   } catch (error) {
+    if (error.code === 'INVALID_STATUS')
+      return res.status(400).json({ ok: false, message: error.message })
     logger.error({ err: error }, '[blogController] Error updating blog post')
     res.status(500).json({ ok: false, message: 'Failed to update blog post' })
   }

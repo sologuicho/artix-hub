@@ -192,7 +192,7 @@ exports.updateArticle = async (id, body, currentUser) => {
   // Re-moderate when published content's title or body changes
   const moderationPatch = triggerModerationAfterEdit('article', existing, { title, content })
 
-  return articleRepository.update(id, {
+  const updated = await articleRepository.update(id, {
     ...(title !== undefined && { title }),
     ...(content !== undefined && { content }),
     ...(description !== undefined && { description }),
@@ -204,6 +204,16 @@ exports.updateArticle = async (id, body, currentUser) => {
     ...(coverUrl !== undefined && { coverUrl }),
     ...moderationPatch,
   })
+
+  if (existing.status === 'draft' && safeStatus === 'reviewing') {
+    triggerModerationAfterCreate('article', {
+      id: updated.id,
+      title: updated.title,
+      body: updated.content,
+    })
+  }
+
+  return updated
 }
 
 exports.deleteArticle = async (id, currentUser) => {

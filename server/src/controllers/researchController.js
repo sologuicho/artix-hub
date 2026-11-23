@@ -4,7 +4,7 @@ const {
   triggerModerationAfterCreate,
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
-const { sanitizeCreateStatus } = require('../lib/contentStatus')
+const { sanitizeCreateStatus, sanitizeUpdateStatus } = require('../lib/contentStatus')
 
 // Helper function to check if user can edit/delete content (including Artix Research content for luisflores01)
 const canManageContent = async (authorId, userId, userUsername, userRole) => {
@@ -338,9 +338,11 @@ exports.createResearch = async (req, res) => {
 exports.updateResearch = async (req, res) => {
   try {
     const { id } = req.params
-    const { title, content, description, category, tags, coverUrl, pdfUrl, documents, references } =
+    const { title, content, description, category, tags, coverUrl, pdfUrl, documents, references, status } =
       req.body
     const userId = req.user.id
+
+    const safeStatus = sanitizeUpdateStatus(status)
 
     const existing = await prisma.research.findUnique({ where: { id } })
     if (!existing) {
@@ -366,6 +368,7 @@ exports.updateResearch = async (req, res) => {
         ...(references !== undefined && {
           references: Array.isArray(references) ? references : [],
         }),
+        ...(safeStatus !== undefined && { status: safeStatus }),
         ...moderationPatch,
       },
       include: {
@@ -379,8 +382,18 @@ exports.updateResearch = async (req, res) => {
       },
     })
 
+    if (existing.status === 'draft' && safeStatus === 'reviewing') {
+      triggerModerationAfterCreate('research', {
+        id: research.id,
+        title: research.title,
+        body: research.content,
+      })
+    }
+
     res.json({ ok: true, research })
   } catch (error) {
+    if (error.code === 'INVALID_STATUS')
+      return res.status(400).json({ ok: false, message: error.message })
     logger.error({ err: error }, '[researchController] Error updating research')
     res.status(500).json({ ok: false, message: 'Failed to update research' })
   }
