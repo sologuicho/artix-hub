@@ -1,5 +1,9 @@
 const prisma = require('../prismaClient')
 const logger = require('../lib/logger')
+const {
+  triggerModerationAfterCreate,
+  triggerModerationAfterEdit,
+} = require('../middleware/moderationMiddleware')
 
 // Helper: only author or admin can manage content
 const canManageContent = (authorId, userId, userRole) => authorId === userId || userRole === 'ADMIN'
@@ -248,6 +252,12 @@ exports.createBlogPost = async (req, res) => {
       }
     }
 
+    triggerModerationAfterCreate('blogPost', {
+      id:    post.id,
+      title: post.title || '',
+      body:  post.content,
+    })
+
     res.status(201).json({ ok: true, post })
   } catch (error) {
     logger.error({ err: error }, '[blogController] Error creating blog post')
@@ -290,6 +300,8 @@ exports.updateBlogPost = async (req, res) => {
       }
     }
 
+    const moderationPatch = triggerModerationAfterEdit('blogPost', existing, { title, content })
+
     const post = await prisma.blogPost.update({
       where: { id },
       data: {
@@ -302,6 +314,7 @@ exports.updateBlogPost = async (req, res) => {
         ...(videoUrl !== undefined && { videoUrl }),
         ...(documents !== undefined && { documents: Array.isArray(documents) ? documents : [] }),
         ...(mentionIds.length > 0 && { mentions: mentionIds }),
+        ...moderationPatch,
       },
       include: {
         author: {

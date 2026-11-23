@@ -1,5 +1,9 @@
 const prisma = require('../prismaClient')
 const logger = require('../lib/logger')
+const {
+  triggerModerationAfterCreate,
+  triggerModerationAfterEdit,
+} = require('../middleware/moderationMiddleware')
 
 // Helper function to check if user can edit/delete content (including Artix Research content for luisflores01)
 const canManageContent = async (authorId, userId, userUsername, userRole) => {
@@ -303,19 +307,11 @@ exports.createResearch = async (req, res) => {
       },
     })
 
-    // Schedule AI validation (similar to articles)
-    setTimeout(async () => {
-      try {
-        // TODO: Implement AI validation for research
-        // For now, auto-publish after 1 minute
-        await prisma.research.update({
-          where: { id: research.id },
-          data: { status: 'published' },
-        })
-      } catch (error) {
-        logger.error({ err: error }, '[researchController] Error in research validation')
-      }
-    }, 60000) // 1 minute
+    triggerModerationAfterCreate('research', {
+      id: research.id,
+      title: research.title,
+      body: research.content,
+    })
 
     res.status(201).json({ ok: true, research })
   } catch (error) {
@@ -340,6 +336,8 @@ exports.updateResearch = async (req, res) => {
       return res.status(403).json({ ok: false, message: 'Not authorized' })
     }
 
+    const moderationPatch = triggerModerationAfterEdit('research', existing, { title, content })
+
     const research = await prisma.research.update({
       where: { id },
       data: {
@@ -354,6 +352,7 @@ exports.updateResearch = async (req, res) => {
         ...(references !== undefined && {
           references: Array.isArray(references) ? references : [],
         }),
+        ...moderationPatch,
       },
       include: {
         author: {

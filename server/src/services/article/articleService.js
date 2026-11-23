@@ -5,38 +5,10 @@ const {
 } = require('../shared/artixResearchService')
 const jobQueue = require('../../integrations/queue/jobQueue')
 const logger = require('../../lib/logger')
-
-// ——————————————————————————————————————————
-// Job handlers — registered once at import time
-// ——————————————————————————————————————————
-jobQueue.register('article:validate', async ({ articleId }) => {
-  const { validateContent } = require('../../lib/ai/aiClient')
-  const prisma = require('../../prismaClient')
-
-  const article = await prisma.article.findUnique({
-    where: { id: articleId },
-    select: { content: true, category: true, title: true, description: true },
-  })
-  if (!article) return
-
-  try {
-    const validation = await validateContent({
-      type: 'article',
-      text: article.content,
-      metadata: {
-        category: article.category,
-        title: article.title,
-        description: article.description,
-      },
-    })
-    const newStatus =
-      validation.safeToPublish && validation.qualityScore >= 70 ? 'published' : 'draft'
-    await prisma.article.update({ where: { id: articleId }, data: { status: newStatus } })
-  } catch (err) {
-    logger.error({ err }, '[articleService] AI validation failed, falling back to draft')
-    await prisma.article.update({ where: { id: articleId }, data: { status: 'draft' } })
-  }
-})
+const {
+  triggerModerationAfterCreate,
+  triggerModerationAfterEdit,
+} = require('../../middleware/moderationMiddleware')
 
 jobQueue.register('article:track-read', async ({ userId }) => {
   const { trackArticleRead } = require('../subscription/subscriptionService')
@@ -58,7 +30,7 @@ const assertCanManage = (authorId, currentUser) => {
 // Service functions
 // ——————————————————————————————————————————
 
-exports.getAllArticles = async query => {
+exports.getAllArticles = async (query, currentUser) => {
   const {
     page = 1,
     limit = 10,
@@ -74,10 +46,18 @@ exports.getAllArticles = async query => {
   } = query
   const skip = (parseInt(page) - 1) * parseInt(limit)
 
+  const isAdmin = currentUser?.role === 'ADMIN'
+
   const where = {}
-  if (!includeArchived && status !== 'archived') where.status = { not: 'archived' }
+  if (!isAdmin) {
+    // Unauthenticated users and non-admins only see published articles
+    where.status = 'published'
+  } else if (status) {
+    where.status = status
+  } else if (!includeArchived) {
+    where.status = { not: 'archived' }
+  }
   if (category) where.category = category
-  if (status) where.status = status
   if (authorId) {
     where.authorId = authorId
   } else if (author) {
@@ -174,7 +154,11 @@ exports.createArticle = async (body, currentUser) => {
   })
 
   if (article.status === 'reviewing') {
-    jobQueue.enqueue('article:validate', { articleId: article.id })
+    triggerModerationAfterCreate('article', {
+      id: article.id,
+      title: article.title,
+      body: article.content,
+    })
   }
 
   return article
@@ -191,6 +175,9 @@ exports.updateArticle = async (id, body, currentUser) => {
 
   const { title, content, description, category, tags, status, references, pdfUrl, coverUrl } = body
 
+  // Re-moderate when published content's title or body changes
+  const moderationPatch = triggerModerationAfterEdit('article', existing, { title, content })
+
   return articleRepository.update(id, {
     ...(title !== undefined && { title }),
     ...(content !== undefined && { content }),
@@ -201,6 +188,7 @@ exports.updateArticle = async (id, body, currentUser) => {
     ...(references !== undefined && { references: Array.isArray(references) ? references : [] }),
     ...(pdfUrl !== undefined && { pdfUrl }),
     ...(coverUrl !== undefined && { coverUrl }),
+    ...moderationPatch,
   })
 }
 

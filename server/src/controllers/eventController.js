@@ -1,5 +1,9 @@
 const prisma = require('../prismaClient')
 const logger = require('../lib/logger')
+const {
+  triggerModerationAfterCreate,
+  triggerModerationAfterEdit,
+} = require('../middleware/moderationMiddleware')
 
 // Helper: check if user can manage event content (creator, admin, or Artix Research proxy)
 const canManageContent = async (creatorId, userId, userUsername, userRole) => {
@@ -242,6 +246,12 @@ exports.createEvent = async (req, res) => {
       },
     })
 
+    triggerModerationAfterCreate('event', {
+      id:    event.id,
+      title: event.title,
+      body:  event.description,
+    })
+
     res.status(201).json({ ok: true, event })
   } catch (error) {
     logger.error({ err: error }, '[eventController] Error creating event')
@@ -272,6 +282,8 @@ exports.updateEvent = async (req, res) => {
       return res.status(403).json({ ok: false, message: 'Not authorized' })
     }
 
+    const moderationPatch = triggerModerationAfterEdit('event', existing, { title, description })
+
     const event = await prisma.event.update({
       where: { id },
       data: {
@@ -291,6 +303,7 @@ exports.updateEvent = async (req, res) => {
         }),
         ...(req.body.ticketCurrency !== undefined && { ticketCurrency: req.body.ticketCurrency }),
         ...(req.body.streamUrl !== undefined && { streamUrl: req.body.streamUrl || null }),
+        ...moderationPatch,
       },
       include: {
         creator: {
