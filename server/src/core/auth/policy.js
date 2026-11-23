@@ -7,6 +7,7 @@ const { JWT_SECRET } = process.env
 const AuthTokenErrorCodes = {
   JWT_INVALID: 'JWT_INVALID',
   USER_NOT_FOUND: 'USER_NOT_FOUND',
+  USER_BANNED: 'USER_BANNED',
   SESSION_REVOKED: 'SESSION_REVOKED',
 }
 
@@ -42,6 +43,10 @@ async function verifyAuthToken(token) {
   const user = await prisma.user.findUnique({ where: { id: decoded.id } })
   if (!user) {
     throw createAuthTokenError(AuthTokenErrorCodes.USER_NOT_FOUND, 'User not found')
+  }
+
+  if (user.banned) {
+    throw createAuthTokenError(AuthTokenErrorCodes.USER_BANNED, 'Account banned')
   }
 
   if ((decoded.tv ?? 0) < (user.tokenVersion ?? 0)) {
