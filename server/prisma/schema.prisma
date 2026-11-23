@@ -174,27 +174,29 @@ model Follow {
 }
 
 model Article {
-  id              String                @id @default(cuid())
-  title           String
-  content         String                @db.Text
-  description     String?
-  category        String
-  tags            String[]
-  status          String                @default("draft") // draft, reviewing, published, archived
-  coverUrl        String?
-  pdfUrl          String?
-  references      String[]
-  isCollaborative Boolean               @default(false)
-  authorId        String
-  author          User                  @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  collaborators   ArticleCollaborator[]
-  comments        Comment[]
-  reactions       Reaction[]
-  savedItems      SavedItem[]
-  readingProgress ReadingProgress[]
-  reposts         Repost[]
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id               String                @id @default(cuid())
+  title            String
+  content          String                @db.Text
+  description      String?
+  category         String
+  tags             String[]
+  status           String                @default("reviewing") // draft, reviewing, published, rejected, archived
+  coverUrl         String?
+  pdfUrl           String?
+  references       String[]
+  isCollaborative  Boolean               @default(false)
+  moderationScore  Float?
+  moderationReason String?               @db.Text
+  authorId         String
+  author           User                  @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  collaborators    ArticleCollaborator[]
+  comments         Comment[]
+  reactions        Reaction[]
+  savedItems       SavedItem[]
+  readingProgress  ReadingProgress[]
+  reposts          Repost[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
   @@index([authorId])
   @@index([category])
@@ -204,28 +206,30 @@ model Article {
 
 // Research/Investigaciones Model - Research generates Articles
 model Research {
-  id              String                 @id @default(cuid())
-  title           String
-  content         String                 @db.Text
-  description     String?
-  category        String
-  tags            String[]
-  status          String                 @default("draft") // draft, reviewing, published, archived
-  coverUrl        String?
-  pdfUrl          String?
-  documents       String[] // Array of document URLs (PDF, DOCX, etc.)
-  references      String[]
-  isCollaborative Boolean                @default(false)
-  authorId        String
-  author          User                   @relation("ResearchAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  collaborators   ResearchCollaborator[]
-  comments        Comment[]
-  reactions       Reaction[]
-  savedItems      SavedItem[]
-  readingProgress ReadingProgress[]
-  reposts         Repost[]
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  id               String                 @id @default(cuid())
+  title            String
+  content          String                 @db.Text
+  description      String?
+  category         String
+  tags             String[]
+  status           String                 @default("reviewing") // draft, reviewing, published, rejected, archived
+  coverUrl         String?
+  pdfUrl           String?
+  documents        String[] // Array of document URLs (PDF, DOCX, etc.)
+  references       String[]
+  isCollaborative  Boolean                @default(false)
+  moderationScore  Float?
+  moderationReason String?                @db.Text
+  authorId         String
+  author           User                   @relation("ResearchAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  collaborators    ResearchCollaborator[]
+  comments         Comment[]
+  reactions        Reaction[]
+  savedItems       SavedItem[]
+  readingProgress  ReadingProgress[]
+  reposts          Repost[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
 
   @@index([authorId])
   @@index([category])
@@ -269,17 +273,20 @@ model ArticleCollaborator {
 }
 
 model Event {
-  id              String              @id @default(cuid())
-  title           String
-  description     String              @db.Text
-  date            DateTime
-  time            String?
-  location        String
-  type            String // Conferencia, Taller, Congreso, etc.
-  tags            String[]
-  bannerUrl       String?
-  isCollaborative Boolean             @default(false)
-  archived        Boolean             @default(false)
+  id               String              @id @default(cuid())
+  title            String
+  description      String              @db.Text
+  date             DateTime
+  time             String?
+  location         String
+  type             String // Conferencia, Taller, Congreso, etc.
+  tags             String[]
+  bannerUrl        String?
+  isCollaborative  Boolean             @default(false)
+  archived         Boolean             @default(false)
+  status           String              @default("reviewing") // reviewing, published, rejected, archived
+  moderationScore  Float?
+  moderationReason String?             @db.Text
   // Capacity & tickets
   maxAttendees    Int?                // null = unlimited
   ticketPrice     Float?              // null / 0 = free
@@ -304,6 +311,7 @@ model Event {
   @@index([type])
   @@index([archived])
   @@index([isLive])
+  @@index([status])
 }
 
 model EventWaitlist {
@@ -351,30 +359,34 @@ model EventCollaborator {
 }
 
 model BlogPost {
-  id         String      @id @default(cuid())
-  title      String?
-  content    String      @db.Text
-  category   String
-  tags       String[]
-  coverUrl   String? // Cover image for the post
-  imageUrl   String? // Additional images in content
-  videoUrl   String? // Video URL
-  documents  String[] // Array of document URLs (PDF, DOCX, etc.)
-  mentions   String[] // Array of user IDs mentioned
-  archived   Boolean     @default(false)
-  authorId   String
-  author     User        @relation("BlogPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  reactions  Reaction[]
-  comments   Comment[]
-  savedItems SavedItem[]
-  readingProgress ReadingProgress[]
-  reposts    Repost[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id               String      @id @default(cuid())
+  title            String?
+  content          String      @db.Text
+  category         String
+  tags             String[]
+  coverUrl         String? // Cover image for the post
+  imageUrl         String? // Additional images in content
+  videoUrl         String? // Video URL
+  documents        String[] // Array of document URLs (PDF, DOCX, etc.)
+  mentions         String[] // Array of user IDs mentioned
+  archived         Boolean     @default(false)
+  status           String      @default("reviewing") // reviewing, published, rejected, archived
+  moderationScore  Float?
+  moderationReason String?     @db.Text
+  authorId         String
+  author           User        @relation("BlogPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  reactions        Reaction[]
+  comments         Comment[]
+  savedItems       SavedItem[]
+  readingProgress  ReadingProgress[]
+  reposts          Repost[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   @@index([authorId])
   @@index([category])
   @@index([archived])
+  @@index([status])
 }
 
 model Discussion {
