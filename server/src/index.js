@@ -24,15 +24,32 @@ const { protect } = require('./middleware/authMiddleware')
 const { initializeSocket } = require('./socket/socketServer')
 const { ALLOWED_ORIGINS } = require('./config/urls')
 const { startEmailReminderJob } = require('./jobs/emailReminderJob')
+const aiWorker = require('./workers/aiWorker')
 const correlationMiddleware = require('./middleware/correlationMiddleware')
 
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET', 'DATABASE_URL', 'FRONTEND_URL', 'BACKEND_URL']
-
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar])
 if (missingEnvVars.length > 0) {
   logger.error({ missingEnvVars }, 'Missing required environment variables')
   process.exit(1)
+}
+
+if ((process.env.JWT_SECRET || '').length < 32) {
+  logger.error('JWT_SECRET is too short — must be at least 32 characters')
+  process.exit(1)
+}
+
+const recommendedEnvVars = [
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'MP_ACCESS_TOKEN',
+  'SMTP_HOST',
+  'SENTRY_DSN',
+]
+const missingRecommended = recommendedEnvVars.filter(v => !process.env[v])
+if (missingRecommended.length > 0) {
+  logger.warn({ missingRecommended }, 'Some recommended environment variables are not set')
 }
 
 const app = express()
@@ -42,7 +59,32 @@ const PORT = process.env.PORT || 4000
 // by rate-limiter and req.ip correctly
 app.set('trust proxy', 1)
 
-app.use(helmet())
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'none'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        formAction: ["'none'"],
+        baseUri: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+)
 app.use(correlationMiddleware)
 
 // HTTP request logging — stream pino at 'info' level
@@ -271,6 +313,7 @@ app.use((req, res) => {
 })
 
 startEmailReminderJob()
+aiWorker.register()
 
 // Global error handler
 app.use((err, req, res, _next) => {
