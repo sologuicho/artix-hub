@@ -30,7 +30,7 @@ exports.getCategories = async (req, res) => {
     const types = await prisma.event.findMany({
       where: {
         type: { not: null },
-        archived: false,
+        status: 'published',
       },
       select: { type: true },
       distinct: ['type'],
@@ -56,9 +56,9 @@ exports.getAllEvents = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit)
 
     const where = {}
-    // By default, exclude archived events unless explicitly requested
+    // Default: only published events. includeArchived=true exposes all statuses (admin/owner use)
     if (!req.query.includeArchived) {
-      where.archived = false
+      where.status = 'published'
     }
     if (type) where.type = type
     if (creatorId) {
@@ -152,6 +152,16 @@ exports.getEvent = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({ ok: false, message: 'Event not found' })
+    }
+
+    // Non-published events visible only to the creator or admin
+    if (event.status !== 'published') {
+      const user = req.user
+      const isOwner = user && user.id === event.creatorId
+      const isAdmin = user && user.role === 'ADMIN'
+      if (!isOwner && !isAdmin) {
+        return res.status(404).json({ ok: false, message: 'Event not found' })
+      }
     }
 
     res.json({ ok: true, event })
@@ -347,7 +357,10 @@ exports.archiveEvent = async (req, res) => {
 
     const event = await prisma.event.update({
       where: { id },
-      data: { archived: archived === true },
+      data: {
+        archived: archived === true,
+        status: archived === true ? 'archived' : 'published',
+      },
       include: {
         creator: {
           select: {

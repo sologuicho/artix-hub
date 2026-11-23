@@ -146,7 +146,7 @@ exports.createArticle = async (body, currentUser) => {
     description,
     category,
     tags: tags || [],
-    status: status || 'draft',
+    status: status || 'reviewing',
     references: references || [],
     pdfUrl,
     coverUrl,

@@ -129,7 +129,7 @@ async function buildFeed(userId) {
         select: RESEARCH_SELECT,
       }),
       prisma.blogPost.findMany({
-        where: { archived: false, createdAt: { gte: thirtyDaysAgo } },
+        where: { status: 'published', createdAt: { gte: thirtyDaysAgo } },
         orderBy: { createdAt: 'desc' },
         take: 15,
         select: POST_SELECT,
@@ -165,7 +165,7 @@ async function buildFeed(userId) {
       prisma.blogPost.findMany({
         where: {
           authorId: { in: followedIds },
-          archived: false,
+          status: 'published',
           createdAt: { gte: thirtyDaysAgo },
         },
         orderBy: { createdAt: 'desc' },

@@ -225,12 +225,18 @@ router.get('/content', async (req, res) => {
         .findMany({
           orderBy: { createdAt: 'desc' },
           take: 200,
-          select: { id: true, title: true, createdAt: true, creatorId: true, creator: AUTHOR_SEL },
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            createdAt: true,
+            creatorId: true,
+            creator: AUTHOR_SEL,
+          },
         })
         .then(rs =>
           rs.map(r => ({
             ...r,
-            status: 'published',
             authorId: r.creatorId,
             author: r.creator,
             type: 'event',
@@ -241,9 +247,9 @@ router.get('/content', async (req, res) => {
         .findMany({
           orderBy: { createdAt: 'desc' },
           take: 200,
-          select: { id: true, title: true, createdAt: true, authorId: true, author: AUTHOR_SEL },
+          select: { id: true, title: true, status: true, createdAt: true, authorId: true, author: AUTHOR_SEL },
         })
-        .then(rs => rs.map(r => ({ ...r, status: 'published', type: 'blogpost' })))
+        .then(rs => rs.map(r => ({ ...r, type: 'blogpost' })))
 
     const items = []
     if (!type || type === 'article') items.push(...(await fetchArticles()))
@@ -396,6 +402,154 @@ router.post('/student-verifications/:id/reject', verifyCsrf, async (req, res) =>
   } catch (err) {
     logger.error({ err }, '[adminRoutes] Error rejecting student verification')
     res.status(500).json({ ok: false, message: 'Failed to reject verification' })
+  }
+})
+
+// GET /api/admin/moderation
+// Lists all content in 'reviewing' or 'rejected' across all 4 entity types
+router.get('/moderation', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const limit = Math.min(100, parseInt(req.query.limit) || 20)
+    const statusFilter = req.query.status // reviewing | rejected | (all if omitted)
+    const type = req.query.type
+
+    const statuses = statusFilter ? [statusFilter] : ['reviewing', 'rejected']
+    const AUTHOR_SEL = { select: { id: true, name: true, email: true } }
+
+    const queries = []
+    if (!type || type === 'article')
+      queries.push(
+        prisma.article
+          .findMany({
+            where: { status: { in: statuses } },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              moderationScore: true,
+              moderationReason: true,
+              createdAt: true,
+              author: AUTHOR_SEL,
+            },
+          })
+          .then(rs => rs.map(r => ({ ...r, type: 'article' })))
+      )
+    if (!type || type === 'research')
+      queries.push(
+        prisma.research
+          .findMany({
+            where: { status: { in: statuses } },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              moderationScore: true,
+              moderationReason: true,
+              createdAt: true,
+              author: AUTHOR_SEL,
+            },
+          })
+          .then(rs => rs.map(r => ({ ...r, type: 'research' })))
+      )
+    if (!type || type === 'blogpost')
+      queries.push(
+        prisma.blogPost
+          .findMany({
+            where: { status: { in: statuses } },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              moderationScore: true,
+              moderationReason: true,
+              createdAt: true,
+              author: AUTHOR_SEL,
+            },
+          })
+          .then(rs => rs.map(r => ({ ...r, type: 'blogpost' })))
+      )
+    if (!type || type === 'event')
+      queries.push(
+        prisma.event
+          .findMany({
+            where: { status: { in: statuses } },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              moderationScore: true,
+              moderationReason: true,
+              createdAt: true,
+              creator: AUTHOR_SEL,
+            },
+          })
+          .then(rs => rs.map(r => ({ ...r, author: r.creator, creator: undefined, type: 'event' })))
+      )
+
+    const results = await Promise.all(queries)
+    const items = results.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+    const total = items.length
+    const offset = (page - 1) * limit
+    res.json({
+      ok: true,
+      items: items.slice(offset, offset + limit),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+    })
+  } catch (err) {
+    logger.error({ err }, '[adminRoutes] Error fetching moderation queue')
+    res.status(500).json({ ok: false, message: 'Failed to fetch moderation queue' })
+  }
+})
+
+// PATCH /api/admin/content/:type/:id/status
+// Approve (status=published) or reject (status=rejected) with optional reason
+router.patch('/content/:type/:id/status', verifyCsrf, async (req, res) => {
+  const { type, id } = req.params
+  const { status, reason } = req.body
+
+  const MODELS = {
+    article: 'article',
+    research: 'research',
+    event: 'event',
+    blogpost: 'blogPost',
+  }
+  const model = MODELS[type]
+  if (!model) return res.status(400).json({ ok: false, message: 'Tipo de contenido inválido' })
+
+  const allowedStatuses = ['published', 'rejected', 'reviewing']
+  if (!allowedStatuses.includes(status))
+    return res.status(400).json({ ok: false, message: 'Estado inválido' })
+
+  try {
+    const data = { status }
+    if (reason !== undefined) data.moderationReason = reason
+    // Sync archived boolean for event and blogPost
+    if (type === 'event' || type === 'blogpost') {
+      data.archived = status === 'archived'
+    }
+
+    const updated = await prisma[model].update({
+      where: { id },
+      data,
+      select: { id: true, status: true, moderationReason: true },
+    })
+
+    // If approved, enqueue indexing
+    if (status === 'published') {
+      const jobQueue = require('../integrations/queue/jobQueue')
+      jobQueue.enqueue('ai:index', { entity: type === 'blogpost' ? 'post' : type, id })
+    }
+
+    res.json({ ok: true, item: updated })
+  } catch (err) {
+    logger.error({ err }, '[adminRoutes] Error updating content status')
+    res.status(500).json({ ok: false, message: 'Failed to update content status' })
   }
 })
 

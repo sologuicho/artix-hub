@@ -14,7 +14,7 @@ exports.getCategories = async (req, res) => {
     const categories = await prisma.blogPost.findMany({
       where: {
         category: { not: null },
-        archived: false,
+        status: 'published',
       },
       select: { category: true },
       distinct: ['category'],
@@ -40,9 +40,9 @@ exports.getAllBlogPosts = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit)
 
     const where = {}
-    // By default, exclude archived posts unless explicitly requested
+    // Default: only show published posts. includeArchived=true exposes all statuses (admin/owner use)
     if (!req.query.includeArchived) {
-      where.archived = false
+      where.status = 'published'
     }
     if (category) where.category = category
     if (search) {
@@ -106,6 +106,7 @@ exports.getAllBlogPosts = async (req, res) => {
 }
 
 // Get single blog post
+// optionalAuth is applied in the route so req.user may be set for logged-in users
 exports.getBlogPost = async (req, res) => {
   try {
     const { id } = req.params
@@ -125,6 +126,16 @@ exports.getBlogPost = async (req, res) => {
 
     if (!post) {
       return res.status(404).json({ ok: false, message: 'Blog post not found' })
+    }
+
+    // Non-published posts visible only to the author or admin
+    if (post.status !== 'published') {
+      const user = req.user
+      const isOwner = user && user.id === post.authorId
+      const isAdmin = user && user.role === 'ADMIN'
+      if (!isOwner && !isAdmin) {
+        return res.status(404).json({ ok: false, message: 'Blog post not found' })
+      }
     }
 
     res.json({ ok: true, post })
@@ -353,7 +364,10 @@ exports.archiveBlogPost = async (req, res) => {
 
     const post = await prisma.blogPost.update({
       where: { id },
-      data: { archived: archived === true },
+      data: {
+        archived: archived === true,
+        status: archived === true ? 'archived' : 'published',
+      },
       include: {
         author: {
           select: {

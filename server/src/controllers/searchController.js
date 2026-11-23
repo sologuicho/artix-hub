@@ -112,7 +112,7 @@ exports.globalSearch = async (req, res) => {
       prisma.event.findMany({
         where: {
           AND: [
-            { archived: false },
+            { status: 'published' },
             {
               OR: [
                 { title: searchMode },
@@ -142,7 +142,7 @@ exports.globalSearch = async (req, res) => {
       prisma.blogPost.findMany({
         where: {
           AND: [
-            { archived: false },
+            { status: 'published' },
             {
               OR: [
                 { title: searchMode },
@@ -183,13 +183,13 @@ exports.globalSearch = async (req, res) => {
         take: 5,
       }),
       prisma.event.findMany({
-        where: { type: searchMode, archived: false },
+        where: { type: searchMode, status: 'published' },
         select: { type: true },
         distinct: ['type'],
         take: 5,
       }),
       prisma.blogPost.findMany({
-        where: { category: searchMode, archived: false },
+        where: { category: searchMode, status: 'published' },
         select: { category: true },
         distinct: ['category'],
         take: 5,

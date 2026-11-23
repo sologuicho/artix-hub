@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const eventController = require('../controllers/eventController')
 const { protect } = require('../middleware/authMiddleware')
+const { optionalAuth } = require('../middleware/optionalAuth')
 const { checkPermission } = require('../middleware/checkTier')
 const { verifyCsrf } = require('../middleware/csrfMiddleware')
 const { validateEvent } = require('../middleware/validationMiddleware')
@@ -9,7 +10,8 @@ const { validateEvent } = require('../middleware/validationMiddleware')
 // Public routes
 router.get('/', eventController.getAllEvents)
 router.get('/categories', eventController.getCategories)
-router.get('/:id', eventController.getEvent)
+// optionalAuth lets the creator see their own reviewing/rejected event
+router.get('/:id', optionalAuth, eventController.getEvent)
 router.get('/:id/lobby/messages', eventController.getLobbyMessages)
 
 // Protected routes
