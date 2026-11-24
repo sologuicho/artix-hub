@@ -24,7 +24,8 @@ const { protect } = require('./middleware/authMiddleware')
 const { initializeSocket } = require('./socket/socketServer')
 const { ALLOWED_ORIGINS } = require('./config/urls')
 const { startEmailReminderJob } = require('./jobs/emailReminderJob')
-const aiWorker = require('./workers/aiWorker')
+const aiWorker          = require('./workers/aiWorker')
+const moderationSweeper = require('./workers/moderationSweeper')
 const correlationMiddleware = require('./middleware/correlationMiddleware')
 
 // Validate required environment variables
@@ -314,6 +315,7 @@ app.use((req, res) => {
 
 startEmailReminderJob()
 aiWorker.register()
+moderationSweeper.start()
 
 // Global error handler
 app.use((err, req, res, _next) => {

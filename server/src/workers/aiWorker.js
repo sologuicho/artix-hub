@@ -172,4 +172,4 @@ function register() {
   jobQueue.register('ai:delete',   handleDelete)
 }
 
-module.exports = { register }
+module.exports = { register, handleModerate }
