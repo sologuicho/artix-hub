@@ -10,8 +10,8 @@
  *                     Skips items whose moderationError was set < 30 min ago
  *                     so a down ai-core doesn't get hammered every sweep.
  *
- *   sweepIndex      — enqueues ai:index for published content where
- *                     indexedAt IS NULL or indexedAt < updatedAt (stale).
+ *   sweepIndex      — enqueues ai:index for published content / complete profiles
+ *                     where indexedAt IS NULL or indexedAt < contentUpdatedAt (stale).
  *
  *   sweepDeindex    — enqueues ai:delete for non-published content that
  *                     still has indexedAt set (was indexed but then removed).
@@ -28,12 +28,58 @@ const RECENT_FAILURE_MS   = 30 * 60 * 1000  // skip items whose error is < 30 mi
 const SWEEP_INTERVAL_MS   = 5 * 60 * 1000   // run every 5 minutes
 const FIRST_RUN_DELAY_MS  = 60 * 1000       // first run 1 min after server boot
 
-// DB table name must match Prisma schema model names (PascalCase)
-const ENTITIES = [
+// Content entities: go through the moderation pipeline (sweepModeration only)
+const CONTENT_ENTITIES = [
   { name: 'article',  model: () => prisma.article,  table: 'Article'  },
   { name: 'research', model: () => prisma.research,  table: 'Research' },
   { name: 'blogPost', model: () => prisma.blogPost,  table: 'BlogPost' },
   { name: 'event',    model: () => prisma.event,     table: 'Event'    },
+]
+
+// All entities that participate in the search index (content + user profiles)
+const INDEX_ENTITIES = [
+  {
+    name:         'article',
+    model:        () => prisma.article,
+    table:        'Article',
+    indexWhere:   { status: 'published' },
+    deindexWhere: { status: { not: 'published' }, indexedAt: { not: null } },
+    staleSql:     `status = 'published'`,
+  },
+  {
+    name:         'research',
+    model:        () => prisma.research,
+    table:        'Research',
+    indexWhere:   { status: 'published' },
+    deindexWhere: { status: { not: 'published' }, indexedAt: { not: null } },
+    staleSql:     `status = 'published'`,
+  },
+  {
+    name:         'blogPost',
+    model:        () => prisma.blogPost,
+    table:        'BlogPost',
+    indexWhere:   { status: 'published' },
+    deindexWhere: { status: { not: 'published' }, indexedAt: { not: null } },
+    staleSql:     `status = 'published'`,
+  },
+  {
+    name:         'event',
+    model:        () => prisma.event,
+    table:        'Event',
+    indexWhere:   { status: 'published' },
+    deindexWhere: { status: { not: 'published' }, indexedAt: { not: null } },
+    staleSql:     `status = 'published'`,
+  },
+  {
+    name:         'user',
+    model:        () => prisma.user,
+    table:        'User',
+    // Index profiles that are complete and not banned
+    indexWhere:   { profileComplete: true, banned: false },
+    // Deindex profiles that became banned or incomplete after being indexed
+    deindexWhere: { OR: [{ banned: true }, { profileComplete: false }], indexedAt: { not: null } },
+    staleSql:     `"profileComplete" = true AND "banned" = false`,
+  },
 ]
 
 // ─── Phase 1: re-enqueue stuck moderation ────────────────────────────────────
@@ -43,7 +89,7 @@ async function sweepModeration() {
   const recentFailureCutoff = new Date(Date.now() - RECENT_FAILURE_MS)
   let total = 0
 
-  for (const { name, model } of ENTITIES) {
+  for (const { name, model } of CONTENT_ENTITIES) {
     try {
       const stuck = await model().findMany({
         where: {
@@ -80,11 +126,11 @@ async function sweepModeration() {
 async function sweepIndex() {
   let total = 0
 
-  for (const { name, model, table } of ENTITIES) {
+  for (const { name, model, table, indexWhere, staleSql } of INDEX_ENTITIES) {
     try {
       // Items that have never been indexed
       const unindexed = await model().findMany({
-        where: { status: 'published', indexedAt: null },
+        where: { ...indexWhere, indexedAt: null },
         select: { id: true },
       })
 
@@ -94,7 +140,7 @@ async function sweepIndex() {
       // indexedAt, which would cause infinite re-indexing.
       // Prisma doesn't support column-to-column comparisons natively.
       const staleRows = await prisma.$queryRawUnsafe(
-        `SELECT id FROM "${table}" WHERE status = 'published' AND "indexedAt" IS NOT NULL AND "indexedAt" < "contentUpdatedAt"`
+        `SELECT id FROM "${table}" WHERE ${staleSql} AND "indexedAt" IS NOT NULL AND "indexedAt" < "contentUpdatedAt"`
       )
 
       const ids = new Set([
@@ -123,13 +169,10 @@ async function sweepIndex() {
 async function sweepDeindex() {
   let total = 0
 
-  for (const { name, model } of ENTITIES) {
+  for (const { name, model, deindexWhere } of INDEX_ENTITIES) {
     try {
       const toDeindex = await model().findMany({
-        where: {
-          status:    { not: 'published' },
-          indexedAt: { not: null },
-        },
+        where:  deindexWhere,
         select: { id: true },
       })
 

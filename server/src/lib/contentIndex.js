@@ -15,6 +15,7 @@ const INDEXABLE_FIELDS = {
   research: ['title', 'content', 'description', 'category', 'tags'],
   blogPost: ['title', 'content', 'category', 'tags'],
   event:    ['title', 'description', 'type', 'tags'],
+  user:     ['name', 'bio', 'occupation', 'interests'],
 }
 
 function contentUpdatedAtPatch(entity, incoming) {

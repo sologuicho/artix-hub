@@ -149,6 +149,7 @@ describe('sweepIndex — enqueuing', () => {
     mockFindMany('research', [])
     mockFindMany('blogPost', [])
     mockFindMany('event',    [])
+    mockFindMany('user',     [])
     mockQueryRaw([])
     const enqueueSpy = vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
 
@@ -166,6 +167,7 @@ describe('sweepIndex — enqueuing', () => {
     mockFindMany('research', [])
     mockFindMany('blogPost', [])
     mockFindMany('event',    [])
+    mockFindMany('user',     [])
     const rawSpy = mockQueryRaw([])
     vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
 
@@ -181,6 +183,7 @@ describe('sweepIndex — enqueuing', () => {
     mockFindMany('research', [])
     mockFindMany('blogPost', [])
     mockFindMany('event',    [])
+    mockFindMany('user',     [])
     mockQueryRaw([{ id: 'a-stale' }])  // first $queryRawUnsafe call returns stale article
     const enqueueSpy = vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
 
@@ -198,6 +201,7 @@ describe('sweepIndex — enqueuing', () => {
     mockFindMany('research', [])
     mockFindMany('blogPost', [])
     mockFindMany('event',    [])
+    mockFindMany('user',     [])
     // First $queryRawUnsafe call (article) returns the same id; rest return empty
     vi.spyOn(prisma, '$queryRawUnsafe')
       .mockResolvedValueOnce([{ id: 'a1' }])
@@ -217,11 +221,46 @@ describe('sweepIndex — enqueuing', () => {
     mockFindMany('research', [{ id: 'r1' }])
     mockFindMany('blogPost', [])
     mockFindMany('event',    [])
+    mockFindMany('user',     [])
     mockQueryRaw([])
     vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
 
     const count = await sweepIndex()
     expect(count).toBe(3)
+  })
+
+  it('enqueues ai:index for complete, non-banned user profiles with indexedAt=null', async () => {
+    mockFindMany('article',  [])
+    mockFindMany('research', [])
+    mockFindMany('blogPost', [])
+    mockFindMany('event',    [])
+    mockFindMany('user',     [{ id: 'u1' }])
+    mockQueryRaw([])
+    const enqueueSpy = vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
+
+    await sweepIndex()
+
+    expect(enqueueSpy).toHaveBeenCalledWith(
+      'ai:index',
+      { entity: 'user', id: 'u1' },
+      { jobId: 'index:user:u1' }
+    )
+  })
+
+  it('queries user with indexWhere = { profileComplete: true, banned: false }', async () => {
+    mockFindMany('article',  [])
+    mockFindMany('research', [])
+    mockFindMany('blogPost', [])
+    mockFindMany('event',    [])
+    const userSpy = mockFindMany('user', [])
+    mockQueryRaw([])
+    vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
+
+    await sweepIndex()
+
+    expect(userSpy).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ profileComplete: true, banned: false }),
+    }))
   })
 })
 
@@ -233,6 +272,7 @@ describe('sweepDeindex — enqueuing', () => {
     mockFindMany('research', [])
     mockFindMany('blogPost', [])
     mockFindMany('event',    [])
+    mockFindMany('user',     [])
     vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
 
     await sweepDeindex()
@@ -247,6 +287,7 @@ describe('sweepDeindex — enqueuing', () => {
     mockFindMany('research', [])
     mockFindMany('blogPost', [])
     mockFindMany('event',    [])
+    mockFindMany('user',     [])
     const enqueueSpy = vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
 
     await sweepDeindex()
@@ -263,10 +304,46 @@ describe('sweepDeindex — enqueuing', () => {
     mockFindMany('research', [])
     mockFindMany('blogPost', [{ id: 'b1' }, { id: 'b2' }])
     mockFindMany('event',    [])
+    mockFindMany('user',     [])
     vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
 
     const count = await sweepDeindex()
     expect(count).toBe(3)
+  })
+
+  it('enqueues ai:delete for banned/incomplete user profiles that are still indexed', async () => {
+    mockFindMany('article',  [])
+    mockFindMany('research', [])
+    mockFindMany('blogPost', [])
+    mockFindMany('event',    [])
+    mockFindMany('user',     [{ id: 'u-banned' }])
+    const enqueueSpy = vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
+
+    await sweepDeindex()
+
+    expect(enqueueSpy).toHaveBeenCalledWith(
+      'ai:delete',
+      { entity: 'user', id: 'u-banned' },
+      { jobId: 'delete:user:u-banned' }
+    )
+  })
+
+  it('queries user with deindexWhere = { OR: [banned, incomplete], indexedAt set }', async () => {
+    mockFindMany('article',  [])
+    mockFindMany('research', [])
+    mockFindMany('blogPost', [])
+    mockFindMany('event',    [])
+    const userSpy = mockFindMany('user', [])
+    vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
+
+    await sweepDeindex()
+
+    expect(userSpy).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        OR: expect.arrayContaining([{ banned: true }, { profileComplete: false }]),
+        indexedAt: { not: null },
+      }),
+    }))
   })
 })
 
@@ -274,12 +351,14 @@ describe('sweepDeindex — enqueuing', () => {
 
 describe('sweep — full run', () => {
   it('runs all three phases and returns { moderation, index, deindex }', async () => {
-    // moderation: 2 stuck
+    // moderation: 2 stuck (content entities only)
     mockFindMany('article',  [{ id: 'a1' }, { id: 'a2' }])
     mockFindMany('research', [])
     mockFindMany('blogPost', [])
     mockFindMany('event',    [])
-    // index: nothing (all findMany already mocked above, raw returns empty)
+    // index/deindex phases include user
+    mockFindMany('user',     [])
+    // index: nothing (raw returns empty)
     mockQueryRaw([])
     vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
 

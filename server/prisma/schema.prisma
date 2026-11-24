@@ -58,6 +58,7 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   studentVerification    StudentVerification?
   indexedAt              DateTime?
+  contentUpdatedAt       DateTime             @default(now())
 
   @@index([username])
   @@index([email])

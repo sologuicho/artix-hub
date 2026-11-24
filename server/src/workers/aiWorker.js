@@ -34,7 +34,11 @@ const MODELS = {
   research: prisma.research,
   blogPost: prisma.blogPost,
   event:    prisma.event,
+  user:     prisma.user,
 }
+
+// Entities that go through the moderation pipeline (users are excluded)
+const MODERATION_ENTITIES = new Set(['article', 'research', 'blogPost', 'event'])
 
 const BODY_FIELD = {
   article:  'content',
@@ -45,13 +49,28 @@ const BODY_FIELD = {
 
 function getModel(entity) {
   const model = MODELS[entity]
-  if (!model) throw new Error(`Unknown entity type for moderation: ${entity}`)
+  if (!model) throw new Error(`Unknown entity type: ${entity}`)
   return model
+}
+
+function extractTitle(entity, record) {
+  return record.title ?? record.name ?? ''
+}
+
+function extractBody(entity, record) {
+  if (entity === 'user') {
+    return [record.bio, record.occupation, ...(record.interests ?? [])].filter(Boolean).join('\n')
+  }
+  return record[BODY_FIELD[entity]] ?? ''
 }
 
 // ─── ai:moderate ─────────────────────────────────────────────────────────────
 
 async function handleModerate({ entity, id, attempt = 1 }) {
+  if (!MODERATION_ENTITIES.has(entity)) {
+    logger.warn({ entity, id }, '[aiWorker] Entity does not go through moderation — skipping')
+    return
+  }
   if (!aiCore.isConfigured()) {
     logger.warn({ entity, id }, '[aiWorker] ai-core not configured — skipping moderation')
     return
@@ -146,8 +165,8 @@ async function handleIndex({ entity, id, title: _title, body: _body, metadata = 
         logger.warn({ entity, id }, '[aiWorker] Record not found — skipping index')
         return
       }
-      title = record.title ?? ''
-      body  = record[BODY_FIELD[entity]] ?? ''
+      title = extractTitle(entity, record)
+      body  = extractBody(entity, record)
     }
 
     await aiCore.indexDocument({

@@ -24,8 +24,9 @@ const { protect } = require('./middleware/authMiddleware')
 const { initializeSocket } = require('./socket/socketServer')
 const { ALLOWED_ORIGINS } = require('./config/urls')
 const { startEmailReminderJob } = require('./jobs/emailReminderJob')
-const aiWorker          = require('./workers/aiWorker')
-const moderationSweeper = require('./workers/moderationSweeper')
+const aiWorker              = require('./workers/aiWorker')
+const moderationSweeper     = require('./workers/moderationSweeper')
+const { contentUpdatedAtPatch } = require('./lib/contentIndex')
 const correlationMiddleware = require('./middleware/correlationMiddleware')
 
 // Validate required environment variables
@@ -268,6 +269,7 @@ app.put('/api/auth/me', protect, verifyCsrf, async (req, res) => {
     if (country !== undefined) updateData.country = country
     if (interests !== undefined) updateData.interests = interests
     if (profileComplete !== undefined) updateData.profileComplete = profileComplete
+    Object.assign(updateData, contentUpdatedAtPatch('user', req.body))
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },

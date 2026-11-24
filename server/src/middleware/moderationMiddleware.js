@@ -64,7 +64,8 @@ function triggerModerationAfterEdit(entity, existing, incoming) {
     logger.info({ entity, id: existing.id }, '[moderation] Queued ai:moderate after edit')
   })
 
-  return { status: 'reviewing' }
+  // Clear score so the sweeper can recover this item after a restart
+  return { status: 'reviewing', moderationScore: null }
 }
 
 module.exports = { triggerModerationAfterCreate, triggerModerationAfterEdit }
