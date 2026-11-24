@@ -150,12 +150,12 @@ describe('triggerModerationAfterEdit', () => {
     expect(enqueue).not.toHaveBeenCalled()
   })
 
-  it('returns { status: reviewing } and enqueues when published content body changes', async () => {
+  it('returns { status: reviewing, moderationScore: null } and enqueues when published content body changes', async () => {
     const patch = triggerModerationAfterEdit('article',
       { id: 'a1', status: 'published', title: 'T', content: 'old body' },
       { content: 'new body' }
     )
-    expect(patch).toEqual({ status: 'reviewing' })
+    expect(patch).toEqual({ status: 'reviewing', moderationScore: null })
     await new Promise(resolve => setImmediate(resolve))
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',
@@ -164,12 +164,12 @@ describe('triggerModerationAfterEdit', () => {
     )
   })
 
-  it('returns { status: reviewing } and enqueues when published title changes', async () => {
+  it('returns { status: reviewing, moderationScore: null } and enqueues when published title changes', async () => {
     const patch = triggerModerationAfterEdit('research',
       { id: 'r1', status: 'published', title: 'Old', content: 'C' },
       { title: 'New' }
     )
-    expect(patch).toEqual({ status: 'reviewing' })
+    expect(patch).toEqual({ status: 'reviewing', moderationScore: null })
     await new Promise(resolve => setImmediate(resolve))
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',

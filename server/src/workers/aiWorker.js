@@ -131,18 +131,34 @@ async function handleModerate({ entity, id, attempt = 1 }) {
 
 // ─── ai:index ────────────────────────────────────────────────────────────────
 
-async function handleIndex({ entity, id, title, body, metadata = {} }) {
+async function handleIndex({ entity, id, title: _title, body: _body, metadata = {} }) {
   if (!aiCore.isConfigured()) return
 
   const aiEntity = entity === 'blogPost' ? 'post' : entity
 
   try {
+    // Sweeper enqueues with only { entity, id } — read from DB in that case
+    let title = _title
+    let body  = _body
+    if (title === undefined || body === undefined) {
+      const record = await getModel(entity).findUnique({ where: { id } })
+      if (!record) {
+        logger.warn({ entity, id }, '[aiWorker] Record not found — skipping index')
+        return
+      }
+      title = record.title ?? ''
+      body  = record[BODY_FIELD[entity]] ?? ''
+    }
+
     await aiCore.indexDocument({
       id:       `${aiEntity}-${id}`,
       entity:   aiEntity,
       text:     `${title}\n\n${body}`,
       metadata: { artixId: id, ...metadata },
     })
+
+    await getModel(entity).update({ where: { id }, data: { indexedAt: new Date() } })
+
     logger.info({ entity, id }, '[aiWorker] Document indexed')
   } catch (err) {
     logger.error({ err, entity, id }, '[aiWorker] Index failed (non-fatal)')
@@ -158,6 +174,9 @@ async function handleDelete({ entity, id }) {
 
   try {
     await aiCore.deleteDocument(`${aiEntity}-${id}`)
+
+    await getModel(entity).update({ where: { id }, data: { indexedAt: null } })
+
     logger.info({ entity, id }, '[aiWorker] Document removed from index')
   } catch (err) {
     logger.error({ err, entity, id }, '[aiWorker] Delete from index failed (non-fatal)')
@@ -172,4 +191,4 @@ function register() {
   jobQueue.register('ai:delete',   handleDelete)
 }
 
-module.exports = { register, handleModerate }
+module.exports = { register, handleModerate, handleIndex, handleDelete }

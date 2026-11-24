@@ -41,6 +41,20 @@
     ```
 - `protect` middleware validates session cookie and sets `req.user`.
 
+## Rate limiting
+
+All limiters use **express-rate-limit with MemoryStore** (the default, in-process). This is correct for a single Render instance. If the app ever scales to multiple instances, replace the stores with a shared backend (e.g. `rate-limit-redis`) so limits are enforced across all processes.
+
+| Limiter              | Scope     | Window   | Max | Endpoints                       |
+|----------------------|-----------|----------|-----|---------------------------------|
+| `authLimiter`        | IP        | 15 min   | 20  | `/auth/login`, `/auth/register` |
+| `checkUsernameLimiter` | IP      | 1 min    | 30  | `/auth/check-username`          |
+| `generalLimiter`     | IP        | 15 min   | 500 | Public API endpoints            |
+| `passwordResetLimiter` | IP      | 15 min   | 3   | `/auth/reset-password`          |
+| `aiLimiter`          | User ID\* | 15 min   | 20  | `/api/ai/assist`, `/api/ai/search` |
+
+\* `aiLimiter` keys by `req.user.id` when authenticated, falls back to `req.ip` for unauthenticated requests.
+
 ## Security note
 - Do not pass JWT in URL in production.
 - Rotate your Supabase password since the DB URL was shared.

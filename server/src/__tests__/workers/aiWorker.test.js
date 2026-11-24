@@ -1,7 +1,7 @@
 const prisma          = require('../../prismaClient')
 const aiCore          = require('../../lib/aiCoreClient')
 const jobQueue        = require('../../integrations/queue/jobQueue')
-const { handleModerate } = require('../../workers/aiWorker')
+const { handleModerate, handleIndex, handleDelete } = require('../../workers/aiWorker')
 
 // ─── Shared mocks ────────────────────────────────────────────────────────────
 
@@ -260,5 +260,87 @@ describe('handleModerate — retries', () => {
     const data = updateSpy.mock.calls[0][0].data
     expect(data).not.toHaveProperty('moderationReason')
     expect(data).not.toHaveProperty('status')
+  })
+})
+
+// ─── handleIndex ─────────────────────────────────────────────────────────────
+
+describe('handleIndex', () => {
+  function setupIndex() {
+    vi.spyOn(aiCore, 'isConfigured').mockReturnValue(true)
+    vi.spyOn(aiCore, 'indexDocument').mockResolvedValue({})
+    return vi.spyOn(prisma.article, 'update').mockResolvedValue({})
+  }
+
+  it('sets indexedAt after a successful index call', async () => {
+    const updateSpy = setupIndex()
+    await handleIndex({ entity: 'article', id: 'a1', title: 'T', body: 'B' })
+    expect(updateSpy).toHaveBeenCalledWith({
+      where: { id: 'a1' },
+      data:  { indexedAt: expect.any(Date) },
+    })
+  })
+
+  it('reads title and body from DB when they are not passed (sweeper path)', async () => {
+    vi.spyOn(aiCore, 'isConfigured').mockReturnValue(true)
+    vi.spyOn(aiCore, 'indexDocument').mockResolvedValue({})
+    vi.spyOn(prisma.article, 'findUnique').mockResolvedValue(ARTICLE_RECORD)
+    vi.spyOn(prisma.article, 'update').mockResolvedValue({})
+
+    const indexSpy = vi.spyOn(aiCore, 'indexDocument')
+    await handleIndex({ entity: 'article', id: 'a1' })
+
+    expect(indexSpy).toHaveBeenCalledWith(expect.objectContaining({
+      text: expect.stringContaining('Title'),
+    }))
+  })
+
+  it('skips without calling ai-core when record not found', async () => {
+    vi.spyOn(aiCore, 'isConfigured').mockReturnValue(true)
+    vi.spyOn(prisma.article, 'findUnique').mockResolvedValue(null)
+    const indexSpy = vi.spyOn(aiCore, 'indexDocument').mockResolvedValue({})
+
+    await handleIndex({ entity: 'article', id: 'missing' })
+
+    expect(indexSpy).not.toHaveBeenCalled()
+  })
+
+  it('does nothing when ai-core is not configured', async () => {
+    vi.spyOn(aiCore, 'isConfigured').mockReturnValue(false)
+    const findSpy  = vi.spyOn(prisma.article, 'findUnique').mockResolvedValue({})
+    const indexSpy = vi.spyOn(aiCore, 'indexDocument').mockResolvedValue({})
+
+    await handleIndex({ entity: 'article', id: 'a1' })
+
+    expect(findSpy).not.toHaveBeenCalled()
+    expect(indexSpy).not.toHaveBeenCalled()
+  })
+})
+
+// ─── handleDelete ─────────────────────────────────────────────────────────────
+
+describe('handleDelete', () => {
+  it('clears indexedAt after a successful delete call', async () => {
+    vi.spyOn(aiCore, 'isConfigured').mockReturnValue(true)
+    vi.spyOn(aiCore, 'deleteDocument').mockResolvedValue({})
+    const updateSpy = vi.spyOn(prisma.article, 'update').mockResolvedValue({})
+
+    await handleDelete({ entity: 'article', id: 'a1' })
+
+    expect(updateSpy).toHaveBeenCalledWith({
+      where: { id: 'a1' },
+      data:  { indexedAt: null },
+    })
+  })
+
+  it('does nothing when ai-core is not configured', async () => {
+    vi.spyOn(aiCore, 'isConfigured').mockReturnValue(false)
+    const deleteSpy = vi.spyOn(aiCore, 'deleteDocument').mockResolvedValue({})
+    const updateSpy = vi.spyOn(prisma.article, 'update').mockResolvedValue({})
+
+    await handleDelete({ entity: 'article', id: 'a1' })
+
+    expect(deleteSpy).not.toHaveBeenCalled()
+    expect(updateSpy).not.toHaveBeenCalled()
   })
 })
