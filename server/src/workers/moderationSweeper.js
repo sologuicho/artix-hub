@@ -88,10 +88,13 @@ async function sweepIndex() {
         select: { id: true },
       })
 
-      // Items whose index entry is stale (indexedAt < updatedAt)
-      // Prisma doesn't support column-to-column comparisons natively
+      // Items whose index entry is stale (indexedAt < contentUpdatedAt).
+      // contentUpdatedAt only advances when indexable fields change — unlike
+      // updatedAt (@updatedAt), which also bumps on the same write that sets
+      // indexedAt, which would cause infinite re-indexing.
+      // Prisma doesn't support column-to-column comparisons natively.
       const staleRows = await prisma.$queryRawUnsafe(
-        `SELECT id FROM "${table}" WHERE status = 'published' AND "indexedAt" IS NOT NULL AND "indexedAt" < "updatedAt"`
+        `SELECT id FROM "${table}" WHERE status = 'published' AND "indexedAt" IS NOT NULL AND "indexedAt" < "contentUpdatedAt"`
       )
 
       const ids = new Set([

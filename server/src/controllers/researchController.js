@@ -5,6 +5,7 @@ const {
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
 const { sanitizeCreateStatus, sanitizeUpdateStatus } = require('../lib/contentStatus')
+const { contentUpdatedAtPatch } = require('../lib/contentIndex')
 
 // Helper function to check if user can edit/delete content (including Artix Research content for luisflores01)
 const canManageContent = async (authorId, userId, userUsername, userRole) => {
@@ -304,6 +305,7 @@ exports.createResearch = async (req, res) => {
         isCollaborative: isCollaborative || false,
         status: sanitizeCreateStatus(status),
         authorId: authorId,
+        contentUpdatedAt: new Date(),
       },
       include: {
         author: {
@@ -365,10 +367,12 @@ exports.updateResearch = async (req, res) => {
           references: Array.isArray(references) ? references : [],
         }),
         ...(safeStatus !== undefined && { status: safeStatus }),
+        ...(safeStatus === 'reviewing' && { moderationScore: null }),
         ...(existing.status === 'rejected' && safeStatus === 'reviewing' && {
           moderationReason: null,
           moderationError:  null,
         }),
+        ...contentUpdatedAtPatch('research', req.body),
         ...moderationPatch,
       },
       include: {

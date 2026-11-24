@@ -39,16 +39,35 @@ const passwordResetLimiter = rateLimit({
   },
 })
 
-// AI endpoints (/assist, /search) — 20 requests per 15 min per authenticated user (falls back to IP).
+// AI endpoints — keyed by authenticated user ID (falls back to IP).
 // Uses MemoryStore (express-rate-limit default). Safe for a single Render instance; if the app
 // ever scales to multiple instances, replace with a shared store (e.g. rate-limit-redis).
-const aiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
+
+// /assist — generative, expensive: 30 per 10 min
+const aiAssistLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.user?.id || req.ip,
-  message: { ok: false, message: 'AI request limit reached. Please wait before trying again.' },
+  message: { ok: false, message: 'AI assistant limit reached. Please wait before trying again.' },
 })
 
-module.exports = { authLimiter, checkUsernameLimiter, generalLimiter, passwordResetLimiter, aiLimiter }
+// /search — read-only, cheaper: 60 per 10 min
+const aiSearchLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: { ok: false, message: 'Search limit reached. Please wait before trying again.' },
+})
+
+module.exports = {
+  authLimiter,
+  checkUsernameLimiter,
+  generalLimiter,
+  passwordResetLimiter,
+  aiAssistLimiter,
+  aiSearchLimiter,
+}

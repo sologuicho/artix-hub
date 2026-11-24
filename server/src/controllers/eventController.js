@@ -5,6 +5,7 @@ const {
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
 const { sanitizeCreateStatus, sanitizeUpdateStatus } = require('../lib/contentStatus')
+const { contentUpdatedAtPatch } = require('../lib/contentIndex')
 
 // Helper: check if user can manage event content (creator, admin, or Artix Research proxy)
 const canManageContent = async (creatorId, userId, userUsername, userRole) => {
@@ -247,6 +248,7 @@ exports.createEvent = async (req, res) => {
         ticketPrice: req.body.ticketPrice ? parseFloat(req.body.ticketPrice) : null,
         ticketCurrency: req.body.ticketCurrency || 'MXN',
         streamUrl: req.body.streamUrl || null,
+        contentUpdatedAt: new Date(),
       },
       include: {
         creator: {
@@ -318,10 +320,12 @@ exports.updateEvent = async (req, res) => {
         ...(ticketCurrency !== undefined && { ticketCurrency }),
         ...(streamUrl !== undefined && { streamUrl: streamUrl || null }),
         ...(safeStatus !== undefined && { status: safeStatus }),
+        ...(safeStatus === 'reviewing' && { moderationScore: null }),
         ...(existing.status === 'rejected' && safeStatus === 'reviewing' && {
           moderationReason: null,
           moderationError:  null,
         }),
+        ...contentUpdatedAtPatch('event', req.body),
         ...moderationPatch,
       },
       include: {

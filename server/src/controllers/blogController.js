@@ -5,6 +5,7 @@ const {
   triggerModerationAfterEdit,
 } = require('../middleware/moderationMiddleware')
 const { sanitizeCreateStatus, sanitizeUpdateStatus } = require('../lib/contentStatus')
+const { contentUpdatedAtPatch } = require('../lib/contentIndex')
 
 // Helper: only author or admin can manage content
 const canManageContent = (authorId, userId, userRole) => authorId === userId || userRole === 'ADMIN'
@@ -237,6 +238,7 @@ exports.createBlogPost = async (req, res) => {
         documents: documents && Array.isArray(documents) ? documents : [],
         mentions: mentionIds,
         authorId: authorId,
+        contentUpdatedAt: new Date(),
       },
       include: {
         author: {
@@ -331,10 +333,12 @@ exports.updateBlogPost = async (req, res) => {
         ...(documents !== undefined && { documents: Array.isArray(documents) ? documents : [] }),
         ...(mentionIds.length > 0 && { mentions: mentionIds }),
         ...(safeStatus !== undefined && { status: safeStatus }),
+        ...(safeStatus === 'reviewing' && { moderationScore: null }),
         ...(existing.status === 'rejected' && safeStatus === 'reviewing' && {
           moderationReason: null,
           moderationError:  null,
         }),
+        ...contentUpdatedAtPatch('blogPost', req.body),
         ...moderationPatch,
       },
       include: {

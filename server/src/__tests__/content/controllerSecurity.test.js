@@ -119,11 +119,13 @@ describe('researchController — update security', () => {
     expect(data).not.toHaveProperty('moderationReason')
   })
 
-  it('draft→reviewing enqueues moderation', async () => {
+  it('draft→reviewing sets moderationScore=null and enqueues moderation', async () => {
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing' })
     const req = mockReq({ status: 'reviewing' })
     const res = mockRes()
     await researchCtrl.updateResearch(req, res)
+    const data = updateSpy.mock.calls[0][0].data
+    expect(data).toHaveProperty('moderationScore', null)
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',
       expect.objectContaining({ id: 'r1' }),
@@ -131,13 +133,14 @@ describe('researchController — update security', () => {
     )
   })
 
-  it('rejected→reviewing clears moderationReason/moderationError and enqueues moderation', async () => {
+  it('rejected→reviewing clears moderationScore/moderationReason/moderationError and enqueues moderation', async () => {
     findSpy.mockResolvedValue({ ...existing, status: 'rejected', moderationReason: 'hate' })
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing', moderationReason: null })
     const req = mockReq({ status: 'reviewing' })
     const res = mockRes()
     await researchCtrl.updateResearch(req, res)
     const data = updateSpy.mock.calls[0][0].data
+    expect(data).toHaveProperty('moderationScore', null)
     expect(data).toHaveProperty('moderationReason', null)
     expect(data).toHaveProperty('moderationError', null)
     expect(enqueue).toHaveBeenCalledWith(
@@ -147,7 +150,7 @@ describe('researchController — update security', () => {
     )
   })
 
-  it('published + body change sets status to reviewing and enqueues moderation', async () => {
+  it('published + body change sets status=reviewing, moderationScore=null and enqueues moderation', async () => {
     findSpy.mockResolvedValue({ ...existing, status: 'published' })
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing', content: 'New' })
     const req = mockReq({ content: 'New' })
@@ -155,6 +158,7 @@ describe('researchController — update security', () => {
     await researchCtrl.updateResearch(req, res)
     const data = updateSpy.mock.calls[0][0].data
     expect(data).toHaveProperty('status', 'reviewing')
+    expect(data).toHaveProperty('moderationScore', null)
     await new Promise(resolve => setImmediate(resolve))
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',
@@ -251,11 +255,13 @@ describe('blogController — update security', () => {
     expect(data).not.toHaveProperty('moderationReason')
   })
 
-  it('draft→reviewing enqueues moderation', async () => {
+  it('draft→reviewing sets moderationScore=null and enqueues moderation', async () => {
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing' })
     const req = mockReq({ status: 'reviewing' })
     const res = mockRes()
     await blogCtrl.updateBlogPost(req, res)
+    const data = updateSpy.mock.calls[0][0].data
+    expect(data).toHaveProperty('moderationScore', null)
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',
       expect.objectContaining({ id: 'b1' }),
@@ -263,13 +269,14 @@ describe('blogController — update security', () => {
     )
   })
 
-  it('rejected→reviewing clears moderationReason/moderationError and enqueues moderation', async () => {
+  it('rejected→reviewing clears moderationScore/moderationReason/moderationError and enqueues moderation', async () => {
     findSpy.mockResolvedValue({ ...existing, status: 'rejected', moderationReason: 'spam' })
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing', moderationReason: null })
     const req = mockReq({ status: 'reviewing' })
     const res = mockRes()
     await blogCtrl.updateBlogPost(req, res)
     const data = updateSpy.mock.calls[0][0].data
+    expect(data).toHaveProperty('moderationScore', null)
     expect(data).toHaveProperty('moderationReason', null)
     expect(data).toHaveProperty('moderationError', null)
     expect(enqueue).toHaveBeenCalledWith(
@@ -279,7 +286,7 @@ describe('blogController — update security', () => {
     )
   })
 
-  it('published + body change sets status to reviewing and enqueues moderation', async () => {
+  it('published + body change sets status=reviewing, moderationScore=null and enqueues moderation', async () => {
     findSpy.mockResolvedValue({ ...existing, status: 'published' })
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing', content: 'New' })
     const req = mockReq({ content: 'New' })
@@ -287,6 +294,7 @@ describe('blogController — update security', () => {
     await blogCtrl.updateBlogPost(req, res)
     const data = updateSpy.mock.calls[0][0].data
     expect(data).toHaveProperty('status', 'reviewing')
+    expect(data).toHaveProperty('moderationScore', null)
     await new Promise(resolve => setImmediate(resolve))
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',
@@ -384,11 +392,13 @@ describe('eventController — update security', () => {
     expect(data).not.toHaveProperty('moderationReason')
   })
 
-  it('draft→reviewing enqueues moderation', async () => {
+  it('draft→reviewing sets moderationScore=null and enqueues moderation', async () => {
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing' })
     const req = mockReq({ status: 'reviewing' })
     const res = mockRes()
     await eventCtrl.updateEvent(req, res)
+    const data = updateSpy.mock.calls[0][0].data
+    expect(data).toHaveProperty('moderationScore', null)
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',
       expect.objectContaining({ id: 'e1' }),
@@ -396,13 +406,14 @@ describe('eventController — update security', () => {
     )
   })
 
-  it('rejected→reviewing clears moderationReason/moderationError and enqueues moderation', async () => {
+  it('rejected→reviewing clears moderationScore/moderationReason/moderationError and enqueues moderation', async () => {
     findSpy.mockResolvedValue({ ...existing, status: 'rejected', moderationReason: 'violence' })
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing', moderationReason: null })
     const req = mockReq({ status: 'reviewing' })
     const res = mockRes()
     await eventCtrl.updateEvent(req, res)
     const data = updateSpy.mock.calls[0][0].data
+    expect(data).toHaveProperty('moderationScore', null)
     expect(data).toHaveProperty('moderationReason', null)
     expect(data).toHaveProperty('moderationError', null)
     expect(enqueue).toHaveBeenCalledWith(
@@ -412,7 +423,7 @@ describe('eventController — update security', () => {
     )
   })
 
-  it('published + body change sets status to reviewing and enqueues moderation', async () => {
+  it('published + body change sets status=reviewing, moderationScore=null and enqueues moderation', async () => {
     findSpy.mockResolvedValue({ ...existing, status: 'published' })
     updateSpy.mockResolvedValue({ ...existing, status: 'reviewing', description: 'New' })
     const req = mockReq({ description: 'New' })
@@ -420,6 +431,7 @@ describe('eventController — update security', () => {
     await eventCtrl.updateEvent(req, res)
     const data = updateSpy.mock.calls[0][0].data
     expect(data).toHaveProperty('status', 'reviewing')
+    expect(data).toHaveProperty('moderationScore', null)
     await new Promise(resolve => setImmediate(resolve))
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',

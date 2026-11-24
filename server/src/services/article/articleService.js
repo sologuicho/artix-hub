@@ -13,6 +13,7 @@ const {
   sanitizeCreateStatus,
   sanitizeUpdateStatus,
 } = require('../../lib/contentStatus')
+const { contentUpdatedAtPatch } = require('../../lib/contentIndex')
 
 jobQueue.register('article:track-read', async ({ userId }) => {
   const { trackArticleRead } = require('../subscription/subscriptionService')
@@ -163,6 +164,7 @@ exports.createArticle = async (body, currentUser) => {
     pdfUrl,
     coverUrl,
     authorId,
+    contentUpdatedAt: new Date(),
   })
 
   if (article.status === 'reviewing') {
@@ -195,6 +197,7 @@ exports.updateArticle = async (id, body, currentUser) => {
     ...(category !== undefined && { category }),
     ...(tags !== undefined && { tags: Array.isArray(tags) ? tags : [] }),
     ...(safeStatus !== undefined && { status: safeStatus }),
+    ...(safeStatus === 'reviewing' && { moderationScore: null }),
     ...(references !== undefined && { references: Array.isArray(references) ? references : [] }),
     ...(pdfUrl !== undefined && { pdfUrl }),
     ...(coverUrl !== undefined && { coverUrl }),
@@ -202,6 +205,7 @@ exports.updateArticle = async (id, body, currentUser) => {
       moderationReason: null,
       moderationError:  null,
     }),
+    ...contentUpdatedAtPatch('article', body),
     ...moderationPatch,
   })
 

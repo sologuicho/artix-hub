@@ -161,6 +161,21 @@ describe('sweepIndex — enqueuing', () => {
     )
   })
 
+  it('stale raw query compares indexedAt < contentUpdatedAt (not updatedAt)', async () => {
+    mockFindMany('article',  [])
+    mockFindMany('research', [])
+    mockFindMany('blogPost', [])
+    mockFindMany('event',    [])
+    const rawSpy = mockQueryRaw([])
+    vi.spyOn(jobQueue, 'enqueue').mockImplementation(() => {})
+
+    await sweepIndex()
+
+    const sql = rawSpy.mock.calls[0][0]
+    expect(sql).toContain('"contentUpdatedAt"')
+    expect(sql).not.toContain('"updatedAt"')
+  })
+
   it('enqueues ai:index for stale items returned by raw query', async () => {
     mockFindMany('article',  [])
     mockFindMany('research', [])

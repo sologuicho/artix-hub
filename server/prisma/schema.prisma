@@ -197,9 +197,10 @@ model Article {
   savedItems       SavedItem[]
   readingProgress  ReadingProgress[]
   reposts          Repost[]
-  indexedAt        DateTime?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  indexedAt           DateTime?
+  contentUpdatedAt    DateTime              @default(now())
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
 
   @@index([authorId])
   @@index([category])
@@ -232,9 +233,10 @@ model Research {
   savedItems       SavedItem[]
   readingProgress  ReadingProgress[]
   reposts          Repost[]
-  indexedAt        DateTime?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
+  indexedAt           DateTime?
+  contentUpdatedAt    DateTime               @default(now())
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
 
   @@index([authorId])
   @@index([category])
@@ -309,9 +311,10 @@ model Event {
   reminders       EventReminder[]
   savedItems      SavedItem[]
   reposts         Repost[]
-  indexedAt       DateTime?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  indexedAt           DateTime?
+  contentUpdatedAt    DateTime            @default(now())
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
   @@index([creatorId])
   @@index([date])
@@ -388,9 +391,10 @@ model BlogPost {
   savedItems       SavedItem[]
   readingProgress  ReadingProgress[]
   reposts          Repost[]
-  indexedAt        DateTime?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  indexedAt           DateTime?
+  contentUpdatedAt    DateTime    @default(now())
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
   @@index([authorId])
   @@index([category])

@@ -266,9 +266,11 @@ describe('articleService — update status and field security', () => {
     expect(data).not.toHaveProperty('moderationReason')
   })
 
-  it('draft→reviewing transition enqueues moderation', async () => {
+  it('draft→reviewing transition sets moderationScore=null and enqueues moderation', async () => {
     repoUpdate.mockResolvedValue({ id: 'a1', title: 'Old', content: 'Old body', status: 'reviewing' })
     await articleService.updateArticle('a1', { status: 'reviewing' }, user)
+    const data = repoUpdate.mock.calls[0][1]
+    expect(data).toHaveProperty('moderationScore', null)
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',
       expect.objectContaining({ id: 'a1' }),
@@ -276,11 +278,12 @@ describe('articleService — update status and field security', () => {
     )
   })
 
-  it('rejected→reviewing clears moderationReason and enqueues moderation', async () => {
+  it('rejected→reviewing clears moderationScore, moderationReason and enqueues moderation', async () => {
     repoFindById.mockResolvedValue({ ...existing, status: 'rejected', moderationReason: 'hate speech' })
     repoUpdate.mockResolvedValue({ id: 'a1', status: 'reviewing', moderationReason: null })
     await articleService.updateArticle('a1', { status: 'reviewing' }, user)
     const data = repoUpdate.mock.calls[0][1]
+    expect(data).toHaveProperty('moderationScore', null)
     expect(data).toHaveProperty('moderationReason', null)
     expect(data).toHaveProperty('moderationError', null)
     expect(enqueue).toHaveBeenCalledWith(
@@ -290,12 +293,13 @@ describe('articleService — update status and field security', () => {
     )
   })
 
-  it('published + body change sets status to reviewing and enqueues moderation', async () => {
+  it('published + body change sets status=reviewing, moderationScore=null and enqueues moderation', async () => {
     repoFindById.mockResolvedValue({ ...existing, status: 'published' })
     repoUpdate.mockResolvedValue({ id: 'a1', title: 'Old', content: 'New body', status: 'reviewing' })
     await articleService.updateArticle('a1', { content: 'New body' }, user)
     const data = repoUpdate.mock.calls[0][1]
     expect(data).toHaveProperty('status', 'reviewing')
+    expect(data).toHaveProperty('moderationScore', null)
     await new Promise(resolve => setImmediate(resolve))
     expect(enqueue).toHaveBeenCalledWith(
       'ai:moderate',
